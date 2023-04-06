@@ -1,0 +1,9 @@
+.middle{width:100%;text-align:center}
+.middle input[type=radio]{display:none}
+.middle .box{width:200px;height:200px;background-color:#fff;transition:all 250ms ease;will-change:transition;display:inline-block;text-align:center;cursor:pointer;position:relative;font-weight:900}
+.middle input[type=radio]:checked + .box{background-color:#3c8dbc}
+.middle input[type=radio]:checked + .box span{color:#fff;transform:translateY(70px)}
+.middle .box span{position:absolute;transform:translate(0,60px);left:0;right:0;transition:all 300ms ease;font-size:1.5em;user-select:none;color:#3c8dbc}
+.middle input[type=radio]:checked + .box span:before{transform:translateY(0px);opacity:1}
+.middle .front-end span:before{content:"\f2b0"}
+.middle .box span:before{font-size:1.2em;font-family:FontAwesome;display:block;transform:translateY(-80px);opacity:0;transition:all 300ms ease-in-out;font-weight:400;color:#fff}

@@ -1,0 +1,124 @@
+.parsley-errors-list.filled {
+    color: #f96a6a;
+    list-style: none;
+    padding: 0px !important;
+    margin-top: 5px;
+}
+.bg-danger {
+    background-color: #f2dede;
+    color: #f96a6a;
+    margin-bottom: 10px;
+    padding: 2px;
+}
+/* .btn-outline-light {
+    color: #3c8dbc;
+    background-color: transparent;
+    border-color: #e6e6f2;
+}
+.btn-outline-light:hover{
+    color: #204d74;
+} */
+#cover-spin {
+    position:fixed;
+    width:100%;
+    left:0;right:0;top:0;bottom:0;
+    background-color: rgba(255,255,255,0.7);
+    z-index:9999;
+    display:none;
+}
+
+@-webkit-keyframes spin {
+    from {-webkit-transform:rotate(0deg);}
+    to {-webkit-transform:rotate(360deg);}
+}
+
+@keyframes spin {
+    from {transform:rotate(0deg);}
+    to {transform:rotate(360deg);}
+}
+
+#cover-spin::after {
+    content:'';
+    display:block;
+    position:absolute;
+    left:49%;top:45%;
+    width:40px;height:40px;
+    border-style:solid;
+    border-color:black;
+    border-top-color:transparent;
+    border-width: 4px;
+    border-radius:50%;
+    -webkit-animation: spin .8s linear infinite;
+    animation: spin .8s linear infinite;
+}
+
+.error{color:#f96a6a;}
+.order_material dt{text-align:left;overflow:unset;font-weight:unset;margin:10px;}
+.order_material dd{margin:10px;}
+.order_material input{margin-left:115px !important;margin:10px;}
+.special_note{color:#f75555;}
+
+/**global css change**/
+.btn{ border-radius:0px; }
+.form-group label{ color:#346a7e; }
+.dl-horizontal dt { color: #346a7e !important; }
+.allergen_header { color: #346a7e; }
+.form-control, .select2-container--default .select2-selection--single, .input-group .input-group-addon, .bootstrap-select > .dropdown-toggle.bs-placeholder, .bootstrap-select > .dropdown-toggle.bs-placeholder:hover, .bootstrap-select > .dropdown-toggle.bs-placeholder:focus, .bootstrap-select > .dropdown-toggle.bs-placeholder:active{ background-color: #ebf0f3 !important; }
+.filter-option{ background-color: #ebf0f3; }
+input[type='radio']:after,  input[type='checkbox']:after{
+    width: 15px;
+    height: 15px;
+    /* border-radius: 15px; */
+    top: -2px;
+    left: -1px;
+    position: relative;
+    background-color: #d1d3d1;
+    content: '';
+    display: inline-block;
+    visibility: visible;
+    border: 2px solid #d1d3d1;
+}
+input[type='radio']:checked:after, input[type='checkbox']:checked:after {
+    width: 15px;
+    height: 15px;
+    /* border-radius: 15px; */
+    top: -2px;
+    left: -1px;
+    position: relative;
+    background-color: #367fa9;
+    content: '';
+    display: inline-block;
+    visibility: visible;
+    border: 2px solid #d1d3d1;
+}
+input[type='radio']:after, input[type='radio']:checked:after{ border-radius: 15px; }
+.table-striped>tbody>tr:nth-of-type(odd){ background-color:unset; }
+.dataTables_wrapper .row:first-child {
+    background-color: #ebf0f3;
+    padding: 10px;
+    margin: auto;
+    border-top: 2px solid #3c8dbc;
+}
+.dataTable tr:first-child{background-color: #fafbfd; }
+/* .box{ background: #ecf0f5; } */
+.dataTable tbody{ background-color: #ffffff; }
+.dataTables_wrapper .input-sm{ background-color: #ffffff; }
+.dataTables_filter .form-control.input-sm, .dataTables_length .form-control.input-sm{ background-color: #ffffff !important; }
+.dataTable tfoot{ display: none; }
+.dataTable thead tr th{ color:#346a7e; }
+
+.back-btn-cls{ margin-right: 7px; }
+.next-btn-cls{ margin-left: 7px; }
+.btn-group i.fa.fa-trash{color: #cb3623;}
+.btn-group i.fa.fa-check-circle-o{color: #69b822;}
+.btn-group i{ color:#3c8dbc; margin-right: 2px; }
+.btn-group a{ color:#333; }
+.middle input[type='radio']:checked + .box{ background-color:#ebf0f3 !important; }
+.middle input[type=radio]:checked + .box span{color:#3c8dbc !important;}
+.middle .front-end span:before { content:url('https://vetruus.com/order-management/assets/images/favicon_mini.png') !important; }
+.middle input[type='radio'] + .box{ border: unset; box-shadow:unset; }
+.middle .box{ width: 370px !important; }
+/**global css change**/
+.table-bordered>thead>tr>th, .table-bordered>tbody>tr>th, .table-bordered>tfoot>tr>th, .table-bordered>thead>tr>td, .table-bordered>tbody>tr>td, .table-bordered>tfoot>tr>td {
+    border: 1px solid #e7e5e5;
+}

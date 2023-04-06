@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<Invoices>
+  <Invoice>
+    <Id>38755</Id>
+    <AccountReference>98956</AccountReference>
+    <InvoiceNumber>98956</InvoiceNumber>
+    <InvoiceDate>22-04-19 01:04:42</InvoiceDate>
+    <CustomerOrderNumber>98956</CustomerOrderNumber>
+    <InvoiceAddress>
+      <Name>Leanne</Name>
+      <Address1>The Manor House</Address1>
+      <Address2>Brunel Road </Address2>
+      <Address3>Newton Abbot</Address3>
+      <Address4/>
+      <town>Devon</town>
+      <postal_code>TQ12 4PB</postal_code>
+      <country>UK</country>
+    </InvoiceAddress>
+    <PetowenerName>Maynard</PetowenerName>
+    <PetName>Humphry</PetName>
+    <Species>Dog</Species>
+    <AllProduct>
+      <Product>Phleum pratense (Timothy)</Product>
+      <Product>Chenopodium album (Lamb&#x2019;s quarter)</Product>
+      <Product>Tree pollen mixture II</Product>
+      <Product>Alternaria alternata</Product>
+    </AllProduct>
+    <TotalProduct>7</TotalProduct>
+    <UnitPrice>93.60</UnitPrice>
+    <DiscountPrice>0.00</DiscountPrice>
+  </Invoice>
+</Invoices>
