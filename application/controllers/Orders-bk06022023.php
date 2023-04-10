@@ -15,8 +15,6 @@ class Orders extends CI_Controller{
 		$this->user_role = $this->session->userdata('role');
 		$this->user_country = $this->session->userdata('country');
 		$this->zones = $this->session->userdata('managed_by_id');
-		$this->site_lang = $this->session->userdata('site_lang');
-		$this->export_site_lang = $this->session->userdata('export_site_lang');
 		$this->load->model('OrdersModel');
 		$this->load->model('UsersModel');
 		$this->load->model('PetsModel');
@@ -105,17 +103,10 @@ class Orders extends CI_Controller{
 				}
 				if ($value->lab_id > 0) {
 					$Orders[$key]->final_name = $value->lab_name;
-					$sqlac = "SELECT column_field as account_ref FROM `ci_user_details` WHERE user_id = '".$value->lab_id."' AND column_name LIKE 'account_ref'";
-					$responac = $this->db->query($sqlac);
-					$Orders[$key]->account_ref = $responac->row()->account_ref;
 				} elseif ($value->vet_user_id > 0) {
 					$Orders[$key]->final_name = $value->practice_first_name;
-					$sqlac = "SELECT column_field as account_ref FROM `ci_user_details` WHERE user_id = '".$value->vet_user_id."' AND column_name LIKE 'account_ref'";
-					$responac = $this->db->query($sqlac);
-					$Orders[$key]->account_ref = $responac->row()->account_ref;
 				} else {
 					$Orders[$key]->final_name = '';
-					$Orders[$key]->account_ref = '';
 				}
 				$orderHistory = $this->OrdersModel->getLastOrderHistory($value->id);
 				if(!empty($orderHistory)){
@@ -137,13 +128,6 @@ class Orders extends CI_Controller{
 				}else{
 					$Orders[$key]->breed_id = '';
 				}
-				if ($value->lab_id > 0) {
-					$sqlc = "SELECT name as order_country FROM `ci_staff_countries` WHERE id = '".$value->lab_country."'";
-				} elseif ($value->vet_user_id > 0) {
-					$sqlc = "SELECT name as order_country FROM `ci_staff_countries` WHERE id = '".$value->practice_country."'";
-				}
-				$responc = $this->db->query($sqlc);
-				$value->order_country = $responc->row()->order_country;
 			}
 		}
 
@@ -264,7 +248,7 @@ class Orders extends CI_Controller{
 						if($this->user_role == 1 || $this->user_role == 11){
 							redirect('orders/serum_type/'. $id);
 						}else{
-							if($this->user_country != "1" && $this->user_country != "2"){
+							if($this->user_country != "1"){
 								$orderProcess = array(
 									'serum_type'    => 1
 								);
@@ -637,7 +621,7 @@ class Orders extends CI_Controller{
 		if ($this->user_role == '5') {
 			if ($tm_vet_user != 0) {
 				$this->_data['vatLabUsers'] = $this->UsersModel->getRecordAll($role_id, $this->user_id, $this->user_role, "practices");
-				$this->_data['branches'] = array();
+				$this->_data['branches'] = $this->UsersDetailsModel->get_branch_dropdown($vetUserData);
 			}
 			if ($tm_labs != 0) {
 				$this->_data['vatLabUsers'] = $this->UsersModel->getRecordAll($role_id);
@@ -649,15 +633,16 @@ class Orders extends CI_Controller{
 			}
 		} else {
 			$this->_data['vatLabUsers'] = $this->UsersModel->getRecordAll($role_id);
-			$this->_data['branches'] = array();
+			$this->_data['branches'] = $this->UsersDetailsModel->get_branch_dropdown($vetUserData);
 			$this->_data['labs'] = $this->UsersModel->getRecordAll("6");
 			$this->_data['corporates'] = $this->UsersModel->getRecordAll("7");
 		}
 
 		$this->_data['pet_owners'] = $this->UsersModel->get_petOwner_dropdown($vetUserData);
 		$this->_data['pets'] = $this->PetsModel->get_pets_dropdown($petOwnerData);
-		$this->_data['lab_branches'] = array();
-		$this->_data['corporate_branches'] = array(); /* $this->UsersDetailsModel->get_branch_dropdown($corporatesData); */
+		$this->_data['lab_branches'] = $this->UsersDetailsModel->get_branch_dropdown($labsData);
+		$this->_data['corporate_branches'] = $this->UsersDetailsModel->get_branch_dropdown($corporatesData);
+		//$this->_data['breeds'] = $this->BreedsModel->get_breeds_dropdown();
 		$this->_data['species'] = $this->SpeciesModel->getRecordAll();
 		if ($this->session->userdata('order_type') == '2') {
 			$sub_order_type = '3';
@@ -689,7 +674,6 @@ class Orders extends CI_Controller{
 				$sub_order_type = '3';
 				$orderData['screening'] = !empty($this->session->userdata('screening'))?$this->session->userdata('screening'):NULL;
 				$orderData['serum_type'] = !empty($this->session->userdata('serum_type'))?$this->session->userdata('serum_type'):NULL;
-				$orderData['sample_volume'] = !empty($this->input->post('sample_volume'))?$this->input->post('sample_volume'):0;
 				$orderData['shipping_materials'] = ($this->input->post('shipping_materials') != '') ? '1' : '0';
 				$orderData['qty_order'] = ($this->input->post('qty_order') != '')?$this->input->post('qty_order'):'0';
 				$orderData['lab_order_number'] = $this->input->post('lab_order_number');
@@ -862,18 +846,6 @@ class Orders extends CI_Controller{
 				unset($orderData['save']);
 				unset($orderData['next']);
 				if ($ins_id = $this->OrdersModel->add_edit($orderData) && $this->input->post('save')) {
-					if($orderData['vet_user_id'] > 0){
-						$this->db->select('user.email');
-						$this->db->from('ci_users');
-						$this->db->where('id',$orderData['vet_user_id']);
-						$orderEmail = $this->db->get()->row_array();
-						if($orderCountry['email'] == ""){
-							$postUser['email'] =  $orderData['email'];
-							$this->db->where('id', $orderData['vet_user_id']);
-							$this->db->update('ci_users', $postUser);
-						}
-					}
-
 					$this->updatOrderPDF($ins_id);
 					//$this->session->set_flashdata('success','Order data has been added successfully.');
 					redirect('orders');
@@ -1570,15 +1542,7 @@ class Orders extends CI_Controller{
 
 		$toemailArr = [];
 		$to_email = '';
-		$zonesIds = $this->checkZones($id);
-		if(!empty($zonesIds) && !in_array("1", $zonesIds)){
-			$zoneFEmail = $this->getZoneFromEmail($zonesIds);
-			if(!empty($zoneFEmail)){
-				$from_email = $zoneFEmail;
-			}
-		}else{
-			$from_email = "Noreply@nextmune.com";
-		}
+		$from_email = "Noreply@nextmune.com";
 
 		$order_date = date('d/m/Y', strtotime($data['order_date']));
 		$total = ($data['unit_price'] * $data['qty_order']) - $data['order_discount'];
@@ -1840,7 +1804,6 @@ class Orders extends CI_Controller{
 
 		//Load email library 
 		$this->load->library('email', $config);
-		$this->email->from($from_email, "Nextmune");
 		if ($is_confirmed == 1) {
 			if($data['order_type'] == '2'){
 				/* $content_data['recipient_name'] = "Dear " . $data['name'];
@@ -1850,22 +1813,43 @@ class Orders extends CI_Controller{
 			}else{
 				$content_data['recipient_name'] = "Hello Netherlands";
 				$content_data['content_body'] = 'Please proceed with the attached order.';
-				$to_email = RECIEVER_EMAIL;
+				$zonesIds = $this->checkZones($id);
+				if(!empty($zonesIds) && !in_array("1", $zonesIds)){
+					$zoneEmail = $this->getZoneEmail($zonesIds);
+					if(!empty($zoneEmail)){
+						$to_email = $zoneEmail;
+					}else{
+						$to_email = RECIEVER_EMAIL;
+					}
+				}else{
+					$to_email = RECIEVER_EMAIL;
+				}
 			}
 		} else {
 			$content_data['recipient_name'] = "Dear " . $data['name'];
 			$content_data['content_body'] = 'Thank you for your order.<br><br>
-			This will now be processed and we will be in touch if we have any further questions. You will find a summary of your order in the attached PDF.<br><br>
-			Please allow 10-14 working days to receive your order.';
-			if($data['lab_id'] > 0 && $data['lab_id'] == '13786'){
-				$to_email = 'immunotherapy@axiomvetlab.co.uk';
-			}elseif($data['lab_id'] > 0 && $data['lab_id'] == '13788'){
-				$to_email = 'admin@nwlabs.co.uk';
+                This will now be processed and we will be in touch if we have any further questions. You will find a summary of your order in the attached PDF.<br><br>
+                Please allow 10-14 working days to receive your order.';
+			$zonesIds = $this->checkZones($id);
+			if(!empty($zonesIds) && !in_array("1", $zonesIds)){
+				$zoneEmail = $this->getZoneEmail($zonesIds);
+				if(!empty($zoneEmail)){
+					$to_email = $zoneEmail;
+				}else{
+					$to_email = $data['email'];
+				}
 			}else{
-				$to_email = $data['email'];
+				if($data['lab_id'] > 0 && $data['lab_id'] == '13786'){
+					$to_email = 'immunotherapy@axiomvetlab.co.uk';
+				}elseif($data['lab_id'] > 0 && $data['lab_id'] == '13788'){
+					$to_email = 'admin@nwlabs.co.uk';
+				}else{
+					$to_email = $data['email'];
+				}
 			}
 		}
 
+		$this->email->from($from_email, "Nextmune");
 		$this->email->to($to_email);
 		$this->email->subject('Order Details - '.$content_data['order_number']);
 		$msg_content = $this->load->view('orders/order_mail_content_template', $content_data, true);
@@ -1875,55 +1859,29 @@ class Orders extends CI_Controller{
 		if ($data['sic_document'] != '') {
 			$this->email->attach($sicdoc);
 		}
+		$is_send = $this->email->send();
 
-		if(file_exists($file)){
-			$is_send = $this->email->send();
-			/* Send mail */ 
-			if ($is_send) {
-				if ($is_confirmed == 0) {
-					$zonesIds = $this->checkZones($id);
-					if(!empty($zonesIds) && !in_array("1", $zonesIds)){
-						$zoneEmail = $this->getZoneEmail($zonesIds);
-						if(!empty($zoneEmail)){
-							$this->email->from($from_email, 'Nextmune');
-							$this->email->to($zoneEmail);
-							$this->email->subject('Order Details - '.$content_data['order_number']); 
-							$msgContent = $this->load->view('orders/order_mail_content_template',$content_data,true);
-							$this->email->message($msgContent);
-							$this->email->send();
-						}
-					}
-				}
-
-				$orderData['id'] = $id;
-				if($data['order_type'] == '2'){
-					$orderData['is_mail_sent'] = 0;
-				}else{
-					$orderData['is_mail_sent'] = 1;
-				}
-				$this->OrdersModel->add_edit($orderData);
-				if($data['order_type'] == '2' && $this->user_role != 1 && $this->user_role != 11) {
-					$this->session->set_flashdata("success", "Order has successfully been sent to Nextmune, you can view your order and its status under the Track Order tab.");
-					redirect('orders/serum_address/'. $id);
-				}else{
-					$this->session->set_flashdata("success", "Order has successfully been sent to Nextmune, you can view your order and its status under the Track Order tab.");
-					redirect('orders');
-				}
-			} else {
-				$this->session->set_flashdata("error", $this->email->print_debugger());
+		/* Send mail */ 
+		if ($is_send) {
+			$orderData['id'] = $id;
+			if($data['order_type'] == '2'){
+				$orderData['is_mail_sent'] = 0;
+			}else{
+				$orderData['is_mail_sent'] = 1;
+			}
+			$this->OrdersModel->add_edit($orderData);
+			if($data['order_type'] == '2' && $this->user_role != 1 && $this->user_role != 11) {
+				$this->session->set_flashdata("success", "Order has successfully been sent to Nextmune, you can view your order and its status under the Track Order tab.");
+				redirect('orders/serum_address/'. $id);
+			}else{
+				$this->session->set_flashdata("success", "Order has successfully been sent to Nextmune, you can view your order and its status under the Track Order tab.");
 				redirect('orders');
 			}
-			exit;
-		}else{
-			?>
-			<script>
-			setTimeout(function () {
-				window.location= '<?php echo site_url('orders/resend_customer_mail/'.$id.''); ?>';
-			}, 3000);
-			</script>
-			<?php
-			exit;
+		} else {
+			$this->session->set_flashdata("error", $this->email->print_debugger());
+			redirect('orders');
 		}
+		exit;
 	}
 
 	function resend_customer_mail($id){
@@ -1969,15 +1927,7 @@ class Orders extends CI_Controller{
 
 			$toemailArr = [];
 			$to_email = '';
-			$zonesIds = $this->checkZones($id);
-			if(!empty($zonesIds) && !in_array("1", $zonesIds)){
-				$zoneFEmail = $this->getZoneFromEmail($zonesIds);
-				if(!empty($zoneFEmail)){
-					$from_email = $zoneFEmail;
-				}
-			}else{
-				$from_email = "Noreply@nextmune.com";
-			}
+			$from_email = "Noreply@nextmune.com";
 
 			$order_date = date('d/m/Y', strtotime($data['order_date']));
 			$total = ($data['unit_price'] * $data['qty_order']) - $data['order_discount'];
@@ -2261,7 +2211,6 @@ class Orders extends CI_Controller{
 
 			//Load email library 
 			$this->load->library('email', $config);
-			$this->email->from($from_email, "Nextmune");
 			if($data['plc_selection']=='1'){
 				$content_data['order_number'] = $data['order_number'];
 			}else{
@@ -2280,6 +2229,7 @@ class Orders extends CI_Controller{
 				$to_email = $data['email'];
 			}
 
+			$this->email->from($from_email, "Nextmune");
 			$this->email->to($to_email);
 			$this->email->subject('Order Details - '.$content_data['order_number']);
 			$msg_content = $this->load->view('orders/order_mail_content_template', $content_data, true);
@@ -2293,25 +2243,14 @@ class Orders extends CI_Controller{
 
 			//Send mail 
 			if ($is_send) {
-				$zonesIds = $this->checkZones($id);
-				if(!empty($zonesIds) && !in_array("1", $zonesIds)){
-					$zoneEmail = $this->getZoneEmail($zonesIds);
-					if(!empty($zoneEmail)){
-						$this->email->from($from_email, 'Nextmune');
-						$this->email->to($zoneEmail);
-						$this->email->subject('Order Details - '.$content_data['order_number']); 
-						$msgContent = $this->load->view('orders/order_mail_content_template',$content_data,true);
-						$this->email->message($msgContent);
-						$this->email->send();
-					}
-				}
-
 				$orderData['id'] = $id;
 				$orderData['is_mail_sent'] = 1;
+
 				$this->OrdersModel->add_edit($orderData);
-				$this->session->set_flashdata("success", "Order has successfully been sent to Nextmune, you can view your order and its status under the Track Order tab.");
+				$this->session->set_flashdata("success", "Email sent successfully.");
 				redirect('orders');
 			} else {
+				//$this->session->set_flashdata("error", "Error in sending Email.");
 				$this->session->set_flashdata("error", $this->email->print_debugger());
 				redirect('orders');
 			}
@@ -2360,7 +2299,6 @@ class Orders extends CI_Controller{
 		$msg_data = $this->input->post();
 		$id = $msg_data['order_id_lab_modal'];
 		$lab_order_number = $msg_data['lab_order_number'];
-		$sample_volume = $msg_data['sample_volume'];
 		if(!empty($lab_order_number)){
 			$this->db->select('order_number');
 			$this->db->from('ci_orders');
@@ -2371,7 +2309,6 @@ class Orders extends CI_Controller{
 			if($res1->num_rows() == 0){
 				$orderData['id'] = $id;
 				$orderData['lab_order_number'] = $lab_order_number;
-				$orderData['sample_volume'] = $sample_volume;
 				$this->OrdersModel->add_edit($orderData);
 				$this->session->set_flashdata('success', 'Bar code scanned and Saved Successfully.');
 				echo 'success';
@@ -3466,7 +3403,7 @@ class Orders extends CI_Controller{
 			if (is_numeric($id) > 0) {
 				$orderData['updated_by'] = $this->user_id;
 				$orderData['updated_at'] = date("Y-m-d H:i:s");
-				if ($upid = $this->OrdersModel->serum_test_add_edit($orderData) > 0) {
+				if ($id = $this->OrdersModel->serum_test_add_edit($orderData) > 0) {
 					$updtData['internal_comment'] = $this->input->post('internal_comment');
 					$this->db->update('ci_orders', $updtData, array('id'=>$order_id));
 					redirect('orders/summary/' . $order_id);
@@ -3474,14 +3411,7 @@ class Orders extends CI_Controller{
 			} else {
 				$orderData['created_by'] = $this->user_id;
 				$orderData['created_at'] = date("Y-m-d H:i:s");
-				if ($insid = $this->OrdersModel->serum_test_add_edit($orderData)) {
-					if($order_details['order_type'] == '2' && $order_details['cep_id'] == 0){
-						if($order_details['serum_type'] == '1'){
-							$updtData['pax_cutoff_version'] = '2';
-						}else{
-							$updtData['cutoff_version'] = '3';
-						}
-					}
+				if ($id = $this->OrdersModel->serum_test_add_edit($orderData)) {
 					$updtData['internal_comment'] = $this->input->post('internal_comment');
 					$this->db->update('ci_orders', $updtData, array('id'=>$order_id));
 					redirect('orders/summary/' . $order_id);
@@ -3935,22 +3865,20 @@ class Orders extends CI_Controller{
 					$orderhData['created_at'] = date("Y-m-d H:i:s");
 					$this->OrdersModel->addOrderHistory($orderhData);
 					$this->session->set_flashdata('success', 'Order data has been saved successfully.');
-					if($order_details['order_type'] == '2'){
-						if ($this->user_role != 1 && $this->user_role != 11){
-							redirect('orders/serum_address/'. $id);
-						}elseif(($this->user_role == 1 || $this->user_role == 11) && $order_details['cep_id'] > 0 && $order_details['is_authorised'] == 0){
-							if($order_details['serum_type'] == '1'){
-								$this->authorisedPAXOrder($id);
-							}else{
-								$this->authorisedOrder($id);
-							}
+					/* if (IS_LIVE == 'yes' && ($this->user_role == 1 || $this->user_role == 11 || $this->user_role == 5) && $order_details['is_mail_sent'] == '0' && $order_details['order_type'] != '2') { */
+					if (IS_LIVE == 'yes' && ($this->user_role == 1 || $this->user_role == 11 || $this->user_role == 5) && $order_details['order_type'] != '2') {
+						$this->send_mail($id);
+					}
+					if ($order_details['order_type'] == '2' && $this->user_role != 1 && $this->user_role != 11){
+						redirect('orders/serum_address/'. $id);
+					}elseif($order_details['order_type'] == '2' && ($this->user_role == 1 || $this->user_role == 11) && $order_details['cep_id'] > 0 && $order_details['is_authorised'] == 0){
+						if($order_details['serum_type'] == '1'){
+							$this->authorisedPAXOrder($id);
 						}else{
-							redirect('orders');
+							$this->authorisedOrder($id);
 						}
 					}else{
-						if (IS_LIVE == 'yes' && ($this->user_role == 1 || $this->user_role == 11) && $order_details['order_type'] != '2') {
-							$this->send_mail($id);
-						}
+						redirect('orders');
 					}
 				}
 			}elseif($this->input->post('edit_summery') == 1) {
@@ -4020,22 +3948,20 @@ class Orders extends CI_Controller{
 					$orderhData['created_at'] = date("Y-m-d H:i:s");
 					$this->OrdersModel->addOrderHistory($orderhData);
 					$this->session->set_flashdata('success', 'Order data has been saved successfully.');
-					if($order_details['order_type'] == '2'){
-						if ($this->user_role != 1 && $this->user_role != 11){
-							redirect('orders/serum_address/'. $id);
-						}elseif(($this->user_role == 1 || $this->user_role == 11) && $order_details['cep_id'] > 0 && $order_details['is_authorised'] == 0){
-							if($order_details['serum_type'] == '1'){
-								$this->authorisedPAXOrder($id);
-							}else{
-								$this->authorisedOrder($id);
-							}
+					/* if (IS_LIVE == 'yes' && ($this->user_role == 1 || $this->user_role == 11) && $order_details['is_mail_sent'] == '0' && $order_details['order_type'] != '2') { */
+					if (IS_LIVE == 'yes' && ($this->user_role == 1 || $this->user_role == 11) && $order_details['order_type'] != '2') {
+						$this->send_mail($id);
+					}
+					if ($order_details['order_type'] == '2' && $this->user_role != 1 && $this->user_role != 11){
+						redirect('orders/serum_address/'. $id);
+					}elseif($order_details['order_type'] == '2' && ($this->user_role == 1 || $this->user_role == 11) && $order_details['cep_id'] > 0 && $order_details['is_authorised'] == 0){
+						if($order_details['serum_type'] == '1'){
+							$this->authorisedPAXOrder($id);
 						}else{
-							redirect('orders');
+							$this->authorisedOrder($id);
 						}
 					}else{
-						if (IS_LIVE == 'yes' && ($this->user_role == 1 || $this->user_role == 11) && $order_details['order_type'] != '2') {
-							$this->send_mail($id);
-						}
+						redirect('orders');
 					}
 				}
 			} else {
@@ -4057,22 +3983,20 @@ class Orders extends CI_Controller{
 					$orderhData['created_at'] = date("Y-m-d H:i:s");
 					$this->OrdersModel->addOrderHistory($orderhData);
 					$this->session->set_flashdata('success', 'Order data has been saved successfully.');
-					if($order_details['order_type'] == '2'){
-						if ($this->user_role != 1 && $this->user_role != 11){
-							redirect('orders/serum_address/'. $id);
-						}elseif(($this->user_role == 1 || $this->user_role == 11) && $order_details['cep_id'] > 0 && $order_details['is_authorised'] == 0){
-							if($order_details['serum_type'] == '1'){
-								$this->authorisedPAXOrder($id);
-							}else{
-								$this->authorisedOrder($id);
-							}
+					/* if (IS_LIVE == 'yes' && ($this->user_role == 1 || $this->user_role == 11) && $order_details['is_mail_sent'] == '0' && $order_details['order_type'] != '2') { */
+					if (IS_LIVE == 'yes' && ($this->user_role == 1 || $this->user_role == 11) && $order_details['order_type'] != '2') {
+						$this->send_mail($id);
+					}
+					if ($order_details['order_type'] == '2' && $this->user_role != 1 && $this->user_role != 11) {
+						redirect('orders/serum_address/'. $id);
+					}elseif($order_details['order_type'] == '2' && ($this->user_role == 1 || $this->user_role == 11) && $order_details['cep_id'] > 0 && $order_details['is_authorised'] == 0){
+						if($order_details['serum_type'] == '1'){
+							$this->authorisedPAXOrder($id);
 						}else{
-							redirect('orders');
+							$this->authorisedOrder($id);
 						}
 					}else{
-						if (IS_LIVE == 'yes' && ($this->user_role == 1 || $this->user_role == 11) && $order_details['order_type'] != '2') {
-							$this->send_mail($id);
-						}
+						redirect('orders');
 					}
 				}
 			}
@@ -4237,24 +4161,6 @@ class Orders extends CI_Controller{
 				$this->OrdersModel->addOrderHistory($orderhData);
 				redirect('orders');
 			}
-		}
-	}
-
-	public function invoiced_order($id){
-		if ($id != '' && is_numeric($id)){
-			$orderData['id'] = $id;
-			$orderData['is_confirmed'] = 0;
-			$orderData['is_invoiced'] = 1;
-			$this->OrdersModel->add_edit($orderData);
-
-			$orderhData['text'] = 'Invoiced';
-			$orderhData['order_id'] = $id;
-			$orderhData['created_by'] = $this->user_id;;
-			$orderhData['created_at'] = date("Y-m-d H:i:s");
-			$this->db->insert('ci_order_history', $orderhData);
-
-			$this->session->set_flashdata("success", "Order status changed to Invoiced successfully.");
-			redirect('orders');
 		}
 	}
 
@@ -4754,23 +4660,6 @@ class Orders extends CI_Controller{
 			$order_number = $data['order_number'];
 			$serumType = $this->OrdersModel->getSerumTestType($order_number);
 			if(!empty($serumType)){
-				if($data['cutoff_version'] == 1){
-					$cutaoff = '5';
-					$cutboff = '10';
-					$cutcoff = '60';
-					$cutdoff = '75';
-				}elseif($data['cutoff_version'] == 2){
-					$cutaoff = '100';
-					$cutboff = '200';
-					$cutcoff = '1200';
-					$cutdoff = '1500';
-				}else{
-					$cutaoff = '200';
-					$cutboff = '250';
-					$cutcoff = '1200';
-					$cutdoff = '1500';
-				}
-
 				$stypeIDArr = array(); $sresultIDArr = array(); 
 				foreach($serumType as $stype){
 					$stypeIDArr[] = $stype->type_id;
@@ -4793,7 +4682,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result >= $cutaoff){
+							if($serumResults->result >= 100){
 								$grassesP++;
 							}
 						}
@@ -4812,7 +4701,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResultwed = $this->db->get()->row();
 						if(!empty($serumResultwed)){
-							if($serumResultwed->result >= $cutaoff){
+							if($serumResultwed->result >= 100){
 								$weedsP++;
 							}
 						}
@@ -4831,7 +4720,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResulttres = $this->db->get()->row();
 						if(!empty($serumResulttres)){
-							if($serumResulttres->result >= $cutaoff){
+							if($serumResulttres->result >= 100){
 								$treesP++;
 							}
 						}
@@ -4850,7 +4739,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumcResultcrp = $this->db->get()->row();
 						if(!empty($serumcResultcrp)){
-							if($serumcResultcrp->result >= $cutaoff){
+							if($serumcResultcrp->result >= 100){
 								$cropsP++;
 							}
 						}
@@ -4870,11 +4759,11 @@ class Orders extends CI_Controller{
 						$indoorResults = $this->db->get()->row();
 						if(!empty($indoorResults)){
 							if($ivalue['parent_id'] == '6'){
-								if($indoorResults->result >= $cutcoff){
+								if($indoorResults->result >= 1200){
 									$indoorP++;
 								}
 							}else{
-								if($indoorResults->result >= $cutaoff){
+								if($indoorResults->result >= 100){
 									$indoorP++;
 								}
 							}
@@ -4896,7 +4785,7 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$insectResults = $this->db->get()->row();
 							if(!empty($insectResults)){
-								if($insectResults->result >= $cutaoff){
+								if($insectResults->result >= 100){
 									$insectP++;
 								}
 							}
@@ -4922,7 +4811,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result >= $cutaoff){
+							if($serumResults->result >= 100){
 								$grassesP++;
 							}
 						}
@@ -4941,7 +4830,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResultwed = $this->db->get()->row();
 						if(!empty($serumResultwed)){
-							if($serumResultwed->result >= $cutaoff){
+							if($serumResultwed->result >= 100){
 								$weedsP++;
 							}
 						}
@@ -4960,7 +4849,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResulttres = $this->db->get()->row();
 						if(!empty($serumResulttres)){
-							if($serumResulttres->result >= $cutaoff){
+							if($serumResulttres->result >= 100){
 								$treesP++;
 							}
 						}
@@ -4979,7 +4868,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumcResultcrp = $this->db->get()->row();
 						if(!empty($serumcResultcrp)){
-							if($serumcResultcrp->result >= $cutaoff){
+							if($serumcResultcrp->result >= 100){
 								$cropsP++;
 							}
 						}
@@ -4999,11 +4888,11 @@ class Orders extends CI_Controller{
 						$indoorResults = $this->db->get()->row();
 						if(!empty($indoorResults)){
 							if($ivalue['parent_id'] == '6'){
-								if($indoorResults->result >= $cutcoff){
+								if($indoorResults->result >= 1200){
 									$indoorP++;
 								}
 							}else{
-								if($indoorResults->result >= $cutaoff){
+								if($indoorResults->result >= 100){
 									$indoorP++;
 								}
 							}
@@ -5025,7 +4914,7 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$insectResults = $this->db->get()->row();
 							if(!empty($insectResults)){
-								if($insectResults->result >= $cutaoff){
+								if($insectResults->result >= 100){
 									$insectP++;
 								}
 							}
@@ -5051,7 +4940,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('result', 'DESC');
 						$fpResults = $this->db->get()->row();
 						if(!empty($fpResults)){
-							if($fpResults->result >= $cutaoff){
+							if($fpResults->result >= 100){
 								$protnFPP++;
 							}
 						}
@@ -5070,7 +4959,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('result', 'DESC');
 						$fcResults = $this->db->get()->row();
 						if(!empty($fcResults)){
-							if($fcResults->result >= $cutaoff){
+							if($fcResults->result >= 100){
 								$carboFCP++;
 							}
 						}
@@ -5094,7 +4983,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result >= $cutaoff){
+							if($serumResults->result >= 100){
 								$grassesP++;
 							}
 						}
@@ -5113,7 +5002,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResultwed = $this->db->get()->row();
 						if(!empty($serumResultwed)){
-							if($serumResultwed->result >= $cutaoff){
+							if($serumResultwed->result >= 100){
 								$weedsP++;
 							}
 						}
@@ -5132,7 +5021,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResulttres = $this->db->get()->row();
 						if(!empty($serumResulttres)){
-							if($serumResulttres->result >= $cutaoff){
+							if($serumResulttres->result >= 100){
 								$treesP++;
 							}
 						}
@@ -5151,7 +5040,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumcResultcrp = $this->db->get()->row();
 						if(!empty($serumcResultcrp)){
-							if($serumcResultcrp->result >= $cutaoff){
+							if($serumcResultcrp->result >= 100){
 								$cropsP++;
 							}
 						}
@@ -5171,11 +5060,11 @@ class Orders extends CI_Controller{
 						$indoorResults = $this->db->get()->row();
 						if(!empty($indoorResults)){
 							if($ivalue['parent_id'] == '6'){
-								if($indoorResults->result >= $cutcoff){
+								if($indoorResults->result >= 1200){
 									$indoorP++;
 								}
 							}else{
-								if($indoorResults->result >= $cutaoff){
+								if($indoorResults->result >= 100){
 									$indoorP++;
 								}
 							}
@@ -5197,7 +5086,7 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$insectResults = $this->db->get()->row();
 							if(!empty($insectResults)){
-								if($insectResults->result >= $cutaoff){
+								if($insectResults->result >= 100){
 									$insectP++;
 								}
 							}
@@ -5217,7 +5106,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('result', 'DESC');
 						$fpResults = $this->db->get()->row();
 						if(!empty($fpResults)){
-							if($fpResults->result >= $cutaoff){
+							if($fpResults->result >= 100){
 								$protnFPP++;
 							}
 						}
@@ -5236,7 +5125,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('result', 'DESC');
 						$fcResults = $this->db->get()->row();
 						if(!empty($fcResults)){
-							if($fcResults->result >= $cutaoff){
+							if($fcResults->result >= 100){
 								$carboFCP++;
 							}
 						}
@@ -5260,7 +5149,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('result', 'DESC');
 						$fpResults = $this->db->get()->row();
 						if(!empty($fpResults)){
-							if($fpResults->result >= $cutaoff){
+							if($fpResults->result >= 100){
 								$protnFPP++;
 							}
 						}
@@ -5279,7 +5168,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('result', 'DESC');
 						$fcResults = $this->db->get()->row();
 						if(!empty($fcResults)){
-							if($fcResults->result >= $cutaoff){
+							if($fcResults->result >= 100){
 								$carboFCP++;
 							}
 						}
@@ -5303,7 +5192,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result >= $cutaoff){
+							if($serumResults->result >= 100){
 								$grassesP++;
 							}
 						}
@@ -5322,7 +5211,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResultwed = $this->db->get()->row();
 						if(!empty($serumResultwed)){
-							if($serumResultwed->result >= $cutaoff){
+							if($serumResultwed->result >= 100){
 								$weedsP++;
 							}
 						}
@@ -5341,7 +5230,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResulttres = $this->db->get()->row();
 						if(!empty($serumResulttres)){
-							if($serumResulttres->result >= $cutaoff){
+							if($serumResulttres->result >= 100){
 								$treesP++;
 							}
 						}
@@ -5360,7 +5249,7 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumcResultcrp = $this->db->get()->row();
 						if(!empty($serumcResultcrp)){
-							if($serumcResultcrp->result >= $cutaoff){
+							if($serumcResultcrp->result >= 100){
 								$cropsP++;
 							}
 						}
@@ -5380,11 +5269,11 @@ class Orders extends CI_Controller{
 						$indoorResults = $this->db->get()->row();
 						if(!empty($indoorResults)){
 							if($ivalue['parent_id'] == '6'){
-								if($indoorResults->result >= $cutcoff){
+								if($indoorResults->result >= 1200){
 									$indoorP++;
 								}
 							}else{
-								if($indoorResults->result >= $cutaoff){
+								if($indoorResults->result >= 100){
 									$indoorP++;
 								}
 							}
@@ -5406,7 +5295,7 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$insectResults = $this->db->get()->row();
 							if(!empty($insectResults)){
-								if($insectResults->result >= $cutaoff){
+								if($insectResults->result >= 100){
 									$insectP++;
 								}
 							}
@@ -5458,23 +5347,6 @@ class Orders extends CI_Controller{
 		}else{
 			$this->_data['serumTypes'] = 'NextLab';
 		}
-		if($data['cutoff_version'] == 1){
-			$cutaoff = '5';
-			$cutboff = '10';
-			$cutcoff = '60';
-			$cutdoff = '75';
-		}elseif($data['cutoff_version'] == 2){
-			$cutaoff = '100';
-			$cutboff = '200';
-			$cutcoff = '1200';
-			$cutdoff = '1500';
-		}else{
-			$cutaoff = '200';
-			$cutboff = '250';
-			$cutcoff = '1200';
-			$cutdoff = '1500';
-		}
-
 		$emailBody = $this->load->view('orders/send_serum_mail_template', $this->_data, true);
 		$emailBody = trim($emailBody);
 
@@ -5498,7 +5370,7 @@ class Orders extends CI_Controller{
 				$dochtml .= '<p><b>Animal Name:</b> '.$data['pet_name'].'</p>';
 				$dochtml .= '<p><b>Owner name:</b> '.$data['pet_owner_name'].' '.$data['po_last'].'</p>';
 				$dochtml .= '<p><b>Species:</b> '.$data['species_name'].'</p>';
-				$dochtml .= '<p><b>Lab Ref:</b> '.$data['lab_order_number'].'</p>';
+				$dochtml .= '<p><b>Synlab Lab Ref:</b> '.$data['lab_order_number'].'</p>';
 				$dochtml .= '<p><b>Nextmune Ref:</b> '.$NextmuneRef.'</p>';
 				$dochtml .= '<p></p>';
 				if((preg_match('/\bSCREEN Environmental\b/', $respnedn->name)) && (preg_match('/\bComplete Food\b/', $respnedn->name))){
@@ -5517,9 +5389,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$countergP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$countergB++;
 							}else{
 								$countergN++;
@@ -5555,9 +5427,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$counterwP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$counterwB++;
 							}else{
 								$counterwN++;
@@ -5593,9 +5465,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$countertP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$countertB++;
 							}else{
 								$countertN++;
@@ -5631,9 +5503,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumcResults = $this->db->get()->row();
 						if(!empty($serumcResults)){
-							if($serumcResults->result > $cutboff){
+							if($serumcResults->result >= 201){
 								$countercP++;
-							}elseif($serumcResults->result <= $cutboff && $serumcResults->result >= $cutaoff){
+							}elseif($serumcResults->result <= 200 && $serumcResults->result >= 100){
 								$countercB++;
 							}else{
 								$countercN++;
@@ -5670,17 +5542,17 @@ class Orders extends CI_Controller{
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
 							if($ivalue['parent_id'] == '6'){
-								if($serumResults->result > $cutdoff){
+								if($serumResults->result >= 1501){
 									$counteriP++;
-								}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+								}elseif($serumResults->result <= 1500 && $serumResults->result >= 1200){
 									$counteriB++;
 								}else{
 									$counteriN++;
 								}
 							}else{
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 201){
 									$counteriP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 									$counteriB++;
 								}else{
 									$counteriN++;
@@ -5718,9 +5590,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumiResults = $this->db->get()->row();
 							if(!empty($serumiResults)){
-								if($serumiResults->result > $cutboff){
+								if($serumiResults->result >= 201){
 									$counteritP++;
-								}elseif($serumiResults->result <= $cutboff && $serumiResults->result >= $cutaoff){
+								}elseif($serumiResults->result <= 200 && $serumiResults->result >= 100){
 									$counteritB++;
 								}else{
 									$counteritN++;
@@ -5745,65 +5617,63 @@ class Orders extends CI_Controller{
 						/* End Insects */
 					}
 
-					if(($data['lab_id']=='13401' || $data['lab_id']=='13789' || $data['lab_id']=='28995' || $data['lab_id']=='29164' || $data['lab_id']=='28994') || ($data['lab_id']=='13788' && $data['species_name'] != 'Horse')){
-						/* Start Flea */
-						$dochtml .= '<table>
-							<tbody>
-								<tr>
-									<td width="300">Flea</td>';
-									$this->db->select('result');
-									$this->db->from('ci_serum_result_allergens');
-									$this->db->where('result_id IN('.$sresultID.')');
-									$this->db->where('type_id IN('.$stypeID.')');
-									$this->db->where('(lims_allergens_id = "1900" OR lims_allergens_id = "2243")');
-									$this->db->order_by('id', 'ASC');
-									$fleaResults = $this->db->get()->row();
-									if(!empty($fleaResults)){
-										if($fleaResults->result > $cutboff){
-											$dochtml .= '<td width="200">POSITIVE</td>';
-										}elseif($fleaResults->result <= $cutboff && $fleaResults->result >= $cutaoff){
-											$dochtml .= '<td width="200">BORDER LINE</td>';
-										}else{
-											$dochtml .= '<td width="200">NEGATIVE</td>';
-										}
+					/* Start Flea */
+					$dochtml .= '<table>
+						<tbody>
+							<tr>
+								<td width="300">Flea</td>';
+								$this->db->select('result');
+								$this->db->from('ci_serum_result_allergens');
+								$this->db->where('result_id IN('.$sresultID.')');
+								$this->db->where('type_id IN('.$stypeID.')');
+								$this->db->where('(lims_allergens_id = "1900" OR lims_allergens_id = "2243")');
+								$this->db->order_by('id', 'ASC');
+								$fleaResults = $this->db->get()->row();
+								if(!empty($fleaResults)){
+									if($fleaResults->result >= 201){
+										$dochtml .= '<td width="200">POSITIVE</td>';
+									}elseif($fleaResults->result <= 200 && $fleaResults->result >= 100){
+										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
 										$dochtml .= '<td width="200">NEGATIVE</td>';
 									}
-								$dochtml .= '</tr>
-							</tbody>
-						</table>';
-						$dochtml .= '<p></p>';
-						/* End Flea */
+								}else{
+									$dochtml .= '<td width="200">NEGATIVE</td>';
+								}
+							$dochtml .= '</tr>
+						</tbody>
+					</table>';
+					$dochtml .= '<p></p>';
+					/* End Flea */
 
-						/* Start Malassezia */
-						$dochtml .= '<table>
-							<tbody>
-								<tr>
-									<td width="300">Malassezia</td>';
-									$this->db->select('result');
-									$this->db->from('ci_serum_result_allergens');
-									$this->db->where('result_id IN('.$sresultID.')');
-									$this->db->where('type_id IN('.$stypeID.')');
-									$this->db->where('(lims_allergens_id = "1904" OR lims_allergens_id = "2247")');
-									$this->db->order_by('id', 'ASC');
-									$malasseziaResults = $this->db->get()->row();
-									if(!empty($malasseziaResults)){
-										if($malasseziaResults->result > $cutdoff){
-											$dochtml .= '<td width="200">POSITIVE</td>';
-										}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
-											$dochtml .= '<td width="200">BORDER LINE</td>';
-										}else{
-											$dochtml .= '<td width="200">NEGATIVE</td>';
-										}
+					/* Start Malassezia */
+					$dochtml .= '<table>
+						<tbody>
+							<tr>
+								<td width="300">Malassezia</td>';
+								$this->db->select('result');
+								$this->db->from('ci_serum_result_allergens');
+								$this->db->where('result_id IN('.$sresultID.')');
+								$this->db->where('type_id IN('.$stypeID.')');
+								$this->db->where('(lims_allergens_id = "1904" OR lims_allergens_id = "2247")');
+								$this->db->order_by('id', 'ASC');
+								$malasseziaResults = $this->db->get()->row();
+								if(!empty($malasseziaResults)){
+									if($malasseziaResults->result >= 1501){
+										$dochtml .= '<td width="200">POSITIVE</td>';
+									}elseif($malasseziaResults->result <= 1500 && $malasseziaResults->result >= 1200){
+										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
 										$dochtml .= '<td width="200">NEGATIVE</td>';
 									}
-								$dochtml .= '</tr>
-							</tbody>
-						</table>';
-						$dochtml .= '<p></p><p></p>';
-						/* End Malassezia */
-					}
+								}else{
+									$dochtml .= '<td width="200">NEGATIVE</td>';
+								}
+							$dochtml .= '</tr>
+						</tbody>
+					</table>';
+					$dochtml .= '<p></p><p></p>';
+					/* End Malassezia */
 
 					$dochtml .= '<p><b>Complete Food Panel</b></p>';
 					$dochtml .= '<p></p>';
@@ -5822,7 +5692,7 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumfResults = $this->db->get()->row();
 							if(!empty($serumfResults)){
-								if($serumfResults->result > $cutboff){
+								if($serumfResults->result >= 201){
 									$dochtml .= '<tr>
 										<td width="250">'.$sfvalue['name'].'</td>
 										<td width="50">IgE</td>
@@ -5830,7 +5700,7 @@ class Orders extends CI_Controller{
 										<td width="200">POSITIVE</td>
 									</tr>
 									<tr><td colspan="4"></td></tr>';
-								}elseif($serumfResults->result <= $cutboff && $serumfResults->result >= $cutaoff){
+								}elseif($serumfResults->result <= 200 && $serumfResults->result >= 100){
 									$dochtml .= '<tr>
 										<td width="250">'.$sfvalue['name'].'</td>
 										<td width="50">IgE</td>
@@ -5857,7 +5727,7 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumfiggResults = $this->db->get()->row();
 							if(!empty($serumfiggResults)){
-								if($serumfiggResults->result > $cutboff){
+								if($serumfiggResults->result >= 201){
 									$dochtml .= '<tr>
 										<td width="250">&nbsp;</td>
 										<td width="50">IgG</td>
@@ -5865,7 +5735,7 @@ class Orders extends CI_Controller{
 										<td width="200">POSITIVE</td>
 									</tr>
 									<tr><td colspan="4"></td></tr>';
-								}elseif($serumfiggResults->result <= $cutboff && $serumfiggResults->result >= $cutaoff){
+								}elseif($serumfiggResults->result <= 200 && $serumfiggResults->result >= 100){
 									$dochtml .= '<tr>
 										<td width="250">&nbsp;</td>
 										<td width="50">IgG</td>
@@ -5908,9 +5778,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$countergP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$countergB++;
 							}else{
 								$countergN++;
@@ -5946,9 +5816,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$counterwP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$counterwB++;
 							}else{
 								$counterwN++;
@@ -5984,9 +5854,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$countertP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$countertB++;
 							}else{
 								$countertN++;
@@ -6022,9 +5892,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumcResults = $this->db->get()->row();
 						if(!empty($serumcResults)){
-							if($serumcResults->result > $cutboff){
+							if($serumcResults->result >= 201){
 								$countercP++;
-							}elseif($serumcResults->result <= $cutboff && $serumcResults->result >= $cutaoff){
+							}elseif($serumcResults->result <= 200 && $serumcResults->result >= 100){
 								$countercB++;
 							}else{
 								$countercN++;
@@ -6061,17 +5931,17 @@ class Orders extends CI_Controller{
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
 							if($ivalue['parent_id'] == '6'){
-								if($serumResults->result > $cutdoff){
+								if($serumResults->result >= 1501){
 									$counteriP++;
-								}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+								}elseif($serumResults->result <= 1500 && $serumResults->result >= 1200){
 									$counteriB++;
 								}else{
 									$counteriN++;
 								}
 							}else{
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 201){
 									$counteriP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 									$counteriB++;
 								}else{
 									$counteriN++;
@@ -6093,7 +5963,7 @@ class Orders extends CI_Controller{
 							$dochtml .= '</tr>
 						</tbody>
 					</table>';
-					$dochtml .= '<p></p><p></p>';
+					$dochtml .= '<p></p>';
 					/* End Indoor(Mites/Moulds/Epithelia) */
 
 					if($data['species_name'] == 'Horse'){
@@ -6109,9 +5979,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumiResults = $this->db->get()->row();
 							if(!empty($serumiResults)){
-								if($serumiResults->result > $cutboff){
+								if($serumiResults->result >= 201){
 									$counteritP++;
-								}elseif($serumiResults->result <= $cutboff && $serumiResults->result >= $cutaoff){
+								}elseif($serumiResults->result <= 200 && $serumiResults->result >= 100){
 									$counteritB++;
 								}else{
 									$counteritN++;
@@ -6136,65 +6006,63 @@ class Orders extends CI_Controller{
 						/* End Insects */
 					}
 
-					if(($data['lab_id']=='13401' || $data['lab_id']=='13789' || $data['lab_id']=='28995' || $data['lab_id']=='29164' || $data['lab_id']=='28994') || ($data['lab_id']=='13788' && $data['species_name'] != 'Horse')){
-						/* Start Flea */
-						$dochtml .= '<table>
-							<tbody>
-								<tr>
-									<td width="300">Flea</td>';
-									$this->db->select('result');
-									$this->db->from('ci_serum_result_allergens');
-									$this->db->where('result_id IN('.$sresultID.')');
-									$this->db->where('type_id IN('.$stypeID.')');
-									$this->db->where('(lims_allergens_id = "1900" OR lims_allergens_id = "2243")');
-									$this->db->order_by('id', 'ASC');
-									$fleaResults = $this->db->get()->row();
-									if(!empty($fleaResults)){
-										if($fleaResults->result > $cutboff){
-											$dochtml .= '<td width="200">POSITIVE</td>';
-										}elseif($fleaResults->result <= $cutboff && $fleaResults->result >= $cutaoff){
-											$dochtml .= '<td width="200">BORDER LINE</td>';
-										}else{
-											$dochtml .= '<td width="200">NEGATIVE</td>';
-										}
+					/* Start Flea */
+					$dochtml .= '<table>
+						<tbody>
+							<tr>
+								<td width="300">Flea</td>';
+								$this->db->select('result');
+								$this->db->from('ci_serum_result_allergens');
+								$this->db->where('result_id IN('.$sresultID.')');
+								$this->db->where('type_id IN('.$stypeID.')');
+								$this->db->where('(lims_allergens_id = "1900" OR lims_allergens_id = "2243")');
+								$this->db->order_by('id', 'ASC');
+								$fleaResults = $this->db->get()->row();
+								if(!empty($fleaResults)){
+									if($fleaResults->result >= 201){
+										$dochtml .= '<td width="200">POSITIVE</td>';
+									}elseif($fleaResults->result <= 200 && $fleaResults->result >= 100){
+										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
 										$dochtml .= '<td width="200">NEGATIVE</td>';
 									}
-								$dochtml .= '</tr>
-							</tbody>
-						</table>';
-						$dochtml .= '<p></p>';
-						/* End Flea */
+								}else{
+									$dochtml .= '<td width="200">NEGATIVE</td>';
+								}
+							$dochtml .= '</tr>
+						</tbody>
+					</table>';
+					$dochtml .= '<p></p>';
+					/* End Flea */
 
-						/* Start Malassezia */
-						$dochtml .= '<table>
-							<tbody>
-								<tr>
-									<td width="300">Malassezia</td>';
-									$this->db->select('result');
-									$this->db->from('ci_serum_result_allergens');
-									$this->db->where('result_id IN('.$sresultID.')');
-									$this->db->where('type_id IN('.$stypeID.')');
-									$this->db->where('(lims_allergens_id = "1904" OR lims_allergens_id = "2247")');
-									$this->db->order_by('id', 'ASC');
-									$malasseziaResults = $this->db->get()->row();
-									if(!empty($malasseziaResults)){
-										if($malasseziaResults->result > $cutdoff){
-											$dochtml .= '<td width="200">POSITIVE</td>';
-										}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
-											$dochtml .= '<td width="200">BORDER LINE</td>';
-										}else{
-											$dochtml .= '<td width="200">NEGATIVE</td>';
-										}
+					/* Start Malassezia */
+					$dochtml .= '<table>
+						<tbody>
+							<tr>
+								<td width="300">Malassezia</td>';
+								$this->db->select('result');
+								$this->db->from('ci_serum_result_allergens');
+								$this->db->where('result_id IN('.$sresultID.')');
+								$this->db->where('type_id IN('.$stypeID.')');
+								$this->db->where('(lims_allergens_id = "1904" OR lims_allergens_id = "2247")');
+								$this->db->order_by('id', 'ASC');
+								$malasseziaResults = $this->db->get()->row();
+								if(!empty($malasseziaResults)){
+									if($malasseziaResults->result >= 1501){
+										$dochtml .= '<td width="200">POSITIVE</td>';
+									}elseif($malasseziaResults->result <= 1500 && $malasseziaResults->result >= 1200){
+										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
 										$dochtml .= '<td width="200">NEGATIVE</td>';
 									}
-								$dochtml .= '</tr>
-							</tbody>
-						</table>';
-						$dochtml .= '<p></p><p></p>';
-						/* End Malassezia */
-					}
+								}else{
+									$dochtml .= '<td width="200">NEGATIVE</td>';
+								}
+							$dochtml .= '</tr>
+						</tbody>
+					</table>';
+					$dochtml .= '<p></p><p></p>';
+					/* End Malassezia */
 
 					if($data['lab_id'] > 0 && $data['lab_id'] == '13788'){
 						$dochtml .= '<p></p>';$dochtml .= '<p></p>';
@@ -6217,9 +6085,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('result', 'DESC');
 						$fpResults = $this->db->get()->row();
 						if(!empty($fpResults)){
-							if($fpResults->result > $cutboff){
+							if($fpResults->result >= 201){
 								$counterFPP++;
-							}elseif($fpResults->result <= $cutboff && $fpResults->result >= $cutaoff){
+							}elseif($fpResults->result <= 200 && $fpResults->result >= 100){
 								$counterFPB++;
 							}else{
 								$counterFPN++;
@@ -6255,9 +6123,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('result', 'DESC');
 						$fcResults = $this->db->get()->row();
 						if(!empty($fcResults)){
-							if($fcResults->result > $cutboff){
+							if($fcResults->result >= 201){
 								$counterFCP++;
-							}elseif($fcResults->result <= $cutboff && $fcResults->result >= $cutaoff){
+							}elseif($fcResults->result <= 200 && $fcResults->result >= 100){
 								$counterFCB++;
 							}else{
 								$counterFCN++;
@@ -6306,14 +6174,14 @@ class Orders extends CI_Controller{
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
 								if($row1['parent_id'] == '6'){
-									if($serumResults->result > $cutdoff){
+									if($serumResults->result >= 1501){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="3"></td></tr>';
-									}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+									}elseif($serumResults->result <= 1500 && $serumResults->result >= 1200){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
@@ -6329,14 +6197,14 @@ class Orders extends CI_Controller{
 										<tr><td colspan="3"></td></tr>';
 									}
 								}else{
-									if($serumResults->result > $cutboff){
+									if($serumResults->result >= 201){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="3"></td></tr>';
-									}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+									}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
@@ -6371,10 +6239,10 @@ class Orders extends CI_Controller{
 								$this->db->order_by('result', 'DESC');
 								$malasseziaResults = $this->db->get()->row();
 								if(!empty($malasseziaResults)){
-									if($malasseziaResults->result > $cutdoff){
+									if($malasseziaResults->result >= 1501){
 										$dochtml .= '<td width="50">'.$malasseziaResults->result.'</td>';
 										$dochtml .= '<td width="200">POSITIVE</td>';
-									}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
+									}elseif($malasseziaResults->result <= 1500 && $malasseziaResults->result >= 1200){
 										$dochtml .= '<td width="50">'.$malasseziaResults->result.'</td>';
 										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
@@ -6389,7 +6257,7 @@ class Orders extends CI_Controller{
 						</tbody>
 					</table>';
 					/* End Malassezia */
-				}elseif(preg_match('/\bComplete Food Panel\b/', $respnedn->name) || preg_match('/\bNEXTLAB Complete Food\b/', $respnedn->name)){
+				}elseif(preg_match('/\bComplete Food Panel\b/', $respnedn->name)){
 					$fileName = 'NextLab_Complete_Food_Panel_Serum_Result_'.$data['order_number'].'';
 					$dochtml .= '<p><b>Food Panel</b></p>';
 					$dochtml .= '<p></p>';
@@ -6409,14 +6277,14 @@ class Orders extends CI_Controller{
 							$serumfResults = $this->db->get()->row();
 							if(!empty($serumfResults)){
 								if($row1['parent_id'] == '6'){
-									if($serumResults->result > $cutdoff){
+									if($serumResults->result >= 1501){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="3"></td></tr>';
-									}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+									}elseif($serumResults->result <= 1500 && $serumResults->result >= 1200){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
@@ -6432,7 +6300,7 @@ class Orders extends CI_Controller{
 										<tr><td colspan="3"></td></tr>';
 									}
 								}else{
-									if($serumfResults->result > $cutboff){
+									if($serumfResults->result >= 201){
 										$dochtml .= '<tr>
 											<td width="250">'.$sfvalue['name'].'</td>
 											<td width="50">IgE</td>
@@ -6440,7 +6308,7 @@ class Orders extends CI_Controller{
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="4"></td></tr>';
-									}elseif($serumfResults->result <= $cutboff && $serumfResults->result >= $cutcoff){
+									}elseif($serumfResults->result <= 200 && $serumfResults->result >= 100){
 										$dochtml .= '<tr>
 											<td width="250">'.$sfvalue['name'].'</td>
 											<td width="50">IgE</td>
@@ -6468,7 +6336,7 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumfiggResults = $this->db->get()->row();
 							if(!empty($serumfiggResults)){
-								if($serumfiggResults->result > $cutboff){
+								if($serumfiggResults->result >= 201){
 									$dochtml .= '<tr>
 										<td width="250">&nbsp;</td>
 										<td width="50">IgG</td>
@@ -6476,7 +6344,7 @@ class Orders extends CI_Controller{
 										<td width="200">POSITIVE</td>
 									</tr>
 									<tr><td colspan="4"></td></tr>';
-								}elseif($serumfiggResults->result <= $cutboff && $serumfiggResults->result >= $cutaoff){
+								}elseif($serumfiggResults->result <= 200 && $serumfiggResults->result >= 100){
 									$dochtml .= '<tr>
 										<td width="250">&nbsp;</td>
 										<td width="50">IgG</td>
@@ -6518,14 +6386,14 @@ class Orders extends CI_Controller{
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
 								if($row1['parent_id'] == '6'){
-									if($serumResults->result > $cutdoff){
+									if($serumResults->result >= 1501){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="3"></td></tr>';
-									}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+									}elseif($serumResults->result <= 1500 && $serumResults->result >= 1200){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
@@ -6541,14 +6409,14 @@ class Orders extends CI_Controller{
 										<tr><td colspan="3"></td></tr>';
 									}
 								}else{
-									if($serumResults->result > $cutboff){
+									if($serumResults->result >= 201){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="3"></td></tr>';
-									}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+									}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
@@ -6584,10 +6452,10 @@ class Orders extends CI_Controller{
 								$this->db->order_by('result', 'DESC');
 								$malasseziaResults = $this->db->get()->row();
 								if(!empty($malasseziaResults)){
-									if($malasseziaResults->result > $cutdoff){
+									if($malasseziaResults->result >= 1501){
 										$dochtml .= '<td width="50">'.$malasseziaResults->result.'</td>';
 										$dochtml .= '<td width="200">POSITIVE</td>';
-									}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
+									}elseif($malasseziaResults->result <= 1500 && $malasseziaResults->result >= 1200){
 										$dochtml .= '<td width="50">'.$malasseziaResults->result.'</td>';
 										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
@@ -6620,7 +6488,7 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumfResults = $this->db->get()->row();
 							if(!empty($serumfResults)){
-								if($serumfResults->result > $cutboff){
+								if($serumfResults->result >= 201){
 									$dochtml .= '<tr>
 										<td width="250">'.$sfvalue['name'].'</td>
 										<td width="50">IgE</td>
@@ -6628,7 +6496,7 @@ class Orders extends CI_Controller{
 										<td width="200">POSITIVE</td>
 									</tr>
 									<tr><td colspan="4"></td></tr>';
-								}elseif($serumfResults->result <= $cutboff && $serumfResults->result >= $cutaoff){
+								}elseif($serumfResults->result <= 200 && $serumfResults->result >= 100){
 									$dochtml .= '<tr>
 										<td width="250">'.$sfvalue['name'].'</td>
 										<td width="50">IgE</td>
@@ -6655,7 +6523,7 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumfiggResults = $this->db->get()->row();
 							if(!empty($serumfiggResults)){
-								if($serumfiggResults->result > $cutboff){
+								if($serumfiggResults->result >= 201){
 									$dochtml .= '<tr>
 										<td width="250">&nbsp;</td>
 										<td width="50">IgG</td>
@@ -6663,7 +6531,7 @@ class Orders extends CI_Controller{
 										<td width="200">POSITIVE</td>
 									</tr>
 									<tr><td colspan="4"></td></tr>';
-								}elseif($serumfiggResults->result <= $cutboff && $serumfiggResults->result >= $cutaoff){
+								}elseif($serumfiggResults->result <= 200 && $serumfiggResults->result >= 100){
 									$dochtml .= '<tr>
 										<td width="250">&nbsp;</td>
 										<td width="50">IgG</td>
@@ -6705,14 +6573,14 @@ class Orders extends CI_Controller{
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
 								if($row1['parent_id'] == '6'){
-									if($serumResults->result > $cutdoff){
+									if($serumResults->result >= 1501){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="3"></td></tr>';
-									}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+									}elseif($serumResults->result <= 1500 && $serumResults->result >= 1200){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
@@ -6728,14 +6596,14 @@ class Orders extends CI_Controller{
 										<tr><td colspan="3"></td></tr>';
 									}
 								}else{
-									if($serumResults->result > $cutboff){
+									if($serumResults->result >= 201){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="3"></td></tr>';
-									}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+									}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
@@ -6771,10 +6639,10 @@ class Orders extends CI_Controller{
 								$this->db->order_by('result', 'DESC');
 								$malasseziaResults = $this->db->get()->row();
 								if(!empty($malasseziaResults)){
-									if($malasseziaResults->result > $cutdoff){
+									if($malasseziaResults->result >= 1501){
 										$dochtml .= '<td width="50">'.$malasseziaResults->result.'</td>';
 										$dochtml .= '<td width="200">POSITIVE</td>';
-									}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
+									}elseif($malasseziaResults->result <= 1500 && $malasseziaResults->result >= 1200){
 										$dochtml .= '<td width="50">'.$malasseziaResults->result.'</td>';
 										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
@@ -6804,9 +6672,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('result', 'DESC');
 						$fpResults = $this->db->get()->row();
 						if(!empty($fpResults)){
-							if($fpResults->result > $cutboff){
+							if($fpResults->result >= 201){
 								$counterFPP++;
-							}elseif($fpResults->result <= $cutboff && $fpResults->result >= $cutaoff){
+							}elseif($fpResults->result <= 200 && $fpResults->result >= 100){
 								$counterFPB++;
 							}else{
 								$counterFPN++;
@@ -6842,9 +6710,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('result', 'DESC');
 						$fcResults = $this->db->get()->row();
 						if(!empty($fcResults)){
-							if($fcResults->result > $cutboff){
+							if($fcResults->result >= 201){
 								$counterFCP++;
-							}elseif($fcResults->result <= $cutboff && $fcResults->result >= $cutaoff){
+							}elseif($fcResults->result <= 200 && $fcResults->result >= 100){
 								$counterFCB++;
 							}else{
 								$counterFCN++;
@@ -6883,9 +6751,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$countergP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$countergB++;
 							}else{
 								$countergN++;
@@ -6921,9 +6789,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$counterwP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$counterwB++;
 							}else{
 								$counterwN++;
@@ -6959,9 +6827,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$countertP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$countertB++;
 							}else{
 								$countertN++;
@@ -6997,9 +6865,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumcResults = $this->db->get()->row();
 						if(!empty($serumcResults)){
-							if($serumcResults->result > $cutboff){
+							if($serumcResults->result >= 201){
 								$countercP++;
-							}elseif($serumcResults->result <= $cutboff && $serumcResults->result >= $cutaoff){
+							}elseif($serumcResults->result <= 200 && $serumcResults->result >= 100){
 								$countercB++;
 							}else{
 								$countercN++;
@@ -7036,17 +6904,17 @@ class Orders extends CI_Controller{
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
 							if($ivalue['parent_id'] == '6'){
-								if($serumResults->result > $cutdoff){
+								if($serumResults->result >= 1501){
 									$counteriP++;
-								}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+								}elseif($serumResults->result <= 1500 && $serumResults->result >= 1200){
 									$counteriB++;
 								}else{
 									$counteriN++;
 								}
 							}else{
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 201){
 									$counteriP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 									$counteriB++;
 								}else{
 									$counteriN++;
@@ -7084,9 +6952,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumiResults = $this->db->get()->row();
 							if(!empty($serumiResults)){
-								if($serumiResults->result > $cutboff){
+								if($serumiResults->result >= 201){
 									$counteritP++;
-								}elseif($serumiResults->result <= $cutboff && $serumiResults->result >= $cutaoff){
+								}elseif($serumiResults->result <= 200 && $serumiResults->result >= 100){
 									$counteritB++;
 								}else{
 									$counteritN++;
@@ -7110,66 +6978,64 @@ class Orders extends CI_Controller{
 						$dochtml .= '<p></p>';
 						/* End Insects */
 					}
-
-					if(($data['lab_id']=='13401' || $data['lab_id']=='13789' || $data['lab_id']=='28995' || $data['lab_id']=='29164' || $data['lab_id']=='28994') || ($data['lab_id']=='13788' && $data['species_name'] != 'Horse')){
-						/* Start Flea */
-						$dochtml .= '<table>
-							<tbody>
-								<tr>
-									<td width="300">Flea</td>';
-									$this->db->select('result');
-									$this->db->from('ci_serum_result_allergens');
-									$this->db->where('result_id IN('.$sresultID.')');
-									$this->db->where('type_id IN('.$stypeID.')');
-									$this->db->where('(lims_allergens_id = "1900" OR lims_allergens_id = "2243")');
-									$this->db->order_by('id', 'ASC');
-									$fleaResults = $this->db->get()->row();
-									if(!empty($fleaResults)){
-										if($fleaResults->result > $cutboff){
-											$dochtml .= '<td width="200">POSITIVE</td>';
-										}elseif($fleaResults->result <= $cutboff && $fleaResults->result >= $cutaoff){
-											$dochtml .= '<td width="200">BORDER LINE</td>';
-										}else{
-											$dochtml .= '<td width="200">NEGATIVE</td>';
-										}
+					
+					/* Start Flea */
+					$dochtml .= '<table>
+						<tbody>
+							<tr>
+								<td width="300">Flea</td>';
+								$this->db->select('result');
+								$this->db->from('ci_serum_result_allergens');
+								$this->db->where('result_id IN('.$sresultID.')');
+								$this->db->where('type_id IN('.$stypeID.')');
+								$this->db->where('(lims_allergens_id = "1900" OR lims_allergens_id = "2243")');
+								$this->db->order_by('id', 'ASC');
+								$fleaResults = $this->db->get()->row();
+								if(!empty($fleaResults)){
+									if($fleaResults->result >= 201){
+										$dochtml .= '<td width="200">POSITIVE</td>';
+									}elseif($fleaResults->result <= 200 && $fleaResults->result >= 100){
+										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
 										$dochtml .= '<td width="200">NEGATIVE</td>';
 									}
-								$dochtml .= '</tr>
-							</tbody>
-						</table>';
-						$dochtml .= '<p></p>';
-						/* End Flea */
+								}else{
+									$dochtml .= '<td width="200">NEGATIVE</td>';
+								}
+							$dochtml .= '</tr>
+						</tbody>
+					</table>';
+					$dochtml .= '<p></p>';
+					/* End Flea */
 
-						/* Start Malassezia */
-						$dochtml .= '<table>
-							<tbody>
-								<tr>
-									<td width="300">Malassezia</td>';
-									$this->db->select('result');
-									$this->db->from('ci_serum_result_allergens');
-									$this->db->where('result_id IN('.$sresultID.')');
-									$this->db->where('type_id IN('.$stypeID.')');
-									$this->db->where('(lims_allergens_id = "1904" OR lims_allergens_id = "2247")');
-									$this->db->order_by('id', 'ASC');
-									$malasseziaResults = $this->db->get()->row();
-									if(!empty($malasseziaResults)){
-										if($malasseziaResults->result > $cutdoff){
-											$dochtml .= '<td width="200">POSITIVE</td>';
-										}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
-											$dochtml .= '<td width="200">BORDER LINE</td>';
-										}else{
-											$dochtml .= '<td width="200">NEGATIVE</td>';
-										}
+					/* Start Malassezia */
+					$dochtml .= '<table>
+						<tbody>
+							<tr>
+								<td width="300">Malassezia</td>';
+								$this->db->select('result');
+								$this->db->from('ci_serum_result_allergens');
+								$this->db->where('result_id IN('.$sresultID.')');
+								$this->db->where('type_id IN('.$stypeID.')');
+								$this->db->where('(lims_allergens_id = "1904" OR lims_allergens_id = "2247")');
+								$this->db->order_by('id', 'ASC');
+								$malasseziaResults = $this->db->get()->row();
+								if(!empty($malasseziaResults)){
+									if($malasseziaResults->result >= 1501){
+										$dochtml .= '<td width="200">POSITIVE</td>';
+									}elseif($malasseziaResults->result <= 1500 && $malasseziaResults->result >= 1200){
+										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
 										$dochtml .= '<td width="200">NEGATIVE</td>';
 									}
-								$dochtml .= '</tr>
-							</tbody>
-						</table>';
-						$dochtml .= '<p></p><p></p>';
-						/* End Malassezia */
-					}
+								}else{
+									$dochtml .= '<td width="200">NEGATIVE</td>';
+								}
+							$dochtml .= '</tr>
+						</tbody>
+					</table>';
+					$dochtml .= '<p></p><p></p>';
+					/* End Malassezia */
 
 					$dochtml .= '<p><b>SCREEN Food Panel</b></p>';
 					$dochtml .= '<p></p>';
@@ -7185,9 +7051,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('result', 'DESC');
 						$fpResults = $this->db->get()->row();
 						if(!empty($fpResults)){
-							if($fpResults->result > $cutboff){
+							if($fpResults->result >= 201){
 								$counterFPP++;
-							}elseif($fpResults->result <= $cutboff && $fpResults->result >= $cutaoff){
+							}elseif($fpResults->result <= 200 && $fpResults->result >= 100){
 								$counterFPB++;
 							}else{
 								$counterFPN++;
@@ -7223,9 +7089,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('result', 'DESC');
 						$fcResults = $this->db->get()->row();
 						if(!empty($fcResults)){
-							if($fcResults->result > $cutboff){
+							if($fcResults->result >= 201){
 								$counterFCP++;
-							}elseif($fcResults->result <= $cutboff && $fcResults->result >= $cutaoff){
+							}elseif($fcResults->result <= 200 && $fcResults->result >= 100){
 								$counterFCB++;
 							}else{
 								$counterFCN++;
@@ -7274,14 +7140,14 @@ class Orders extends CI_Controller{
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
 								if($row1['parent_id'] == '6'){
-									if($serumResults->result > $cutdoff){
+									if($serumResults->result >= 1501){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="3"></td></tr>';
-									}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+									}elseif($serumResults->result <= 1500 && $serumResults->result >= 1200){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
@@ -7297,14 +7163,14 @@ class Orders extends CI_Controller{
 										<tr><td colspan="3"></td></tr>';
 									}
 								}else{
-									if($serumResults->result > $cutboff){
+									if($serumResults->result >= 201){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="3"></td></tr>';
-									}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+									}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
@@ -7340,10 +7206,10 @@ class Orders extends CI_Controller{
 								$this->db->order_by('result', 'DESC');
 								$malasseziaResults = $this->db->get()->row();
 								if(!empty($malasseziaResults)){
-									if($malasseziaResults->result > $cutdoff){
+									if($malasseziaResults->result >= 1501){
 										$dochtml .= '<td width="50">'.$malasseziaResults->result.'</td>';
 										$dochtml .= '<td width="200">POSITIVE</td>';
-									}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
+									}elseif($malasseziaResults->result <= 1500 && $malasseziaResults->result >= 1200){
 										$dochtml .= '<td width="50">'.$malasseziaResults->result.'</td>';
 										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
@@ -7377,7 +7243,7 @@ class Orders extends CI_Controller{
 								$this->db->order_by('id', 'ASC');
 								$serumfResults = $this->db->get()->row();
 								if(!empty($serumfResults)){
-									if($serumfResults->result > $cutboff){
+									if($serumfResults->result >= 201){
 										$dochtml .= '<tr>
 											<td width="250">'.$sfvalue['name'].'</td>
 											<td width="50">IgE</td>
@@ -7385,7 +7251,7 @@ class Orders extends CI_Controller{
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="4"></td></tr>';
-									}elseif($serumfResults->result <= $cutboff && $serumfResults->result >= $cutaoff){
+									}elseif($serumfResults->result <= 200 && $serumfResults->result >= 100){
 										$dochtml .= '<tr>
 											<td width="250">'.$sfvalue['name'].'</td>
 											<td width="50">IgE</td>
@@ -7412,7 +7278,7 @@ class Orders extends CI_Controller{
 								$this->db->order_by('id', 'ASC');
 								$serumfiggResults = $this->db->get()->row();
 								if(!empty($serumfiggResults)){
-									if($serumfiggResults->result > $cutboff){
+									if($serumfiggResults->result >= 201){
 										$dochtml .= '<tr>
 											<td width="250">&nbsp;</td>
 											<td width="50">IgG</td>
@@ -7420,7 +7286,7 @@ class Orders extends CI_Controller{
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="4"></td></tr>';
-									}elseif($serumfiggResults->result <= $cutboff && $serumfiggResults->result >= $cutaoff){
+									}elseif($serumfiggResults->result <= 200 && $serumfiggResults->result >= 100){
 										$dochtml .= '<tr>
 											<td width="250">&nbsp;</td>
 											<td width="50">IgG</td>
@@ -7459,9 +7325,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$countergP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$countergB++;
 							}else{
 								$countergN++;
@@ -7497,9 +7363,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$counterwP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$counterwB++;
 							}else{
 								$counterwN++;
@@ -7535,9 +7401,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$countertP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$countertB++;
 							}else{
 								$countertN++;
@@ -7573,9 +7439,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumcResults = $this->db->get()->row();
 						if(!empty($serumcResults)){
-							if($serumcResults->result > $cutboff){
+							if($serumcResults->result >= 201){
 								$countercP++;
-							}elseif($serumcResults->result <= $cutboff && $serumcResults->result >= $cutaoff){
+							}elseif($serumcResults->result <= 200 && $serumcResults->result >= 100){
 								$countercB++;
 							}else{
 								$countercN++;
@@ -7612,17 +7478,17 @@ class Orders extends CI_Controller{
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
 							if($ivalue['parent_id'] == '6'){
-								if($serumResults->result > $cutdoff){
+								if($serumResults->result >= 1501){
 									$counteriP++;
-								}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+								}elseif($serumResults->result <= 1500 && $serumResults->result >= 1200){
 									$counteriB++;
 								}else{
 									$counteriN++;
 								}
 							}else{
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 201){
 									$counteriP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 									$counteriB++;
 								}else{
 									$counteriN++;
@@ -7660,9 +7526,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumiResults = $this->db->get()->row();
 							if(!empty($serumiResults)){
-								if($serumiResults->result > $cutboff){
+								if($serumiResults->result >= 201){
 									$counteritP++;
-								}elseif($serumiResults->result <= $cutboff && $serumiResults->result >= $cutaoff){
+								}elseif($serumiResults->result <= 200 && $serumiResults->result >= 100){
 									$counteritB++;
 								}else{
 									$counteritN++;
@@ -7686,66 +7552,64 @@ class Orders extends CI_Controller{
 						$dochtml .= '<p></p>';
 						/* End Insects */
 					}
-
-					if(($data['lab_id']=='13401' || $data['lab_id']=='13789' || $data['lab_id']=='28995' || $data['lab_id']=='29164' || $data['lab_id']=='28994') || ($data['lab_id']=='13788' && $data['species_name'] != 'Horse')){
-						/* Start Flea */
-						$dochtml .= '<table>
-							<tbody>
-								<tr>
-									<td width="300">Flea</td>';
-									$this->db->select('result');
-									$this->db->from('ci_serum_result_allergens');
-									$this->db->where('result_id IN('.$sresultID.')');
-									$this->db->where('type_id IN('.$stypeID.')');
-									$this->db->where('(lims_allergens_id = "1900" OR lims_allergens_id = "2243")');
-									$this->db->order_by('id', 'ASC');
-									$fleaResults = $this->db->get()->row();
-									if(!empty($fleaResults)){
-										if($fleaResults->result > $cutboff){
-											$dochtml .= '<td width="200">POSITIVE</td>';
-										}elseif($fleaResults->result <= $cutboff && $fleaResults->result >= $cutaoff){
-											$dochtml .= '<td width="200">BORDER LINE</td>';
-										}else{
-											$dochtml .= '<td width="200">NEGATIVE</td>';
-										}
+					
+					/* Start Flea */
+					$dochtml .= '<table>
+						<tbody>
+							<tr>
+								<td width="300">Flea</td>';
+								$this->db->select('result');
+								$this->db->from('ci_serum_result_allergens');
+								$this->db->where('result_id IN('.$sresultID.')');
+								$this->db->where('type_id IN('.$stypeID.')');
+								$this->db->where('(lims_allergens_id = "1900" OR lims_allergens_id = "2243")');
+								$this->db->order_by('id', 'ASC');
+								$fleaResults = $this->db->get()->row();
+								if(!empty($fleaResults)){
+									if($fleaResults->result >= 201){
+										$dochtml .= '<td width="200">POSITIVE</td>';
+									}elseif($fleaResults->result <= 200 && $fleaResults->result >= 100){
+										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
 										$dochtml .= '<td width="200">NEGATIVE</td>';
 									}
-								$dochtml .= '</tr>
-							</tbody>
-						</table>';
-						$dochtml .= '<p></p>';
-						/* End Flea */
+								}else{
+									$dochtml .= '<td width="200">NEGATIVE</td>';
+								}
+							$dochtml .= '</tr>
+						</tbody>
+					</table>';
+					$dochtml .= '<p></p>';
+					/* End Flea */
 
-						/* Start Malassezia */
-						$dochtml .= '<table>
-							<tbody>
-								<tr>
-									<td width="300">Malassezia</td>';
-									$this->db->select('result');
-									$this->db->from('ci_serum_result_allergens');
-									$this->db->where('result_id IN('.$sresultID.')');
-									$this->db->where('type_id IN('.$stypeID.')');
-									$this->db->where('(lims_allergens_id = "1904" OR lims_allergens_id = "2247")');
-									$this->db->order_by('id', 'ASC');
-									$malasseziaResults = $this->db->get()->row();
-									if(!empty($malasseziaResults)){
-										if($malasseziaResults->result > $cutdoff){
-											$dochtml .= '<td width="200">POSITIVE</td>';
-										}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
-											$dochtml .= '<td width="200">BORDER LINE</td>';
-										}else{
-											$dochtml .= '<td width="200">NEGATIVE</td>';
-										}
+					/* Start Malassezia */
+					$dochtml .= '<table>
+						<tbody>
+							<tr>
+								<td width="300">Malassezia</td>';
+								$this->db->select('result');
+								$this->db->from('ci_serum_result_allergens');
+								$this->db->where('result_id IN('.$sresultID.')');
+								$this->db->where('type_id IN('.$stypeID.')');
+								$this->db->where('(lims_allergens_id = "1904" OR lims_allergens_id = "2247")');
+								$this->db->order_by('id', 'ASC');
+								$malasseziaResults = $this->db->get()->row();
+								if(!empty($malasseziaResults)){
+									if($malasseziaResults->result >= 1501){
+										$dochtml .= '<td width="200">POSITIVE</td>';
+									}elseif($malasseziaResults->result <= 1500 && $malasseziaResults->result >= 1200){
+										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
 										$dochtml .= '<td width="200">NEGATIVE</td>';
 									}
-								$dochtml .= '</tr>
-							</tbody>
-						</table>';
-						$dochtml .= '<p></p><p></p>';
-						/* End Malassezia */
-					}
+								}else{
+									$dochtml .= '<td width="200">NEGATIVE</td>';
+								}
+							$dochtml .= '</tr>
+						</tbody>
+					</table>';
+					$dochtml .= '<p></p><p></p>';
+					/* End Malassezia */
 
 					if(preg_match('/\bFood\b/', $respnedn->name)){
 						$dochtml .= '<p><b>Food Panel</b></p>';
@@ -7765,7 +7629,7 @@ class Orders extends CI_Controller{
 								$this->db->order_by('id', 'ASC');
 								$serumfResults = $this->db->get()->row();
 								if(!empty($serumfResults)){
-									if($serumfResults->result > $cutboff){
+									if($serumfResults->result >= 201){
 										$dochtml .= '<tr>
 											<td width="250">'.$sfvalue['name'].'</td>
 											<td width="50">IgE</td>
@@ -7773,7 +7637,7 @@ class Orders extends CI_Controller{
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="4"></td></tr>';
-									}elseif($serumfResults->result <= $cutboff && $serumfResults->result >= $cutaoff){
+									}elseif($serumfResults->result <= 200 && $serumfResults->result >= 100){
 										$dochtml .= '<tr>
 											<td width="250">'.$sfvalue['name'].'</td>
 											<td width="50">IgE</td>
@@ -7800,7 +7664,7 @@ class Orders extends CI_Controller{
 								$this->db->order_by('id', 'ASC');
 								$serumfiggResults = $this->db->get()->row();
 								if(!empty($serumfiggResults)){
-									if($serumfiggResults->result > $cutboff){
+									if($serumfiggResults->result >= 201){
 										$dochtml .= '<tr>
 											<td width="250">&nbsp;</td>
 											<td width="50">IgG</td>
@@ -7808,7 +7672,7 @@ class Orders extends CI_Controller{
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="4"></td></tr>';
-									}elseif($serumfiggResults->result <= $cutboff && $serumfiggResults->result >= $cutaoff){
+									}elseif($serumfiggResults->result <= 200 && $serumfiggResults->result >= 100){
 										$dochtml .= '<tr>
 											<td width="250">&nbsp;</td>
 											<td width="50">IgG</td>
@@ -7922,7 +7786,7 @@ class Orders extends CI_Controller{
 				$dochtml .= '<p><b>Animal Name:</b> '.$data['pet_name'].'</p>';
 				$dochtml .= '<p><b>Owner name:</b> '.$data['pet_owner_name'].' '.$data['po_last'].'</p>';
 				$dochtml .= '<p><b>Species:</b> '.$data['species_name'].'</p>';
-				$dochtml .= '<p><b>Lab Ref:</b> '.$data['lab_order_number'].'</p>';
+				$dochtml .= '<p><b>Synlab Lab Ref:</b> '.$data['lab_order_number'].'</p>';
 				$dochtml .= '<p><b>Nextmune Ref:</b> '.$NextmuneRef.'</p>';
 				$dochtml .= '<p></p>';
 				if((preg_match('/\bSCREEN Environmental\b/', $respnedn->name)) && (preg_match('/\bComplete Food\b/', $respnedn->name))){
@@ -7941,9 +7805,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$countergP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$countergB++;
 							}else{
 								$countergN++;
@@ -7979,9 +7843,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$counterwP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$counterwB++;
 							}else{
 								$counterwN++;
@@ -8017,9 +7881,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$countertP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$countertB++;
 							}else{
 								$countertN++;
@@ -8055,9 +7919,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumcResults = $this->db->get()->row();
 						if(!empty($serumcResults)){
-							if($serumcResults->result > $cutboff){
+							if($serumcResults->result >= 201){
 								$countercP++;
-							}elseif($serumcResults->result <= $cutboff && $serumcResults->result >= $cutaoff){
+							}elseif($serumcResults->result <= 200 && $serumcResults->result >= 100){
 								$countercB++;
 							}else{
 								$countercN++;
@@ -8094,17 +7958,17 @@ class Orders extends CI_Controller{
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
 							if($ivalue['parent_id'] == '6'){
-								if($serumResults->result > $cutdoff){
+								if($serumResults->result >= 1501){
 									$counteriP++;
-								}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+								}elseif($serumResults->result <= 1500 && $serumResults->result >= 1200){
 									$counteriB++;
 								}else{
 									$counteriN++;
 								}
 							}else{
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 201){
 									$counteriP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 									$counteriB++;
 								}else{
 									$counteriN++;
@@ -8142,9 +8006,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumiResults = $this->db->get()->row();
 							if(!empty($serumiResults)){
-								if($serumiResults->result > $cutboff){
+								if($serumiResults->result >= 201){
 									$counteritP++;
-								}elseif($serumiResults->result <= $cutboff && $serumiResults->result >= $cutaoff){
+								}elseif($serumiResults->result <= 200 && $serumiResults->result >= 100){
 									$counteritB++;
 								}else{
 									$counteritN++;
@@ -8169,65 +8033,63 @@ class Orders extends CI_Controller{
 						/* End Insects */
 					}
 
-					if(($data['lab_id']=='13401' || $data['lab_id']=='13789' || $data['lab_id']=='28995' || $data['lab_id']=='29164' || $data['lab_id']=='28994') || ($data['lab_id']=='13788' && $data['species_name'] != 'Horse')){
-						/* Start Flea */
-						$dochtml .= '<table>
-							<tbody>
-								<tr>
-									<td width="300">Flea</td>';
-									$this->db->select('result');
-									$this->db->from('ci_serum_result_allergens');
-									$this->db->where('result_id IN('.$sresultID.')');
-									$this->db->where('type_id IN('.$stypeID.')');
-									$this->db->where('(lims_allergens_id = "1900" OR lims_allergens_id = "2243")');
-									$this->db->order_by('id', 'ASC');
-									$fleaResults = $this->db->get()->row();
-									if(!empty($fleaResults)){
-										if($fleaResults->result > $cutboff){
-											$dochtml .= '<td width="200">POSITIVE</td>';
-										}elseif($fleaResults->result <= $cutboff && $fleaResults->result >= $cutaoff){
-											$dochtml .= '<td width="200">BORDER LINE</td>';
-										}else{
-											$dochtml .= '<td width="200">NEGATIVE</td>';
-										}
+					/* Start Flea */
+					$dochtml .= '<table>
+						<tbody>
+							<tr>
+								<td width="300">Flea</td>';
+								$this->db->select('result');
+								$this->db->from('ci_serum_result_allergens');
+								$this->db->where('result_id IN('.$sresultID.')');
+								$this->db->where('type_id IN('.$stypeID.')');
+								$this->db->where('(lims_allergens_id = "1900" OR lims_allergens_id = "2243")');
+								$this->db->order_by('id', 'ASC');
+								$fleaResults = $this->db->get()->row();
+								if(!empty($fleaResults)){
+									if($fleaResults->result >= 201){
+										$dochtml .= '<td width="200">POSITIVE</td>';
+									}elseif($fleaResults->result <= 200 && $fleaResults->result >= 100){
+										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
 										$dochtml .= '<td width="200">NEGATIVE</td>';
 									}
-								$dochtml .= '</tr>
-							</tbody>
-						</table>';
-						$dochtml .= '<p></p>';
-						/* End Flea */
+								}else{
+									$dochtml .= '<td width="200">NEGATIVE</td>';
+								}
+							$dochtml .= '</tr>
+						</tbody>
+					</table>';
+					$dochtml .= '<p></p>';
+					/* End Flea */
 
-						/* Start Malassezia */
-						$dochtml .= '<table>
-							<tbody>
-								<tr>
-									<td width="300">Malassezia</td>';
-									$this->db->select('result');
-									$this->db->from('ci_serum_result_allergens');
-									$this->db->where('result_id IN('.$sresultID.')');
-									$this->db->where('type_id IN('.$stypeID.')');
-									$this->db->where('(lims_allergens_id = "1904" OR lims_allergens_id = "2247")');
-									$this->db->order_by('id', 'ASC');
-									$malasseziaResults = $this->db->get()->row();
-									if(!empty($malasseziaResults)){
-										if($malasseziaResults->result > $cutdoff){
-											$dochtml .= '<td width="200">POSITIVE</td>';
-										}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
-											$dochtml .= '<td width="200">BORDER LINE</td>';
-										}else{
-											$dochtml .= '<td width="200">NEGATIVE</td>';
-										}
+					/* Start Malassezia */
+					$dochtml .= '<table>
+						<tbody>
+							<tr>
+								<td width="300">Malassezia</td>';
+								$this->db->select('result');
+								$this->db->from('ci_serum_result_allergens');
+								$this->db->where('result_id IN('.$sresultID.')');
+								$this->db->where('type_id IN('.$stypeID.')');
+								$this->db->where('(lims_allergens_id = "1904" OR lims_allergens_id = "2247")');
+								$this->db->order_by('id', 'ASC');
+								$malasseziaResults = $this->db->get()->row();
+								if(!empty($malasseziaResults)){
+									if($malasseziaResults->result >= 1501){
+										$dochtml .= '<td width="200">POSITIVE</td>';
+									}elseif($malasseziaResults->result <= 1500 && $malasseziaResults->result >= 1200){
+										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
 										$dochtml .= '<td width="200">NEGATIVE</td>';
 									}
-								$dochtml .= '</tr>
-							</tbody>
-						</table>';
-						$dochtml .= '<p></p><p></p>';
-						/* End Malassezia */
-					}
+								}else{
+									$dochtml .= '<td width="200">NEGATIVE</td>';
+								}
+							$dochtml .= '</tr>
+						</tbody>
+					</table>';
+					$dochtml .= '<p></p><p></p>';
+					/* End Malassezia */
 
 					$dochtml .= '<p><b>Complete Food Panel</b></p>';
 					$dochtml .= '<p></p>';
@@ -8246,7 +8108,7 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumfResults = $this->db->get()->row();
 							if(!empty($serumfResults)){
-								if($serumfResults->result > $cutboff){
+								if($serumfResults->result >= 201){
 									$dochtml .= '<tr>
 										<td width="250">'.$sfvalue['name'].'</td>
 										<td width="50">IgE</td>
@@ -8254,7 +8116,7 @@ class Orders extends CI_Controller{
 										<td width="200">POSITIVE</td>
 									</tr>
 									<tr><td colspan="4"></td></tr>';
-								}elseif($serumfResults->result <= $cutboff && $serumfResults->result >= $cutaoff){
+								}elseif($serumfResults->result <= 200 && $serumfResults->result >= 100){
 									$dochtml .= '<tr>
 										<td width="250">'.$sfvalue['name'].'</td>
 										<td width="50">IgE</td>
@@ -8281,7 +8143,7 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumfiggResults = $this->db->get()->row();
 							if(!empty($serumfiggResults)){
-								if($serumfiggResults->result > $cutboff){
+								if($serumfiggResults->result >= 201){
 									$dochtml .= '<tr>
 										<td width="250">&nbsp;</td>
 										<td width="50">IgG</td>
@@ -8289,7 +8151,7 @@ class Orders extends CI_Controller{
 										<td width="200">POSITIVE</td>
 									</tr>
 									<tr><td colspan="4"></td></tr>';
-								}elseif($serumfiggResults->result <= $cutboff && $serumfiggResults->result >= $cutaoff){
+								}elseif($serumfiggResults->result <= 200 && $serumfiggResults->result >= 100){
 									$dochtml .= '<tr>
 										<td width="250">&nbsp;</td>
 										<td width="50">IgG</td>
@@ -8332,9 +8194,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$countergP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$countergB++;
 							}else{
 								$countergN++;
@@ -8370,9 +8232,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$counterwP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$counterwB++;
 							}else{
 								$counterwN++;
@@ -8408,9 +8270,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$countertP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$countertB++;
 							}else{
 								$countertN++;
@@ -8446,9 +8308,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumcResults = $this->db->get()->row();
 						if(!empty($serumcResults)){
-							if($serumcResults->result > $cutboff){
+							if($serumcResults->result >= 201){
 								$countercP++;
-							}elseif($serumcResults->result <= $cutboff && $serumcResults->result >= $cutaoff){
+							}elseif($serumcResults->result <= 200 && $serumcResults->result >= 100){
 								$countercB++;
 							}else{
 								$countercN++;
@@ -8485,17 +8347,17 @@ class Orders extends CI_Controller{
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
 							if($ivalue['parent_id'] == '6'){
-								if($serumResults->result > $cutdoff){
+								if($serumResults->result >= 1501){
 									$counteriP++;
-								}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+								}elseif($serumResults->result <= 1500 && $serumResults->result >= 1200){
 									$counteriB++;
 								}else{
 									$counteriN++;
 								}
 							}else{
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 201){
 									$counteriP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 									$counteriB++;
 								}else{
 									$counteriN++;
@@ -8533,9 +8395,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumiResults = $this->db->get()->row();
 							if(!empty($serumiResults)){
-								if($serumiResults->result > $cutboff){
+								if($serumiResults->result >= 201){
 									$counteritP++;
-								}elseif($serumiResults->result <= $cutboff && $serumiResults->result >= $cutcoff){
+								}elseif($serumiResults->result <= 200 && $serumiResults->result >= 100){
 									$counteritB++;
 								}else{
 									$counteritN++;
@@ -8560,65 +8422,63 @@ class Orders extends CI_Controller{
 						/* End Insects */
 					}
 
-					if(($data['lab_id']=='13401' || $data['lab_id']=='13789' || $data['lab_id']=='28995' || $data['lab_id']=='29164' || $data['lab_id']=='28994') || ($data['lab_id']=='13788' && $data['species_name'] != 'Horse')){
-						/* Start Flea */
-						$dochtml .= '<table>
-							<tbody>
-								<tr>
-									<td width="300">Flea</td>';
-									$this->db->select('result');
-									$this->db->from('ci_serum_result_allergens');
-									$this->db->where('result_id IN('.$sresultID.')');
-									$this->db->where('type_id IN('.$stypeID.')');
-									$this->db->where('(lims_allergens_id = "1900" OR lims_allergens_id = "2243")');
-									$this->db->order_by('id', 'ASC');
-									$fleaResults = $this->db->get()->row();
-									if(!empty($fleaResults)){
-										if($fleaResults->result > $cutboff){
-											$dochtml .= '<td width="200">POSITIVE</td>';
-										}elseif($fleaResults->result <= $cutboff && $fleaResults->result >= $cutaoff){
-											$dochtml .= '<td width="200">BORDER LINE</td>';
-										}else{
-											$dochtml .= '<td width="200">NEGATIVE</td>';
-										}
+					/* Start Flea */
+					$dochtml .= '<table>
+						<tbody>
+							<tr>
+								<td width="300">Flea</td>';
+								$this->db->select('result');
+								$this->db->from('ci_serum_result_allergens');
+								$this->db->where('result_id IN('.$sresultID.')');
+								$this->db->where('type_id IN('.$stypeID.')');
+								$this->db->where('(lims_allergens_id = "1900" OR lims_allergens_id = "2243")');
+								$this->db->order_by('id', 'ASC');
+								$fleaResults = $this->db->get()->row();
+								if(!empty($fleaResults)){
+									if($fleaResults->result >= 201){
+										$dochtml .= '<td width="200">POSITIVE</td>';
+									}elseif($fleaResults->result <= 200 && $fleaResults->result >= 100){
+										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
 										$dochtml .= '<td width="200">NEGATIVE</td>';
 									}
-								$dochtml .= '</tr>
-							</tbody>
-						</table>';
-						$dochtml .= '<p></p>';
-						/* End Flea */
+								}else{
+									$dochtml .= '<td width="200">NEGATIVE</td>';
+								}
+							$dochtml .= '</tr>
+						</tbody>
+					</table>';
+					$dochtml .= '<p></p>';
+					/* End Flea */
 
-						/* Start Malassezia */
-						$dochtml .= '<table>
-							<tbody>
-								<tr>
-									<td width="300">Malassezia</td>';
-									$this->db->select('result');
-									$this->db->from('ci_serum_result_allergens');
-									$this->db->where('result_id IN('.$sresultID.')');
-									$this->db->where('type_id IN('.$stypeID.')');
-									$this->db->where('(lims_allergens_id = "1904" OR lims_allergens_id = "2247")');
-									$this->db->order_by('id', 'ASC');
-									$malasseziaResults = $this->db->get()->row();
-									if(!empty($malasseziaResults)){
-										if($malasseziaResults->result > $cutdoff){
-											$dochtml .= '<td width="200">POSITIVE</td>';
-										}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
-											$dochtml .= '<td width="200">BORDER LINE</td>';
-										}else{
-											$dochtml .= '<td width="200">NEGATIVE</td>';
-										}
+					/* Start Malassezia */
+					$dochtml .= '<table>
+						<tbody>
+							<tr>
+								<td width="300">Malassezia</td>';
+								$this->db->select('result');
+								$this->db->from('ci_serum_result_allergens');
+								$this->db->where('result_id IN('.$sresultID.')');
+								$this->db->where('type_id IN('.$stypeID.')');
+								$this->db->where('(lims_allergens_id = "1904" OR lims_allergens_id = "2247")');
+								$this->db->order_by('id', 'ASC');
+								$malasseziaResults = $this->db->get()->row();
+								if(!empty($malasseziaResults)){
+									if($malasseziaResults->result >= 1501){
+										$dochtml .= '<td width="200">POSITIVE</td>';
+									}elseif($malasseziaResults->result <= 1500 && $malasseziaResults->result >= 1200){
+										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
 										$dochtml .= '<td width="200">NEGATIVE</td>';
 									}
-								$dochtml .= '</tr>
-							</tbody>
-						</table>';
-						$dochtml .= '<p></p><p></p>';
-						/* End Malassezia */
-					}
+								}else{
+									$dochtml .= '<td width="200">NEGATIVE</td>';
+								}
+							$dochtml .= '</tr>
+						</tbody>
+					</table>';
+					$dochtml .= '<p></p><p></p>';
+					/* End Malassezia */
 
 					if($data['lab_id'] > 0 && $data['lab_id'] == '13788'){
 						$dochtml .= '<p></p>';$dochtml .= '<p></p>';
@@ -8641,9 +8501,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('result', 'DESC');
 						$fpResults = $this->db->get()->row();
 						if(!empty($fpResults)){
-							if($fpResults->result > $cutboff){
+							if($fpResults->result >= 201){
 								$counterFPP++;
-							}elseif($fpResults->result <= $cutboff && $fpResults->result >= $cutaoff){
+							}elseif($fpResults->result <= 200 && $fpResults->result >= 100){
 								$counterFPB++;
 							}else{
 								$counterFPN++;
@@ -8679,9 +8539,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('result', 'DESC');
 						$fcResults = $this->db->get()->row();
 						if(!empty($fcResults)){
-							if($fcResults->result > $cutboff){
+							if($fcResults->result >= 201){
 								$counterFCP++;
-							}elseif($fcResults->result <= $cutboff && $fcResults->result >= $cutaoff){
+							}elseif($fcResults->result <= 200 && $fcResults->result >= 100){
 								$counterFCB++;
 							}else{
 								$counterFCN++;
@@ -8730,14 +8590,14 @@ class Orders extends CI_Controller{
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
 								if($row1['parent_id'] == '6'){
-									if($serumResults->result > $cutdoff){
+									if($serumResults->result >= 1501){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="3"></td></tr>';
-									}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+									}elseif($serumResults->result <= 1500 && $serumResults->result >= 1200){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
@@ -8753,14 +8613,14 @@ class Orders extends CI_Controller{
 										<tr><td colspan="3"></td></tr>';
 									}
 								}else{
-									if($serumResults->result > $cutboff){
+									if($serumResults->result >= 201){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="3"></td></tr>';
-									}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+									}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
@@ -8795,10 +8655,10 @@ class Orders extends CI_Controller{
 								$this->db->order_by('result', 'DESC');
 								$malasseziaResults = $this->db->get()->row();
 								if(!empty($malasseziaResults)){
-									if($malasseziaResults->result > $cutdoff){
+									if($malasseziaResults->result >= 1501){
 										$dochtml .= '<td width="50">'.$malasseziaResults->result.'</td>';
 										$dochtml .= '<td width="200">POSITIVE</td>';
-									}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
+									}elseif($malasseziaResults->result <= 1500 && $malasseziaResults->result >= 1200){
 										$dochtml .= '<td width="50">'.$malasseziaResults->result.'</td>';
 										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
@@ -8813,7 +8673,7 @@ class Orders extends CI_Controller{
 						</tbody>
 					</table>';
 					/* End Malassezia */
-				}elseif(preg_match('/\bComplete Food Panel\b/', $respnedn->name) || preg_match('/\bNEXTLAB Complete Food\b/', $respnedn->name)){
+				}elseif(preg_match('/\bComplete Food Panel\b/', $respnedn->name)){
 					$fileName = 'NextLab_Complete_Food_Panel_Serum_Result_'.$data['order_number'].'';
 					$dochtml .= '<p><b>Food Panel</b></p>';
 					$dochtml .= '<p></p>';
@@ -8833,14 +8693,14 @@ class Orders extends CI_Controller{
 							$serumfResults = $this->db->get()->row();
 							if(!empty($serumfResults)){
 								if($row1['parent_id'] == '6'){
-									if($serumResults->result > $cutdoff){
+									if($serumResults->result >= 1501){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="3"></td></tr>';
-									}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+									}elseif($serumResults->result <= 1500 && $serumResults->result >= 1200){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
@@ -8856,7 +8716,7 @@ class Orders extends CI_Controller{
 										<tr><td colspan="3"></td></tr>';
 									}
 								}else{
-									if($serumfResults->result > $cutboff){
+									if($serumfResults->result >= 201){
 										$dochtml .= '<tr>
 											<td width="250">'.$sfvalue['name'].'</td>
 											<td width="50">IgE</td>
@@ -8864,7 +8724,7 @@ class Orders extends CI_Controller{
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="4"></td></tr>';
-									}elseif($serumfResults->result <= $cutboff && $serumfResults->result >= $cutaoff){
+									}elseif($serumfResults->result <= 200 && $serumfResults->result >= 100){
 										$dochtml .= '<tr>
 											<td width="250">'.$sfvalue['name'].'</td>
 											<td width="50">IgE</td>
@@ -8892,7 +8752,7 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumfiggResults = $this->db->get()->row();
 							if(!empty($serumfiggResults)){
-								if($serumfiggResults->result > $cutboff){
+								if($serumfiggResults->result >= 201){
 									$dochtml .= '<tr>
 										<td width="250">&nbsp;</td>
 										<td width="50">IgG</td>
@@ -8900,7 +8760,7 @@ class Orders extends CI_Controller{
 										<td width="200">POSITIVE</td>
 									</tr>
 									<tr><td colspan="4"></td></tr>';
-								}elseif($serumfiggResults->result <= $cutboff && $serumfiggResults->result >= $cutaoff){
+								}elseif($serumfiggResults->result <= 200 && $serumfiggResults->result >= 100){
 									$dochtml .= '<tr>
 										<td width="250">&nbsp;</td>
 										<td width="50">IgG</td>
@@ -8942,14 +8802,14 @@ class Orders extends CI_Controller{
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
 								if($row1['parent_id'] == '6'){
-									if($serumResults->result > $cutdoff){
+									if($serumResults->result >= 1501){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="3"></td></tr>';
-									}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+									}elseif($serumResults->result <= 1500 && $serumResults->result >= 1200){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
@@ -8965,14 +8825,14 @@ class Orders extends CI_Controller{
 										<tr><td colspan="3"></td></tr>';
 									}
 								}else{
-									if($serumResults->result > $cutboff){
+									if($serumResults->result >= 201){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="3"></td></tr>';
-									}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+									}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
@@ -9008,10 +8868,10 @@ class Orders extends CI_Controller{
 								$this->db->order_by('result', 'DESC');
 								$malasseziaResults = $this->db->get()->row();
 								if(!empty($malasseziaResults)){
-									if($malasseziaResults->result > $cutdoff){
+									if($malasseziaResults->result >= 1501){
 										$dochtml .= '<td width="50">'.$malasseziaResults->result.'</td>';
 										$dochtml .= '<td width="200">POSITIVE</td>';
-									}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
+									}elseif($malasseziaResults->result <= 1500 && $malasseziaResults->result >= 1200){
 										$dochtml .= '<td width="50">'.$malasseziaResults->result.'</td>';
 										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
@@ -9044,7 +8904,7 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumfResults = $this->db->get()->row();
 							if(!empty($serumfResults)){
-								if($serumfResults->result > $cutboff){
+								if($serumfResults->result >= 201){
 									$dochtml .= '<tr>
 										<td width="250">'.$sfvalue['name'].'</td>
 										<td width="50">IgE</td>
@@ -9052,7 +8912,7 @@ class Orders extends CI_Controller{
 										<td width="200">POSITIVE</td>
 									</tr>
 									<tr><td colspan="4"></td></tr>';
-								}elseif($serumfResults->result <= $cutboff && $serumfResults->result >= $cutaoff){
+								}elseif($serumfResults->result <= 200 && $serumfResults->result >= 100){
 									$dochtml .= '<tr>
 										<td width="250">'.$sfvalue['name'].'</td>
 										<td width="50">IgE</td>
@@ -9079,7 +8939,7 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumfiggResults = $this->db->get()->row();
 							if(!empty($serumfiggResults)){
-								if($serumfiggResults->result > $cutboff){
+								if($serumfiggResults->result >= 201){
 									$dochtml .= '<tr>
 										<td width="250">&nbsp;</td>
 										<td width="50">IgG</td>
@@ -9087,7 +8947,7 @@ class Orders extends CI_Controller{
 										<td width="200">POSITIVE</td>
 									</tr>
 									<tr><td colspan="4"></td></tr>';
-								}elseif($serumfiggResults->result <= $cutboff && $serumfiggResults->result >= $cutaoff){
+								}elseif($serumfiggResults->result <= 200 && $serumfiggResults->result >= 100){
 									$dochtml .= '<tr>
 										<td width="250">&nbsp;</td>
 										<td width="50">IgG</td>
@@ -9129,14 +8989,14 @@ class Orders extends CI_Controller{
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
 								if($row1['parent_id'] == '6'){
-									if($serumResults->result > $cutdoff){
+									if($serumResults->result >= 1501){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="3"></td></tr>';
-									}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+									}elseif($serumResults->result <= 1500 && $serumResults->result >= 1200){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
@@ -9152,14 +9012,14 @@ class Orders extends CI_Controller{
 										<tr><td colspan="3"></td></tr>';
 									}
 								}else{
-									if($serumResults->result > $cutboff){
+									if($serumResults->result >= 201){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="3"></td></tr>';
-									}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+									}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
@@ -9195,10 +9055,10 @@ class Orders extends CI_Controller{
 								$this->db->order_by('result', 'DESC');
 								$malasseziaResults = $this->db->get()->row();
 								if(!empty($malasseziaResults)){
-									if($malasseziaResults->result > $cutdoff){
+									if($malasseziaResults->result >= 1501){
 										$dochtml .= '<td width="50">'.$malasseziaResults->result.'</td>';
 										$dochtml .= '<td width="200">POSITIVE</td>';
-									}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
+									}elseif($malasseziaResults->result <= 1500 && $malasseziaResults->result >= 1200){
 										$dochtml .= '<td width="50">'.$malasseziaResults->result.'</td>';
 										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
@@ -9228,9 +9088,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('result', 'DESC');
 						$fpResults = $this->db->get()->row();
 						if(!empty($fpResults)){
-							if($fpResults->result > $cutboff){
+							if($fpResults->result >= 201){
 								$counterFPP++;
-							}elseif($fpResults->result <= $cutboff && $fpResults->result >= $cutaoff){
+							}elseif($fpResults->result <= 200 && $fpResults->result >= 100){
 								$counterFPB++;
 							}else{
 								$counterFPN++;
@@ -9266,9 +9126,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('result', 'DESC');
 						$fcResults = $this->db->get()->row();
 						if(!empty($fcResults)){
-							if($fcResults->result > $cutboff){
+							if($fcResults->result >= 201){
 								$counterFCP++;
-							}elseif($fcResults->result <= $cutboff && $fcResults->result >= $cutaoff){
+							}elseif($fcResults->result <= 200 && $fcResults->result >= 100){
 								$counterFCB++;
 							}else{
 								$counterFCN++;
@@ -9307,9 +9167,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$countergP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$countergB++;
 							}else{
 								$countergN++;
@@ -9345,9 +9205,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$counterwP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$counterwB++;
 							}else{
 								$counterwN++;
@@ -9383,9 +9243,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$countertP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$countertB++;
 							}else{
 								$countertN++;
@@ -9421,9 +9281,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumcResults = $this->db->get()->row();
 						if(!empty($serumcResults)){
-							if($serumcResults->result > $cutboff){
+							if($serumcResults->result >= 201){
 								$countercP++;
-							}elseif($serumcResults->result <= $cutboff && $serumcResults->result >= $cutaoff){
+							}elseif($serumcResults->result <= 200 && $serumcResults->result >= 100){
 								$countercB++;
 							}else{
 								$countercN++;
@@ -9460,17 +9320,17 @@ class Orders extends CI_Controller{
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
 							if($ivalue['parent_id'] == '6'){
-								if($serumResults->result > $cutdoff){
+								if($serumResults->result >= 1501){
 									$counteriP++;
-								}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+								}elseif($serumResults->result <= 1500 && $serumResults->result >= 1200){
 									$counteriB++;
 								}else{
 									$counteriN++;
 								}
 							}else{
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 201){
 									$counteriP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 									$counteriB++;
 								}else{
 									$counteriN++;
@@ -9508,9 +9368,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumiResults = $this->db->get()->row();
 							if(!empty($serumiResults)){
-								if($serumiResults->result > $cutboff){
+								if($serumiResults->result >= 201){
 									$counteritP++;
-								}elseif($serumiResults->result <= $cutboff && $serumiResults->result >= $cutaoff){
+								}elseif($serumiResults->result <= 200 && $serumiResults->result >= 100){
 									$counteritB++;
 								}else{
 									$counteritN++;
@@ -9534,66 +9394,64 @@ class Orders extends CI_Controller{
 						$dochtml .= '<p></p>';
 						/* End Insects */
 					}
-
-					if(($data['lab_id']=='13401' || $data['lab_id']=='13789' || $data['lab_id']=='28995' || $data['lab_id']=='29164' || $data['lab_id']=='28994') || ($data['lab_id']=='13788' && $data['species_name'] != 'Horse')){
-						/* Start Flea */
-						$dochtml .= '<table>
-							<tbody>
-								<tr>
-									<td width="300">Flea</td>';
-									$this->db->select('result');
-									$this->db->from('ci_serum_result_allergens');
-									$this->db->where('result_id IN('.$sresultID.')');
-									$this->db->where('type_id IN('.$stypeID.')');
-									$this->db->where('(lims_allergens_id = "1900" OR lims_allergens_id = "2243")');
-									$this->db->order_by('id', 'ASC');
-									$fleaResults = $this->db->get()->row();
-									if(!empty($fleaResults)){
-										if($fleaResults->result > $cutboff){
-											$dochtml .= '<td width="200">POSITIVE</td>';
-										}elseif($fleaResults->result <= $cutboff && $fleaResults->result >= $cutaoff){
-											$dochtml .= '<td width="200">BORDER LINE</td>';
-										}else{
-											$dochtml .= '<td width="200">NEGATIVE</td>';
-										}
+					
+					/* Start Flea */
+					$dochtml .= '<table>
+						<tbody>
+							<tr>
+								<td width="300">Flea</td>';
+								$this->db->select('result');
+								$this->db->from('ci_serum_result_allergens');
+								$this->db->where('result_id IN('.$sresultID.')');
+								$this->db->where('type_id IN('.$stypeID.')');
+								$this->db->where('(lims_allergens_id = "1900" OR lims_allergens_id = "2243")');
+								$this->db->order_by('id', 'ASC');
+								$fleaResults = $this->db->get()->row();
+								if(!empty($fleaResults)){
+									if($fleaResults->result >= 201){
+										$dochtml .= '<td width="200">POSITIVE</td>';
+									}elseif($fleaResults->result <= 200 && $fleaResults->result >= 100){
+										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
 										$dochtml .= '<td width="200">NEGATIVE</td>';
 									}
-								$dochtml .= '</tr>
-							</tbody>
-						</table>';
-						$dochtml .= '<p></p>';
-						/* End Flea */
+								}else{
+									$dochtml .= '<td width="200">NEGATIVE</td>';
+								}
+							$dochtml .= '</tr>
+						</tbody>
+					</table>';
+					$dochtml .= '<p></p>';
+					/* End Flea */
 
-						/* Start Malassezia */
-						$dochtml .= '<table>
-							<tbody>
-								<tr>
-									<td width="300">Malassezia</td>';
-									$this->db->select('result');
-									$this->db->from('ci_serum_result_allergens');
-									$this->db->where('result_id IN('.$sresultID.')');
-									$this->db->where('type_id IN('.$stypeID.')');
-									$this->db->where('(lims_allergens_id = "1904" OR lims_allergens_id = "2247")');
-									$this->db->order_by('id', 'ASC');
-									$malasseziaResults = $this->db->get()->row();
-									if(!empty($malasseziaResults)){
-										if($malasseziaResults->result > $cutdoff){
-											$dochtml .= '<td width="200">POSITIVE</td>';
-										}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
-											$dochtml .= '<td width="200">BORDER LINE</td>';
-										}else{
-											$dochtml .= '<td width="200">NEGATIVE</td>';
-										}
+					/* Start Malassezia */
+					$dochtml .= '<table>
+						<tbody>
+							<tr>
+								<td width="300">Malassezia</td>';
+								$this->db->select('result');
+								$this->db->from('ci_serum_result_allergens');
+								$this->db->where('result_id IN('.$sresultID.')');
+								$this->db->where('type_id IN('.$stypeID.')');
+								$this->db->where('(lims_allergens_id = "1904" OR lims_allergens_id = "2247")');
+								$this->db->order_by('id', 'ASC');
+								$malasseziaResults = $this->db->get()->row();
+								if(!empty($malasseziaResults)){
+									if($malasseziaResults->result >= 1501){
+										$dochtml .= '<td width="200">POSITIVE</td>';
+									}elseif($malasseziaResults->result <= 1500 && $malasseziaResults->result >= 1200){
+										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
 										$dochtml .= '<td width="200">NEGATIVE</td>';
 									}
-								$dochtml .= '</tr>
-							</tbody>
-						</table>';
-						$dochtml .= '<p></p><p></p>';
-						/* End Malassezia */
-					}
+								}else{
+									$dochtml .= '<td width="200">NEGATIVE</td>';
+								}
+							$dochtml .= '</tr>
+						</tbody>
+					</table>';
+					$dochtml .= '<p></p><p></p>';
+					/* End Malassezia */
 
 					$dochtml .= '<p><b>SCREEN Food Panel</b></p>';
 					$dochtml .= '<p></p>';
@@ -9609,9 +9467,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('result', 'DESC');
 						$fpResults = $this->db->get()->row();
 						if(!empty($fpResults)){
-							if($fpResults->result > $cutboff){
+							if($fpResults->result >= 201){
 								$counterFPP++;
-							}elseif($fpResults->result <= $cutboff && $fpResults->result >= $cutaoff){
+							}elseif($fpResults->result <= 200 && $fpResults->result >= 100){
 								$counterFPB++;
 							}else{
 								$counterFPN++;
@@ -9647,9 +9505,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('result', 'DESC');
 						$fcResults = $this->db->get()->row();
 						if(!empty($fcResults)){
-							if($fcResults->result > $cutboff){
+							if($fcResults->result >= 201){
 								$counterFCP++;
-							}elseif($fcResults->result <= $cutboff && $fcResults->result >= $cutaoff){
+							}elseif($fcResults->result <= 200 && $fcResults->result >= 100){
 								$counterFCB++;
 							}else{
 								$counterFCN++;
@@ -9698,14 +9556,14 @@ class Orders extends CI_Controller{
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
 								if($row1['parent_id'] == '6'){
-									if($serumResults->result > $cutdoff){
+									if($serumResults->result >= 1501){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="3"></td></tr>';
-									}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+									}elseif($serumResults->result <= 1500 && $serumResults->result >= 1200){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
@@ -9721,14 +9579,14 @@ class Orders extends CI_Controller{
 										<tr><td colspan="3"></td></tr>';
 									}
 								}else{
-									if($serumResults->result > $cutboff){
+									if($serumResults->result >= 201){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="3"></td></tr>';
-									}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+									}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 										$dochtml .= '<tr>
 											<td width="250">'.$serumResults->name.'</td>
 											<td width="50">'.$serumResults->result.'</td>
@@ -9764,10 +9622,10 @@ class Orders extends CI_Controller{
 								$this->db->order_by('result', 'DESC');
 								$malasseziaResults = $this->db->get()->row();
 								if(!empty($malasseziaResults)){
-									if($malasseziaResults->result > $cutdoff){
+									if($malasseziaResults->result >= 1501){
 										$dochtml .= '<td width="50">'.$malasseziaResults->result.'</td>';
 										$dochtml .= '<td width="200">POSITIVE</td>';
-									}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
+									}elseif($malasseziaResults->result <= 1500 && $malasseziaResults->result >= 1200){
 										$dochtml .= '<td width="50">'.$malasseziaResults->result.'</td>';
 										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
@@ -9801,7 +9659,7 @@ class Orders extends CI_Controller{
 								$this->db->order_by('id', 'ASC');
 								$serumfResults = $this->db->get()->row();
 								if(!empty($serumfResults)){
-									if($serumfResults->result > $cutboff){
+									if($serumfResults->result >= 201){
 										$dochtml .= '<tr>
 											<td width="250">'.$sfvalue['name'].'</td>
 											<td width="50">IgE</td>
@@ -9809,7 +9667,7 @@ class Orders extends CI_Controller{
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="4"></td></tr>';
-									}elseif($serumfResults->result <= $cutboff && $serumfResults->result >= $cutaoff){
+									}elseif($serumfResults->result <= 200 && $serumfResults->result >= 100){
 										$dochtml .= '<tr>
 											<td width="250">'.$sfvalue['name'].'</td>
 											<td width="50">IgE</td>
@@ -9836,7 +9694,7 @@ class Orders extends CI_Controller{
 								$this->db->order_by('id', 'ASC');
 								$serumfiggResults = $this->db->get()->row();
 								if(!empty($serumfiggResults)){
-									if($serumfiggResults->result > $cutboff){
+									if($serumfiggResults->result >= 201){
 										$dochtml .= '<tr>
 											<td width="250">&nbsp;</td>
 											<td width="50">IgG</td>
@@ -9844,7 +9702,7 @@ class Orders extends CI_Controller{
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="4"></td></tr>';
-									}elseif($serumfiggResults->result <= $cutboff && $serumfiggResults->result >= $cutaoff){
+									}elseif($serumfiggResults->result <= 200 && $serumfiggResults->result >= 100){
 										$dochtml .= '<tr>
 											<td width="250">&nbsp;</td>
 											<td width="50">IgG</td>
@@ -9883,9 +9741,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$countergP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$countergB++;
 							}else{
 								$countergN++;
@@ -9921,9 +9779,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$counterwP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$counterwB++;
 							}else{
 								$counterwN++;
@@ -9959,9 +9817,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
-							if($serumResults->result > $cutboff){
+							if($serumResults->result >= 201){
 								$countertP++;
-							}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+							}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 								$countertB++;
 							}else{
 								$countertN++;
@@ -9997,9 +9855,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$serumcResults = $this->db->get()->row();
 						if(!empty($serumcResults)){
-							if($serumcResults->result > $cutboff){
+							if($serumcResults->result >= 201){
 								$countercP++;
-							}elseif($serumcResults->result <= $cutboff && $serumcResults->result >= $cutaoff){
+							}elseif($serumcResults->result <= 200 && $serumcResults->result >= 100){
 								$countercB++;
 							}else{
 								$countercN++;
@@ -10036,17 +9894,17 @@ class Orders extends CI_Controller{
 						$serumResults = $this->db->get()->row();
 						if(!empty($serumResults)){
 							if($ivalue['parent_id'] == '6'){
-								if($serumResults->result > $cutdoff){
+								if($serumResults->result >= 1501){
 									$counteriP++;
-								}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+								}elseif($serumResults->result <= 1500 && $serumResults->result >= 1200){
 									$counteriB++;
 								}else{
 									$counteriN++;
 								}
 							}else{
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 201){
 									$counteriP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result <= 200 && $serumResults->result >= 100){
 									$counteriB++;
 								}else{
 									$counteriN++;
@@ -10084,9 +9942,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumiResults = $this->db->get()->row();
 							if(!empty($serumiResults)){
-								if($serumiResults->result > $cutboff){
+								if($serumiResults->result >= 201){
 									$counteritP++;
-								}elseif($serumiResults->result <= $cutboff && $serumiResults->result >= $cutaoff){
+								}elseif($serumiResults->result <= 200 && $serumiResults->result >= 100){
 									$counteritB++;
 								}else{
 									$counteritN++;
@@ -10110,66 +9968,64 @@ class Orders extends CI_Controller{
 						$dochtml .= '<p></p>';
 						/* End Insects */
 					}
-
-					if(($data['lab_id']=='13401' || $data['lab_id']=='13789' || $data['lab_id']=='28995' || $data['lab_id']=='29164' || $data['lab_id']=='28994') || ($data['lab_id']=='13788' && $data['species_name'] != 'Horse')){
-						/* Start Flea */
-						$dochtml .= '<table>
-							<tbody>
-								<tr>
-									<td width="300">Flea</td>';
-									$this->db->select('result');
-									$this->db->from('ci_serum_result_allergens');
-									$this->db->where('result_id IN('.$sresultID.')');
-									$this->db->where('type_id IN('.$stypeID.')');
-									$this->db->where('(lims_allergens_id = "1900" OR lims_allergens_id = "2243")');
-									$this->db->order_by('id', 'ASC');
-									$fleaResults = $this->db->get()->row();
-									if(!empty($fleaResults)){
-										if($fleaResults->result > $cutboff){
-											$dochtml .= '<td width="200">POSITIVE</td>';
-										}elseif($fleaResults->result <= $cutboff && $fleaResults->result >= $cutaoff){
-											$dochtml .= '<td width="200">BORDER LINE</td>';
-										}else{
-											$dochtml .= '<td width="200">NEGATIVE</td>';
-										}
+					
+					/* Start Flea */
+					$dochtml .= '<table>
+						<tbody>
+							<tr>
+								<td width="300">Flea</td>';
+								$this->db->select('result');
+								$this->db->from('ci_serum_result_allergens');
+								$this->db->where('result_id IN('.$sresultID.')');
+								$this->db->where('type_id IN('.$stypeID.')');
+								$this->db->where('(lims_allergens_id = "1900" OR lims_allergens_id = "2243")');
+								$this->db->order_by('id', 'ASC');
+								$fleaResults = $this->db->get()->row();
+								if(!empty($fleaResults)){
+									if($fleaResults->result >= 201){
+										$dochtml .= '<td width="200">POSITIVE</td>';
+									}elseif($fleaResults->result <= 200 && $fleaResults->result >= 100){
+										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
 										$dochtml .= '<td width="200">NEGATIVE</td>';
 									}
-								$dochtml .= '</tr>
-							</tbody>
-						</table>';
-						$dochtml .= '<p></p>';
-						/* End Flea */
+								}else{
+									$dochtml .= '<td width="200">NEGATIVE</td>';
+								}
+							$dochtml .= '</tr>
+						</tbody>
+					</table>';
+					$dochtml .= '<p></p>';
+					/* End Flea */
 
-						/* Start Malassezia */
-						$dochtml .= '<table>
-							<tbody>
-								<tr>
-									<td width="300">Malassezia</td>';
-									$this->db->select('result');
-									$this->db->from('ci_serum_result_allergens');
-									$this->db->where('result_id IN('.$sresultID.')');
-									$this->db->where('type_id IN('.$stypeID.')');
-									$this->db->where('(lims_allergens_id = "1904" OR lims_allergens_id = "2247")');
-									$this->db->order_by('id', 'ASC');
-									$malasseziaResults = $this->db->get()->row();
-									if(!empty($malasseziaResults)){
-										if($malasseziaResults->result > $cutdoff){
-											$dochtml .= '<td width="200">POSITIVE</td>';
-										}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
-											$dochtml .= '<td width="200">BORDER LINE</td>';
-										}else{
-											$dochtml .= '<td width="200">NEGATIVE</td>';
-										}
+					/* Start Malassezia */
+					$dochtml .= '<table>
+						<tbody>
+							<tr>
+								<td width="300">Malassezia</td>';
+								$this->db->select('result');
+								$this->db->from('ci_serum_result_allergens');
+								$this->db->where('result_id IN('.$sresultID.')');
+								$this->db->where('type_id IN('.$stypeID.')');
+								$this->db->where('(lims_allergens_id = "1904" OR lims_allergens_id = "2247")');
+								$this->db->order_by('id', 'ASC');
+								$malasseziaResults = $this->db->get()->row();
+								if(!empty($malasseziaResults)){
+									if($malasseziaResults->result >= 1501){
+										$dochtml .= '<td width="200">POSITIVE</td>';
+									}elseif($malasseziaResults->result <= 1500 && $malasseziaResults->result >= 1200){
+										$dochtml .= '<td width="200">BORDER LINE</td>';
 									}else{
 										$dochtml .= '<td width="200">NEGATIVE</td>';
 									}
-								$dochtml .= '</tr>
-							</tbody>
-						</table>';
-						$dochtml .= '<p></p><p></p>';
-						/* End Malassezia */
-					}
+								}else{
+									$dochtml .= '<td width="200">NEGATIVE</td>';
+								}
+							$dochtml .= '</tr>
+						</tbody>
+					</table>';
+					$dochtml .= '<p></p><p></p>';
+					/* End Malassezia */
 
 					if(preg_match('/\bFood\b/', $respnedn->name)){
 						$dochtml .= '<p><b>Food Panel</b></p>';
@@ -10189,7 +10045,7 @@ class Orders extends CI_Controller{
 								$this->db->order_by('id', 'ASC');
 								$serumfResults = $this->db->get()->row();
 								if(!empty($serumfResults)){
-									if($serumfResults->result > $cutboff){
+									if($serumfResults->result >= 201){
 										$dochtml .= '<tr>
 											<td width="250">'.$sfvalue['name'].'</td>
 											<td width="50">IgE</td>
@@ -10197,7 +10053,7 @@ class Orders extends CI_Controller{
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="4"></td></tr>';
-									}elseif($serumfResults->result <= $cutboff && $serumfResults->result >= $cutaoff){
+									}elseif($serumfResults->result <= 200 && $serumfResults->result >= 100){
 										$dochtml .= '<tr>
 											<td width="250">'.$sfvalue['name'].'</td>
 											<td width="50">IgE</td>
@@ -10224,7 +10080,7 @@ class Orders extends CI_Controller{
 								$this->db->order_by('id', 'ASC');
 								$serumfiggResults = $this->db->get()->row();
 								if(!empty($serumfiggResults)){
-									if($serumfiggResults->result > $cutboff){
+									if($serumfiggResults->result >= 201){
 										$dochtml .= '<tr>
 											<td width="250">&nbsp;</td>
 											<td width="50">IgG</td>
@@ -10232,7 +10088,7 @@ class Orders extends CI_Controller{
 											<td width="200">POSITIVE</td>
 										</tr>
 										<tr><td colspan="4"></td></tr>';
-									}elseif($serumfiggResults->result <= $cutboff && $serumfiggResults->result >= $cutaoff){
+									}elseif($serumfiggResults->result <= 200 && $serumfiggResults->result >= 100){
 										$dochtml .= '<tr>
 											<td width="250">&nbsp;</td>
 											<td width="50">IgG</td>
@@ -10401,7 +10257,7 @@ class Orders extends CI_Controller{
 				$mpdf->AddPage('','','','','',20,0,65,35,5,5);
 				$complete_environmental_pdf = $this->load->view('nwl_pdf/nwl_complete_environmental', $this->_data, true);
 				$mpdf->WriteHTML($complete_environmental_pdf);
-			}elseif(preg_match('/\bComplete Food Panel\b/', $respnedn->name) || preg_match('/\bNEXTLAB Complete Food\b/', $respnedn->name)){
+			}elseif(preg_match('/\bComplete Food Panel\b/', $respnedn->name)){
 				$main_header_pdf = $this->load->view('nwl_pdf/nwl_pdf_main_header', $this->_data, true);
 				$header_food_pdf = $this->load->view('nwl_pdf/nwl_serum_result_pdf_header_food', $this->_data, true);
 				$mpdf->use_kwt = true; 
@@ -10524,6 +10380,32 @@ class Orders extends CI_Controller{
 		}
 	}
 
+	function createSerumFoodPDF($data=[]){
+		$dompdf = new Dompdf(array('enable_remote' => true));
+		$html3 = $this->load->view('orders/serum_food_result_pdf', $data, true);
+		$html3 = trim($html3);
+		$dompdf->loadHtml($html3);
+		$dompdf->setPaper('A4', 'Portrait');
+		$dompdf->render();
+		$pdf3 = $dompdf->output();
+		$file3 = FCPATH . SERUM_REQUEST_PDF_PATH . "serum_test_result_food_". $order_number .".pdf";
+		file_put_contents($file3, $pdf3);
+		return $file3;
+	}
+
+	function createTreatmentPDF($data=[]){
+		$dompdf = new Dompdf(array('enable_remote' => true));
+		$html2 = $this->load->view('orders/serum_result_options', $data, true);
+		$html2 = trim($html2);
+		$dompdf->loadHtml($html2);
+		$dompdf->setPaper('A4', 'Portrait');
+		$dompdf->render();
+		$pdfs = $dompdf->output();
+		$file2 = FCPATH . SERUM_REQUEST_PDF_PATH ."serum_treatment_". $order_number .".pdf";
+		file_put_contents($file2, $pdfs);
+		return $file2;
+	}
+
 	function treatment($id=''){
 		$this->_data['data'] = [];
 		$data = $this->OrdersModel->allData($id);
@@ -10551,6 +10433,68 @@ class Orders extends CI_Controller{
 			$orderData['updated_at'] = date("Y-m-d H:i:s");
 			$this->OrdersModel->add_edit($orderData);
 			redirect('orders/treatment/'.$id);
+			/* $result = $this->OrdersModel->serumOrderforImmuno($id);
+			if ($result) {
+				//$this->session->set_flashdata('success', 'Immunotherpathy Order has been placed successfully.');
+				$newData = $this->OrdersModel->allData($result);
+				if($data['order_type'] == 2){
+					if($data['species_selection'] == 2){
+						$pc_selection = '12';
+					}else{
+						$pc_selection = '6';
+					}
+					$orderProcess = array(
+						'order_type'    => $data['order_type'],
+						'sub_order_type' => $data['sub_order_type'],
+						'plc_selection' => $data['plc_selection'],
+						'species_selection' => $data['species_selection'],
+						'product_code_selection' => $pc_selection,
+						'single_double_selection' => $data['single_double_selection']  
+					);
+				}else{
+					$orderProcess = array(
+						'order_type'    => $data['order_type'],
+						'sub_order_type' => $data['sub_order_type'],
+						'plc_selection' => $data['plc_selection'],
+						'species_selection' => $data['species_selection'],
+						'product_code_selection' => $data['product_code_selection'],
+						'single_double_selection' => $data['single_double_selection']  
+					);
+				}
+				$this->session->set_userdata($orderProcess); 
+				if($postData['treatment'] == "3"){
+					redirect('orders/allergens/'. $newData['id']);
+				}else{
+					$orderData['id'] = $newData['id'];
+					if($postData['treatment'] == "2"){
+					$allergens = $postData['allergens2'];
+					}else{
+					$allergens = $postData['allergens1'];
+					}
+					if(!empty($allergens)){
+						$allergensArr = [];
+						foreach($allergens as $ar){
+							$allens = $this->OrdersModel->getAllergensData($ar);
+							$allergensArr[] = $allens->id;
+						}
+						if(!empty($allergensArr)){
+							$orderData['allergens'] = json_encode($allergensArr);
+						}else{
+							$orderData['allergens'] = '[]';
+						}
+					}else{
+						$orderData['allergens'] = '[]';
+					}
+					$orderData['practice_lab_comment'] = '';
+					$orderData['comment_by'] = 0;
+					$orderData['updated_by'] = $this->user_id;
+					$orderData['updated_at'] = date("Y-m-d H:i:s");
+					$this->OrdersModel->add_edit($orderData);
+					redirect('orders/immmuno_summary/'. $newData['id']);
+				}
+			}else{
+				$this->session->set_flashdata('error', 'Sorry! Immunotherpathy Order have an error.');
+			} */
 		}
 		$this->load->view("orders/treatment", $this->_data);
 	}
@@ -10561,14 +10505,6 @@ class Orders extends CI_Controller{
 		$this->db->where('id IN('.implode(",",$id).')');
 		$zoneData = $this->db->get()->row();
 		return !empty($zoneData->managed_by_email)?$zoneData->managed_by_email:'';
-	}
-
-	function getZoneFromEmail($id){
-		$this->db->select('managed_by_from_email');
-		$this->db->from('ci_managed_by_members');
-		$this->db->where('id IN('.implode(",",$id).')');
-		$zoneData = $this->db->get()->row();
-		return !empty($zoneData->managed_by_from_email)?$zoneData->managed_by_from_email:'';
 	}
 
 	function checkZones($id){
@@ -10582,24 +10518,12 @@ class Orders extends CI_Controller{
 			$userID = $ordrData->vet_user_id;
 		}
 
-		$this->db->select('managed_by_id,country');
+		$this->db->select('managed_by_id');
 		$this->db->from('ci_users');
 		$this->db->where('id', $userID);
 		$userData = $this->db->get()->row();
 		if($userData->managed_by_id != ''){
-			if(count(explode(",",$userData->managed_by_id)) > 1){
-				$this->db->select('managed_by_id');
-				$this->db->from('ci_staff_countries');
-				$this->db->where('id', $userData->country);
-				$cuntryData = $this->db->get()->row();
-				if($cuntryData->managed_by_id != ''){
-					return explode(",",$cuntryData->managed_by_id);
-				}else{
-					return '0';
-				}
-			}else{
-				return explode(",",$userData->managed_by_id);
-			}
+			return explode(",",$userData->managed_by_id);
 		}else{
 			return '0';
 		}
@@ -11026,50 +10950,29 @@ class Orders extends CI_Controller{
 
 	function interpretation($id = ''){
 		$data = $this->OrdersModel->getRecord($id);
-		$interpData = $this->OrdersModel->getOrderInterpretation($id);
 		$this->_data['order_details'] = $this->OrdersModel->allData($data['id'], "");
-		$this->_data['order_details']['interpretation'] = $interpData->interpretation;
-		$this->_data['order_details']['interpretation_food'] = $interpData->interpretation_food;
-		$this->_data['order_details']['vet_interpretation'] = $interpData->vet_interpretation;
 		$this->_data['raptorData'] = $this->OrdersModel->getRaptorData($data['order_number']);
 		$this->_data['id'] = $id;
-		$orderData = []; $interpretationData = [];
+		$orderData = [];
 		if (!empty($this->input->post())) {
 			$orderData['id'] = $id;
-			$interpretationData['order_id'] = $id;
 			if($this->user_role == '5' && $this->session->userdata('user_type') == '1' && $this->_data['order_details']['is_order_completed'] == 1){
 				$orderData['internal_practice_comment'] = $this->input->post('internal_practice_comment');
-				if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-					$interpretationData['vet_interpretation_'.$this->session->userdata('site_lang').''] = $this->input->post('vet_interpretation');
-				}else{
-					$interpretationData['vet_interpretation'] = $this->input->post('vet_interpretation');
-				}
+				$orderData['vet_interpretation'] = $this->input->post('vet_interpretation');
 			}else{
 				$orderData['internal_comment'] = $this->input->post('internal_comment');
-				if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-					$interpretationData['interpretation_'.$this->session->userdata('site_lang').''] = $this->input->post('interpretation');
-					$interpretationData['interpretation_food_'.$this->session->userdata('site_lang').''] = !empty($this->input->post('interpretation_food'))?$this->input->post('interpretation_food'):'';
-				}else{
-					$interpretationData['interpretation'] = $this->input->post('interpretation');
-					$interpretationData['interpretation_food'] = !empty($this->input->post('interpretation_food'))?$this->input->post('interpretation_food'):'';
-				}
+				$orderData['interpretation'] = $this->input->post('interpretation');
+				$orderData['interpretation_food'] = !empty($this->input->post('interpretation_food'))?$this->input->post('interpretation_food'):'';
 				$orderData['annotated_by'] = $this->input->post('annotated_by');
 			}
 			$orderData['updated_by'] = $this->user_id;
 			$orderData['updated_at'] = date("Y-m-d H:i:s");
 			$this->OrdersModel->add_edit($orderData);
-
-			$interpretationData['updated_by'] = $this->user_id;
-			$interpretationData['updated_at'] = date("Y-m-d H:i:s");
-			$this->OrdersModel->add_editinterpretation($interpretationData);
 			redirect('orders/interpretation/'.$id);
 		}
 		if (is_numeric($id) > 0) {
 			if (!empty($data)) {
 				$this->_data['data'] = $data;
-				$this->_data['data']['interpretation'] = $interpData->interpretation;
-				$this->_data['data']['interpretation_food'] = $interpData->interpretation_food;
-				$this->_data['data']['vet_interpretation'] = $interpData->vet_interpretation;
 			}
 		}
 		
@@ -11084,33 +10987,12 @@ class Orders extends CI_Controller{
 		}
 	}
 
-	function resetInterpretation($id = ''){
-		if($id > 0){
-			$interpretationData['order_id'] = $id;
-			if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-				$interpretationData['interpretation_'.$this->session->userdata('site_lang').''] = '';
-				$interpretationData['interpretation_food_'.$this->session->userdata('site_lang').''] = '';
-			}else{
-				$interpretationData['interpretation'] = '';
-				$interpretationData['interpretation_food'] = '';
-			}
-			$interpretationData['updated_by'] = $this->user_id;
-			$interpretationData['updated_at'] = date("Y-m-d H:i:s");
-			$this->OrdersModel->add_editinterpretation($interpretationData);
-		}
-		redirect('orders/interpretation/'.$id);
-	}
-
 	function downloadPaxResultENV($orderId){
 		ini_set('memory_limit', '256M');
 		if($orderId > 0){
 			$data = $this->OrdersModel->allData($orderId, "");
 			$order_details = $data;
 			$this->_data['order_details'] = $data;
-			$interpData = $this->OrdersModel->getOrderInterpretation($orderId);
-			$this->_data['order_details']['interpretation'] = $interpData->interpretation;
-			$this->_data['order_details']['interpretation_food'] = $interpData->interpretation_food;
-			$this->_data['order_details']['vet_interpretation'] = $interpData->vet_interpretation;
 			$raptorData = $this->OrdersModel->getRaptorData($data['order_number']);
 			$this->_data['raptorData'] = $raptorData;
 
@@ -11119,18 +11001,6 @@ class Orders extends CI_Controller{
 			}else{
 				$this->_data['serumTypes'] = 'NextLab';
 			}
-
-			if($data['pax_cutoff_version'] == 1){
-				$cutoffs = '30';
-				$this->_data['cutoffs'] = '30';
-			}else{
-				$cutoffs = '28';
-				$this->_data['cutoffs'] = '28';
-			}
-			$petOWFName = !empty($data['pet_owner_name'])?$data['pet_owner_name']:'';
-			$petOWLName = !empty($data['po_last'])?$data['po_last']:'';
-			$petownerName = $petOWFName.' '.$petOWLName;
-
 			$respnedn = $this->OrdersModel->getProductInfo($data['product_code_selection']);
 			if(preg_match('/\bScreening\b/', $respnedn->name)){
 				ob_end_flush();
@@ -11144,8 +11014,7 @@ class Orders extends CI_Controller{
 				$screening_header = $this->load->view('orders/raptor_screening_pdf', $this->_data, true);
 				$mpdf->SetHTMLFooter($raptor_footer_pdf);
 				$mpdf->WriteHTML($screening_header);
-				$pdfNameEnv = seo_friendly_url('PAX_Environmental_Screening_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
-				$file_name = $pdfNameEnv .".pdf";
+				$file_name = "PAX_Environmental_Screening_Serum_Test_Result_". $data['order_number'] .".pdf";
 			}else{
 				$this->_data['fulladdress'] = '';
 				if($data['vet_user_id']>0){
@@ -11157,29 +11026,14 @@ class Orders extends CI_Controller{
 					$city = !empty($refDatas['add_4']) ? $refDatas['add_4'] : '';
 					$postcode = !empty($refDatas['address_3']) ? $refDatas['address_3'] : '';
 					$this->_data['fulladdress'] = $add_1.$add_2.$add_3.$city.$postcode;
-					$this->_data['account_ref'] = !empty($refDatas['account_ref']) ? $refDatas['account_ref'] : '';
 				}
 				$this->_data['serumdata'] = $this->OrdersModel->getSerumTestRecord($orderId);
 				$this->_data['respnedn'] = $respnedn;
 				$this->_data['ordeType'] = $respnedn->name;
 				$this->_data['ordeTypeID'] = $respnedn->id;
 
-				/* get removed treatment 1 */
-				$removed_treatment_1 = array();
-				$removed_treatment_1 = $order_details['removed_treatment_1'];
-				if(!empty($removed_treatment_1)){
-					$removed_treatment_1 = json_decode($removed_treatment_1);
-				}
-
-				/* get removed treatment 2 */
-				$removed_treatment_2 = array();
-				$removed_treatment_2 = $order_details['removed_treatment_2'];
-				if(!empty($removed_treatment_2)){
-					$removed_treatment_2 = json_decode($removed_treatment_2);
-				}
-
 				if($respnedn->name == 'PAX Environmental'){
-					$getAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($data['allergens']);
+					$getAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($order_details['allergens']);
 					$totalGroup0 = count($getAllergenParent);
 					$totalGroup2 = $totalGroup0/2;
 					$partA = ((round)($totalGroup2));
@@ -11187,37 +11041,71 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = []; $block1 = []; $blocks1 = []; $allengesIDsArr = array();
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
+					$block1 = []; $allengesIDsArr = array(); $dummytext = "";
+					$subAllergnArr = $this->AllergensModel->getEnvAllergensByID($order_details['allergens']);
+					if(!empty($subAllergnArr)){
+						$allengesArr = []; $allenges3Arr = []; $allenges4Arr = [];
+						foreach ($subAllergnArr as $svalue){
 							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
 							if(!empty($subVlu->raptor_code)){
 								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
+									if($raptrVlu->result_value >= 30){
 										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID3Arr[] = $svalue['id'];
-											}
 											$block1[$svalue['id']] = $svalue['name'];
+											$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 										}else{
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID4Arr[] = $svalue['id'];
-											}
-											$blocks1[$svalue['id']] = $svalue['name'];
+											$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 										}
-										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-											$allengesIDArr[] = $svalue['id'];
-										}
-										$allengesIDsArr[] = $svalue['id'];
 										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										$allengesIDsArr[] = $svalue['id'];
 									}
 								}
 							}
 						}
+
+						if(count($allengesArr) > 1){
+							$lastchnk = end($allengesArr);
+							$lastchnkName = ', '.$lastchnk;
+							$lastchnkCng = ' and '.$lastchnk;
+							$allengesStr = implode(", ",$allengesArr);
+							$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
+						}else{
+							$allengeStr = implode(", ",$allengesArr);
+						}
+
+						if(count($allenges3Arr) > 1){
+							$last3chnk = end($allenges3Arr);
+							$lastchnk3Name = ', '.$last3chnk;
+							$lastchnk3Cng = ' and '.$last3chnk;
+							$allenges3Str = implode(", ",$allenges3Arr);
+							$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
+						}else{
+							$allenge3Str = implode(", ",$allenges3Arr);
+						}
+
+						if(count($allenges4Arr) > 1){
+							$last4chnk = end($allenges4Arr);
+							$lastchnk4Name = ', '.$last4chnk;
+							$lastchnk4Cng = ' and '.$last4chnk;
+							$allenges4Str = implode(", ",$allenges4Arr);
+							$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
+						}else{
+							$allenge4Str = implode(", ",$allenges4Arr);
+						}
+
+						$dummytext .= "This patient is sensitized to ". $allengeStr .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "If the corresponding clinical signs occur, allergen-specific immunotherapy is recommended for: ". $allenge3Str .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						if(!empty($allenges4Arr)){
+						$dummytext .= "Allergen-specific immunotherapy is currently not available for ". $allenge4Str ."; the treatment is symptomatic.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						}
+						$dummytext .= "Please find full interpretation and detailed results per allergen extract and component in the following pages.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "Based on these results we recommend the following immunotherapy composition(s):";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
 					}
 					if(array_key_exists("45994",$block1) && array_key_exists("73",$block1)){
 						unset($block1['45994']);
@@ -11225,28 +11113,18 @@ class Orders extends CI_Controller{
 						unset($block1['45994']);
 						$block1['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($data['treatment_1'] != "" && $data['treatment_1'] != "[]"){
+					if($order_details['treatment_1'] != "" && $order_details['treatment_1'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_1']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
 								$block1[$svalue['id']] = $svalue['name'];
-								if($svalue['name'] != "N/A"){
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID3Arr))){
-										$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}else{
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID4Arr))){
-										$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
 							}
 						}
 					}
-					//asort($block1);
+					asort($block1);
 					$this->_data['block1'] = $block1;
-					$this->_data['blocks1'] = $blocks1;
 
-					$block2 = []; $chk_alg_cunt = 0;
+					$block2 = [];
 					foreach($getAllergenParent as $apvalue){
 						$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
 						if(!empty($getGroupMixtures)){
@@ -11256,9 +11134,9 @@ class Orders extends CI_Controller{
 									$parentIdArr[] = $mvalue['id'];
 								}
 							}
-
 							if(!empty($parentIdArr)){
 								if(count($parentIdArr) > 1){
+									$emptyArr = [];
 									foreach($parentIdArr as $makey=>$mavalue){
 										$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
 										$testingArr = [];
@@ -11267,24 +11145,50 @@ class Orders extends CI_Controller{
 											if(!empty($rmcodes->raptor_code)){
 												$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
 												if(!empty($raptrmVlu)){
-													if(floor($raptrmVlu->result_value) >= $cutoffs){
+													if($raptrmVlu->result_value >= 30){
 														$testingArr[$mavalue] += 1;
 													}
 												}
 											}
 										}
 
-										if(count($allergenArr) >= 3){
-											$chk_alg_cunt = (count($allergenArr)-1);
-											if($testingArr[$mavalue] >= $chk_alg_cunt){
-												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
+										if($testingArr[$mavalue] >= 2){
+											if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+												$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
+											}
+											foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
+												$emptyArr[$apvalue['parent_id']][] = $emtrow;
+											}
+										}
+									}
+
+									if(!empty($emptyArr[$apvalue['parent_id']])){
+										$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown_empty($apvalue['parent_id'],$order_details['allergens'], $emptyArr[$apvalue['parent_id']]);
+										foreach($sub1Allergens as $s1value){
+											$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
+											if(!empty($sub1Vlu->raptor_code)){
+												$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr1Vlu)){
+													if($raptr1Vlu->result_value >= 30){
+														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
+															$block2[$s1value['id']] = $s1value['name'];
+														}
+													}
 												}
 											}
-										}else{
-											if($testingArr[$mavalue] >= 2){
-												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
+										}
+									}else{
+										$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+										foreach($sub2Allergens as $s2value){
+											$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+											if(!empty($sub2Vlu->raptor_code)){
+												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr2Vlu)){
+													if($raptr2Vlu->result_value >= 30){
+														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
+														$block2[$s2value['id']] = $s2value['name'];
+														}
+													}
 												}
 											}
 										}
@@ -11297,31 +11201,43 @@ class Orders extends CI_Controller{
 										if(!empty($rcodes->raptor_code)){
 											$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
 											if(!empty($raptrVlu)){
-												if(floor($raptrVlu->result_value) >= $cutoffs){
+												if($raptrVlu->result_value >= 30){
 													$tested++;
 												}
 											}
 										}
 									}
-									
-									if($apvalue['parent_id'] == 1){
-										if($tested >= 3){
-											if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-												$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+
+									if($tested >= 2){
+										if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
+										$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+										}
+										$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$order_details['allergens'], $getGroupMixtures[0]['mixture_allergens']);
+										foreach($sub1Allergens as $s1value){
+											$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
+											if(!empty($sub1Vlu->raptor_code)){
+												$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr1Vlu)){
+													if($raptr1Vlu->result_value >= 30){
+														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
+														$block2[$s1value['id']] = $s1value['name'];
+														}
+													}
+												}
 											}
 										}
 									}else{
-										if(count($allergensArr) >= 3){
-											$chk_alg_cunt = (count($allergensArr)-1);
-											if($tested >= $chk_alg_cunt){
-												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-												}
-											}
-										}else{
-											if($tested >= 2){
-												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+										$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+										foreach($sub2Allergens as $s2value){
+											$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+											if(!empty($sub2Vlu->raptor_code)){
+												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr2Vlu)){
+													if($raptr2Vlu->result_value >= 30){
+														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
+														$block2[$s2value['id']] = $s2value['name'];
+														}
+													}
 												}
 											}
 										}
@@ -11336,7 +11252,7 @@ class Orders extends CI_Controller{
 										if(!empty($raptr2Vlu)){
 											if($raptr2Vlu->result_value >= 30){
 												if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-													$block2[$s2value['id']] = $s2value['name'];
+												$block2[$s2value['id']] = $s2value['name'];
 												}
 											}
 										}
@@ -11352,7 +11268,7 @@ class Orders extends CI_Controller{
 									if(!empty($raptr3Vlu)){
 										if($raptr3Vlu->result_value >= 30){
 											if($s3value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s3value['id']) > 0){
-												$block2[$s3value['id']] = $s3value['name'];
+											$block2[$s3value['id']] = $s3value['name'];
 											}
 										}
 									}
@@ -11366,93 +11282,84 @@ class Orders extends CI_Controller{
 						unset($block2['45994']);
 						$block2['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($data['treatment_2'] != "" && $data['treatment_2'] != "[]"){
+					if($order_details['treatment_2'] != "" && $order_details['treatment_2'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_2']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
 								if($svalue['name'] != "N/A"){
-									$block2[$svalue['id']] = $svalue['name'];
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID3Arr))){
-										$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}else{
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID4Arr))){
-										$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
+								$block2[$svalue['id']] = $svalue['name'];
 								}
 							}
 						}
 					}
-					//asort($block2);
+					asort($block2);
 					$this->_data['block2'] = $block2;
 
-					if(count($allengesArr) > 1){
-						asort($allengesArr);
-						$lastchnk = end($allengesArr);
-						$lastchnkName = ', '.$lastchnk;
-						$lastchnkCng = ' '.$this->lang->line('recommendation_text_and').' '.$lastchnk;
-						$allengesStr = implode(", ",$allengesArr);
-						$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
-					}else{
-						$allengeStr = implode(", ",$allengesArr);
-					}
-
-					if(count($allenges3Arr) > 1){
-						asort($allenges3Arr);
-						$last3chnk = end($allenges3Arr);
-						$lastchnk3Name = ', '.$last3chnk;
-						$lastchnk3Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last3chnk;
-						$allenges3Str = implode(", ",$allenges3Arr);
-						$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
-					}else{
-						$allenge3Str = implode(", ",$allenges3Arr);
-					}
-
-					if(count($allenges4Arr) > 1){
-						asort($allenges4Arr);
-						$last4chnk = end($allenges4Arr);
-						$lastchnk4Name = ', '.$last4chnk;
-						$lastchnk4Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last4chnk;
-						$allenges4Str = implode(", ",$allenges4Arr);
-						$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
-					}else{
-						$allenge4Str = implode(", ",$allenges4Arr);
-					}
-
-					$dummytext = $this->lang->line('summery_text_1') . $allengeStr .".";
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					if(!empty($allenges3Arr)){
-					$dummytext .= $this->lang->line('summery_text_2') . $allenge3Str .".";
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					}
-					if(!empty($allenges4Arr)){
-					$dummytext .= $this->lang->line('summery_text_3') . $allenge4Str . $this->lang->line('summery_text_3a');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					}
-					$dummytext .= $this->lang->line('summery_text_4');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					$dummytext .= $this->lang->line('summery_text_5');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-
-					$sql = "SELECT result_value, name FROM `ci_raptor_result_allergens` WHERE result_id = '". $raptorData->result_id ."' AND (name LIKE 'CCD-HSA' OR name LIKE 'Hom s LF')";
-					$responce = $this->db->query($sql);
-					$ccd1Results = $responce->result();
-					$ccdresult1 = 0; $ccdresult2 = 0;
-					if(!empty($ccd1Results)){
-						foreach($ccd1Results as $cvalue){
-							if($cvalue->name == 'CCD-HSA'){
-								$ccdresult1 = $cvalue->result_value;
-							}
-							if($cvalue->name == 'Hom s LF'){
-								$ccdresult2 = $cvalue->result_value;
+					$allengesIDsArr = array(); $allengesArr = []; $dummytext = "";
+					$subAllergnArr = $this->AllergensModel->getEnvAllergensByID($data['allergens']);
+					if(!empty($subAllergnArr)){
+						$allengesArr = []; $allenges3Arr = []; $allenges4Arr = [];
+						foreach ($subAllergnArr as $svalue){
+							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+							if(!empty($subVlu->raptor_code)){
+								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+								if(!empty($raptrVlu)){
+									if($raptrVlu->result_value >= 30){
+										if($svalue['name'] != "N/A"){
+											$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										}else{
+											$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										}
+										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										$allengesIDsArr[] = $svalue['id'];
+									}
+								}
 							}
 						}
-					}
-					if(floor($ccdresult1) >= $cutoffs || floor($ccdresult2) >= $cutoffs){
-						$dummytext .= $this->lang->line('pax_ccd_text_'.$cutoffs.'');
+
+						if(count($allengesArr) > 1){
+							$lastchnk = end($allengesArr);
+							$lastchnkName = ', '.$lastchnk;
+							$lastchnkCng = ' and '.$lastchnk;
+							$allengesStr = implode(", ",$allengesArr);
+							$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
+						}else{
+							$allengeStr = implode(", ",$allengesArr);
+						}
+
+						if(count($allenges3Arr) > 1){
+							$last3chnk = end($allenges3Arr);
+							$lastchnk3Name = ', '.$last3chnk;
+							$lastchnk3Cng = ' and '.$last3chnk;
+							$allenges3Str = implode(", ",$allenges3Arr);
+							$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
+						}else{
+							$allenge3Str = implode(", ",$allenges3Arr);
+						}
+
+						if(count($allenges4Arr) > 1){
+							$last4chnk = end($allenges4Arr);
+							$lastchnk4Name = ', '.$last4chnk;
+							$lastchnk4Cng = ' and '.$last4chnk;
+							$allenges4Str = implode(", ",$allenges4Arr);
+							$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
+						}else{
+							$allenge4Str = implode(", ",$allenges4Arr);
+						}
+
+						$dummytext = "This patient is sensitized to ". $allengeStr .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "If the corresponding clinical signs occur, allergen-specific immunotherapy is recommended for: ". $allenge3Str .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						if(!empty($allenges4Arr)){
+						$dummytext .= "Allergen-specific immunotherapy is currently not available for ". $allenge4Str ."; the treatment is symptomatic.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						}
+						$dummytext .= "Please find full interpretation and detailed results per allergen extract and component in the following pages.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "Based on these results we recommend the following immunotherapy composition(s):";
 						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
 					}
-
 					$this->_data['allengesIDsArr'] = $allengesIDsArr;
 					$this->_data['allengesArr'] = $allengesArr;
 					$this->_data['dummytext'] = $dummytext;
@@ -11471,7 +11378,7 @@ class Orders extends CI_Controller{
 					$html_header = $this->load->view('pax_pdf/raptor_header_pdf', $this->_data, true);
 					$mpdf->WriteHTML($main_header_pdf);
 					$pageno_footer_pdf = $this->load->view('pax_pdf/raptor_footer', $this->_data, true);
-					if(empty($block1) && empty($blocks1)){
+					if(empty($block1)){
 						$negative_faq_pdf = $this->load->view('pax_pdf/raptor_negative_faq', $this->_data, true);
 						$mpdf->SetHTMLHeader($html_header);
 						$mpdf->AddPage('','','','','',0,0,22,22,5,5);
@@ -11479,7 +11386,7 @@ class Orders extends CI_Controller{
 						$mpdf->SetHTMLFooter($pageno_footer_pdf);
 						$mpdf->WriteHTML($negative_faq_pdf);
 					}
-					if(!empty($block1) || !empty($blocks1)){
+					if(!empty($block1)){
 						$summary_footer_pdf = $this->load->view('pax_pdf/raptor_summary_footer', $this->_data, true);
 						$summary_recommendation_pdf = $this->load->view('pax_pdf/raptor_summary_recommendation', $this->_data, true);
 						$mpdf->SetHTMLHeader($html_header);
@@ -11491,22 +11398,22 @@ class Orders extends CI_Controller{
 					$allergens_footer_pdf = $this->load->view('pax_pdf/raptor_allergens_footer_pdf', $this->_data, true);
 					$result_panel_pdf = $this->load->view('pax_pdf/raptor_result_panel', $this->_data, true);
 					$mpdf->SetHTMLHeader($allergen_header_pdf);
-					$mpdf->AddPage('','','','','',0,0,35,25,5,5);
+					$mpdf->AddPage('','','','','',0,0,35,30,5,5);
 					$mpdf->SetDisplayMode('fullpage');
 					$mpdf->SetHTMLFooter($allergens_footer_pdf);
 					$mpdf->WriteHTML($result_panel_pdf);
-					if(!empty($block1) || !empty($blocks1)){
+					if(!empty($block1)){
 						$interpretation_footer_pdf = $this->load->view('pax_pdf/raptor_footer_interpretation', $this->_data, true);
 						$interpretation_support_pdf = $this->load->view('pax_pdf/raptor_interpretation_support', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,22,30,5,5);
+						$mpdf->SetHTMLHeader($allergen_header_pdf);
+						$mpdf->AddPage('','','','','',0,0,35,35,5,5);
 						$mpdf->SetDisplayMode('fullpage');
 						$mpdf->SetHTMLFooter($interpretation_footer_pdf);
 						$mpdf->WriteHTML($interpretation_support_pdf);
 
 						$positive_faq_pdf = $this->load->view('pax_pdf/raptor_positive_faq', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,22,22,5,5);
+						$mpdf->SetHTMLHeader($allergen_header_pdf);
+						$mpdf->AddPage('','','','','',0,0,35,35,5,5);
 						$mpdf->SetDisplayMode('fullpage');
 						$mpdf->SetHTMLFooter($pageno_footer_pdf);
 						$mpdf->WriteHTML($positive_faq_pdf);
@@ -11520,37 +11427,71 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = []; $block1 = []; $blocks1 = []; $allengesIDsArr = array();
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
+					$block1 = []; $allengesIDsArr = array(); $dummytext = "";
+					$subAllergnArr = $this->AllergensModel->getEnvAllergensByID($order_details['allergens']);
+					if(!empty($subAllergnArr)){
+						$allengesArr = []; $allenges3Arr = []; $allenges4Arr = [];
+						foreach ($subAllergnArr as $svalue){
 							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
 							if(!empty($subVlu->raptor_code)){
 								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
+									if($raptrVlu->result_value >= 30){
 										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID3Arr[] = $svalue['id'];
-											}
 											$block1[$svalue['id']] = $svalue['name'];
+											$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 										}else{
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID4Arr[] = $svalue['id'];
-											}
-											$blocks1[$svalue['id']] = $svalue['name'];
+											$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 										}
-										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-											$allengesIDArr[] = $svalue['id'];
-										}
-										$allengesIDsArr[] = $svalue['id'];
 										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										$allengesIDsArr[] = $svalue['id'];
 									}
 								}
 							}
 						}
+
+						if(count($allengesArr) > 1){
+							$lastchnk = end($allengesArr);
+							$lastchnkName = ', '.$lastchnk;
+							$lastchnkCng = ' and '.$lastchnk;
+							$allengesStr = implode(", ",$allengesArr);
+							$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
+						}else{
+							$allengeStr = implode(", ",$allengesArr);
+						}
+
+						if(count($allenges3Arr) > 1){
+							$last3chnk = end($allenges3Arr);
+							$lastchnk3Name = ', '.$last3chnk;
+							$lastchnk3Cng = ' and '.$last3chnk;
+							$allenges3Str = implode(", ",$allenges3Arr);
+							$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
+						}else{
+							$allenge3Str = implode(", ",$allenges3Arr);
+						}
+
+						if(count($allenges4Arr) > 1){
+							$last4chnk = end($allenges4Arr);
+							$lastchnk4Name = ', '.$last4chnk;
+							$lastchnk4Cng = ' and '.$last4chnk;
+							$allenges4Str = implode(", ",$allenges4Arr);
+							$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
+						}else{
+							$allenge4Str = implode(", ",$allenges4Arr);
+						}
+
+						$dummytext .= "This patient is sensitized to ". $allengeStr .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "If the corresponding clinical signs occur, allergen-specific immunotherapy is recommended for: ". $allenge3Str .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						if(!empty($allenges4Arr)){
+						$dummytext .= "Allergen-specific immunotherapy is currently not available for ". $allenge4Str ."; the treatment is symptomatic.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						}
+						$dummytext .= "Please find full interpretation and detailed results per allergen extract and component in the following pages.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "Based on these results we recommend the following immunotherapy composition(s):";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
 					}
 					if(array_key_exists("45994",$block1) && array_key_exists("73",$block1)){
 						unset($block1['45994']);
@@ -11558,28 +11499,18 @@ class Orders extends CI_Controller{
 						unset($block1['45994']);
 						$block1['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($data['treatment_1'] != "" && $data['treatment_1'] != "[]"){
+					if($order_details['treatment_1'] != "" && $order_details['treatment_1'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_1']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
 								$block1[$svalue['id']] = $svalue['name'];
-								if($svalue['name'] != "N/A"){
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID3Arr))){
-										$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}else{
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID4Arr))){
-										$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
 							}
 						}
 					}
-					//asort($block1);
+					asort($block1);
 					$this->_data['block1'] = $block1;
-					$this->_data['blocks1'] = $blocks1;
 
-					$block2 = []; $chk_alg_cunt = 0;
+					$block2 = [];
 					foreach($getAllergenParent as $apvalue){
 						$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
 						if(!empty($getGroupMixtures)){
@@ -11589,9 +11520,9 @@ class Orders extends CI_Controller{
 									$parentIdArr[] = $mvalue['id'];
 								}
 							}
-
 							if(!empty($parentIdArr)){
 								if(count($parentIdArr) > 1){
+									$emptyArr = [];
 									foreach($parentIdArr as $makey=>$mavalue){
 										$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
 										$testingArr = [];
@@ -11600,24 +11531,50 @@ class Orders extends CI_Controller{
 											if(!empty($rmcodes->raptor_code)){
 												$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
 												if(!empty($raptrmVlu)){
-													if(floor($raptrmVlu->result_value) >= $cutoffs){
+													if($raptrmVlu->result_value >= 30){
 														$testingArr[$mavalue] += 1;
 													}
 												}
 											}
 										}
 
-										if(count($allergenArr) >= 3){
-											$chk_alg_cunt = (count($allergenArr)-1);
-											if($testingArr[$mavalue] >= $chk_alg_cunt){
-												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
+										if($testingArr[$mavalue] >= 2){
+											if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+												$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
+											}
+											foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
+												$emptyArr[$apvalue['parent_id']][] = $emtrow;
+											}
+										}
+									}
+
+									if(!empty($emptyArr[$apvalue['parent_id']])){
+										$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown_empty($apvalue['parent_id'],$order_details['allergens'], $emptyArr[$apvalue['parent_id']]);
+										foreach($sub1Allergens as $s1value){
+											$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
+											if(!empty($sub1Vlu->raptor_code)){
+												$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr1Vlu)){
+													if($raptr1Vlu->result_value >= 30){
+														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
+															$block2[$s1value['id']] = $s1value['name'];
+														}
+													}
 												}
 											}
-										}else{
-											if($testingArr[$mavalue] >= 2){
-												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
+										}
+									}else{
+										$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+										foreach($sub2Allergens as $s2value){
+											$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+											if(!empty($sub2Vlu->raptor_code)){
+												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr2Vlu)){
+													if($raptr2Vlu->result_value >= 30){
+														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
+														$block2[$s2value['id']] = $s2value['name'];
+														}
+													}
 												}
 											}
 										}
@@ -11630,31 +11587,43 @@ class Orders extends CI_Controller{
 										if(!empty($rcodes->raptor_code)){
 											$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
 											if(!empty($raptrVlu)){
-												if(floor($raptrVlu->result_value) >= $cutoffs){
+												if($raptrVlu->result_value >= 30){
 													$tested++;
 												}
 											}
 										}
 									}
-									
-									if($apvalue['parent_id'] == 1){
-										if($tested >= 3){
-											if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-												$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+
+									if($tested >= 2){
+										if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
+										$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+										}
+										$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$order_details['allergens'], $getGroupMixtures[0]['mixture_allergens']);
+										foreach($sub1Allergens as $s1value){
+											$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
+											if(!empty($sub1Vlu->raptor_code)){
+												$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr1Vlu)){
+													if($raptr1Vlu->result_value >= 30){
+														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
+														$block2[$s1value['id']] = $s1value['name'];
+														}
+													}
+												}
 											}
 										}
 									}else{
-										if(count($allergensArr) >= 3){
-											$chk_alg_cunt = (count($allergensArr)-1);
-											if($tested >= $chk_alg_cunt){
-												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-												}
-											}
-										}else{
-											if($tested >= 2){
-												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+										$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+										foreach($sub2Allergens as $s2value){
+											$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+											if(!empty($sub2Vlu->raptor_code)){
+												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr2Vlu)){
+													if($raptr2Vlu->result_value >= 30){
+														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
+														$block2[$s2value['id']] = $s2value['name'];
+														}
+													}
 												}
 											}
 										}
@@ -11669,7 +11638,7 @@ class Orders extends CI_Controller{
 										if(!empty($raptr2Vlu)){
 											if($raptr2Vlu->result_value >= 30){
 												if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-													$block2[$s2value['id']] = $s2value['name'];
+												$block2[$s2value['id']] = $s2value['name'];
 												}
 											}
 										}
@@ -11685,7 +11654,7 @@ class Orders extends CI_Controller{
 									if(!empty($raptr3Vlu)){
 										if($raptr3Vlu->result_value >= 30){
 											if($s3value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s3value['id']) > 0){
-												$block2[$s3value['id']] = $s3value['name'];
+											$block2[$s3value['id']] = $s3value['name'];
 											}
 										}
 									}
@@ -11699,93 +11668,84 @@ class Orders extends CI_Controller{
 						unset($block2['45994']);
 						$block2['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($data['treatment_2'] != "" && $data['treatment_2'] != "[]"){
+					if($order_details['treatment_2'] != "" && $order_details['treatment_2'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_2']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
 								if($svalue['name'] != "N/A"){
-									$block2[$svalue['id']] = $svalue['name'];
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID3Arr))){
-										$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}else{
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID4Arr))){
-										$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
+								$block2[$svalue['id']] = $svalue['name'];
 								}
 							}
 						}
 					}
-					//asort($block2);
+					asort($block2);
 					$this->_data['block2'] = $block2;
 
-					if(count($allengesArr) > 1){
-						asort($allengesArr);
-						$lastchnk = end($allengesArr);
-						$lastchnkName = ', '.$lastchnk;
-						$lastchnkCng = ' '.$this->lang->line('recommendation_text_and').' '.$lastchnk;
-						$allengesStr = implode(", ",$allengesArr);
-						$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
-					}else{
-						$allengeStr = implode(", ",$allengesArr);
-					}
-
-					if(count($allenges3Arr) > 1){
-						asort($allengesArr);
-						$last3chnk = end($allenges3Arr);
-						$lastchnk3Name = ', '.$last3chnk;
-						$lastchnk3Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last3chnk;
-						$allenges3Str = implode(", ",$allenges3Arr);
-						$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
-					}else{
-						$allenge3Str = implode(", ",$allenges3Arr);
-					}
-
-					if(count($allenges4Arr) > 1){
-						asort($allenges4Arr);
-						$last4chnk = end($allenges4Arr);
-						$lastchnk4Name = ', '.$last4chnk;
-						$lastchnk4Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last4chnk;
-						$allenges4Str = implode(", ",$allenges4Arr);
-						$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
-					}else{
-						$allenge4Str = implode(", ",$allenges4Arr);
-					}
-
-					$dummytext = $this->lang->line('summery_text_1') . $allengeStr .".";
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					if(!empty($allenges3Arr)){
-					$dummytext .= $this->lang->line('summery_text_2') . $allenge3Str .".";
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					}
-					if(!empty($allenges4Arr)){
-					$dummytext .= $this->lang->line('summery_text_3') . $allenge4Str . $this->lang->line('summery_text_3a');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					}
-					$dummytext .= $this->lang->line('summery_text_4');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					$dummytext .= $this->lang->line('summery_text_5');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-
-					$sql = "SELECT result_value, name FROM `ci_raptor_result_allergens` WHERE result_id = '". $raptorData->result_id ."' AND (name LIKE 'CCD-HSA' OR name LIKE 'Hom s LF')";
-					$responce = $this->db->query($sql);
-					$ccd1Results = $responce->result();
-					$ccdresult1 = 0; $ccdresult2 = 0;
-					if(!empty($ccd1Results)){
-						foreach($ccd1Results as $cvalue){
-							if($cvalue->name == 'CCD-HSA'){
-								$ccdresult1 = $cvalue->result_value;
-							}
-							if($cvalue->name == 'Hom s LF'){
-								$ccdresult2 = $cvalue->result_value;
+					$allengesIDsArr = array(); $allengesArr = []; $dummytext = "";
+					$subAllergnArr = $this->AllergensModel->getEnvAllergensByID($data['allergens']);
+					if(!empty($subAllergnArr)){
+						$allengesArr = []; $allenges3Arr = []; $allenges4Arr = [];
+						foreach ($subAllergnArr as $svalue){
+							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+							if(!empty($subVlu->raptor_code)){
+								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+								if(!empty($raptrVlu)){
+									if($raptrVlu->result_value >= 30){
+										if($svalue['name'] != "N/A"){
+											$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										}else{
+											$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										}
+										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										$allengesIDsArr[] = $svalue['id'];
+									}
+								}
 							}
 						}
-					}
-					if(floor($ccdresult1) >= $cutoffs || floor($ccdresult2) >= $cutoffs){
-						$dummytext .= $this->lang->line('pax_ccd_text_'.$cutoffs.'');
+
+						if(count($allengesArr) > 1){
+							$lastchnk = end($allengesArr);
+							$lastchnkName = ', '.$lastchnk;
+							$lastchnkCng = ' and '.$lastchnk;
+							$allengesStr = implode(", ",$allengesArr);
+							$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
+						}else{
+							$allengeStr = implode(", ",$allengesArr);
+						}
+
+						if(count($allenges3Arr) > 1){
+							$last3chnk = end($allenges3Arr);
+							$lastchnk3Name = ', '.$last3chnk;
+							$lastchnk3Cng = ' and '.$last3chnk;
+							$allenges3Str = implode(", ",$allenges3Arr);
+							$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
+						}else{
+							$allenge3Str = implode(", ",$allenges3Arr);
+						}
+
+						if(count($allenges4Arr) > 1){
+							$last4chnk = end($allenges4Arr);
+							$lastchnk4Name = ', '.$last4chnk;
+							$lastchnk4Cng = ' and '.$last4chnk;
+							$allenges4Str = implode(", ",$allenges4Arr);
+							$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
+						}else{
+							$allenge4Str = implode(", ",$allenges4Arr);
+						}
+
+						$dummytext = "This patient is sensitized to ". $allengeStr .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "If the corresponding clinical signs occur, allergen-specific immunotherapy is recommended for: ". $allenge3Str .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						if(!empty($allenges4Arr)){
+						$dummytext .= "Allergen-specific immunotherapy is currently not available for ". $allenge4Str ."; the treatment is symptomatic.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						}
+						$dummytext .= "Please find full interpretation and detailed results per allergen extract and component in the following pages.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "Based on these results we recommend the following immunotherapy composition(s):";
 						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
 					}
-
 					$this->_data['allengesIDsArr'] = $allengesIDsArr;
 					$this->_data['allengesArr'] = $allengesArr;
 					$this->_data['dummytext'] = $dummytext;
@@ -11804,7 +11764,7 @@ class Orders extends CI_Controller{
 					$env_html_header = $this->load->view('pax_pdf/raptor_header_pdf', $this->_data, true);
 					$mpdf->WriteHTML($env_main_header_pdf);
 					$env_pageno_footer_pdf = $this->load->view('pax_pdf/raptor_footer', $this->_data, true);
-					if(empty($block1) && empty($blocks1)){
+					if(empty($block1)){
 						$env_negative_faq_pdf = $this->load->view('pax_pdf/raptor_negative_faq', $this->_data, true);
 						$mpdf->SetHTMLHeader($env_html_header);
 						$mpdf->AddPage('','','','','',0,0,22,22,5,5);
@@ -11812,7 +11772,7 @@ class Orders extends CI_Controller{
 						$mpdf->SetHTMLFooter($env_pageno_footer_pdf);
 						$mpdf->WriteHTML($env_negative_faq_pdf);
 					}
-					if(!empty($block1) || !empty($blocks1)){
+					if(!empty($block1)){
 						$env_summary_footer_pdf = $this->load->view('pax_pdf/raptor_summary_footer', $this->_data, true);
 						$env_summary_recommendation_pdf = $this->load->view('pax_pdf/raptor_summary_recommendation', $this->_data, true);
 						$mpdf->SetHTMLHeader($env_html_header);
@@ -11824,29 +11784,28 @@ class Orders extends CI_Controller{
 					$env_allergens_footer_pdf = $this->load->view('pax_pdf/raptor_allergens_footer_pdf', $this->_data, true);
 					$env_result_panel_pdf = $this->load->view('pax_pdf/raptor_result_panel', $this->_data, true);
 					$mpdf->SetHTMLHeader($env_allergen_header_pdf);
-					$mpdf->AddPage('','','','','',0,0,35,25,5,5);
+					$mpdf->AddPage('','','','','',0,0,35,30,5,5);
 					$mpdf->SetDisplayMode('fullpage');
 					$mpdf->SetHTMLFooter($env_allergens_footer_pdf);
 					$mpdf->WriteHTML($env_result_panel_pdf);
-					if(!empty($block1) || !empty($blocks1)){
+					if(!empty($block1)){
 						$env_interpretation_footer_pdf = $this->load->view('pax_pdf/raptor_footer_interpretation', $this->_data, true);
 						$env_interpretation_support_pdf = $this->load->view('pax_pdf/raptor_interpretation_support', $this->_data, true);
-						$mpdf->SetHTMLHeader($env_html_header);
-						$mpdf->AddPage('','','','','',0,0,22,30,5,5);
+						$mpdf->SetHTMLHeader($env_allergen_header_pdf);
+						$mpdf->AddPage('','','','','',0,0,35,35,5,5);
 						$mpdf->SetDisplayMode('fullpage');
 						$mpdf->SetHTMLFooter($env_interpretation_footer_pdf);
 						$mpdf->WriteHTML($env_interpretation_support_pdf);
 
 						$env_positive_faq_pdf = $this->load->view('pax_pdf/raptor_positive_faq', $this->_data, true);
-						$mpdf->SetHTMLHeader($env_html_header);
-						$mpdf->AddPage('','','','','',0,0,22,22,5,5);
+						$mpdf->SetHTMLHeader($env_allergen_header_pdf);
+						$mpdf->AddPage('','','','','',0,0,35,35,5,5);
 						$mpdf->SetDisplayMode('fullpage');
 						$mpdf->SetHTMLFooter($env_pageno_footer_pdf);
 						$mpdf->WriteHTML($env_positive_faq_pdf);
 					}
 				}
-				$pdfNameEnv = seo_friendly_url('PAX_Environmental_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
-				$file_name = $pdfNameEnv .".pdf";
+				$file_name = "PAX_Environmental_Serum_Test_Result_". $data['order_number'] .".pdf";
 			}
 			$mpdf->Output($file_name,'D');
 		}
@@ -11858,10 +11817,6 @@ class Orders extends CI_Controller{
 			$data = $this->OrdersModel->allData($orderId, "");
 			$order_details = $data;
 			$this->_data['order_details'] = $data;
-			$interpData = $this->OrdersModel->getOrderInterpretation($orderId);
-			$this->_data['order_details']['interpretation'] = $interpData->interpretation;
-			$this->_data['order_details']['interpretation_food'] = $interpData->interpretation_food;
-			$this->_data['order_details']['vet_interpretation'] = $interpData->vet_interpretation;
 			$raptorData = $this->OrdersModel->getRaptorData($data['order_number']);
 			$this->_data['raptorData'] = $raptorData;
 
@@ -11870,16 +11825,7 @@ class Orders extends CI_Controller{
 			}else{
 				$this->_data['serumTypes'] = 'NextLab';
 			}
-			if($data['pax_cutoff_version'] == 1){
-				$cutoffs = '30';
-				$this->_data['cutoffs'] = '30';
-			}else{
-				$cutoffs = '28';
-				$this->_data['cutoffs'] = '28';
-			}
-			$petOWFName = !empty($data['pet_owner_name'])?$data['pet_owner_name']:'';
-			$petOWLName = !empty($data['po_last'])?$data['po_last']:'';
-			$petownerName = $petOWFName.' '.$petOWLName;
+			$file_name_food = FCPATH . SERUM_REQUEST_PDF_PATH . "serum_result_food_". $data['order_number'] .".pdf";
 
 			$respnedn = $this->OrdersModel->getProductInfo($data['product_code_selection']);
 			if(preg_match('/\bScreening\b/', $respnedn->name)){
@@ -11894,8 +11840,7 @@ class Orders extends CI_Controller{
 				$screening_header_food = $this->load->view('orders/raptor_screening_pdf_food', $this->_data, true);
 				$mpdf->SetHTMLFooter($raptor_footer_pdf_food);
 				$mpdf->WriteHTML($screening_header_food);
-				$pdfNameFood = seo_friendly_url('PAX_Food_Screening_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
-				$file_name = $pdfNameFood .".pdf";
+				$file_name = "PAX_Food_Screening_Serum_Test_Result_". $data['order_number'] .".pdf";
 			}else{
 				$this->_data['fulladdress'] = '';
 				if($data['vet_user_id']>0){
@@ -11907,7 +11852,6 @@ class Orders extends CI_Controller{
 					$city = !empty($refDatas['add_4']) ? $refDatas['add_4'] : '';
 					$postcode = !empty($refDatas['address_3']) ? $refDatas['address_3'] : '';
 					$this->_data['fulladdress'] = $add_1.$add_2.$add_3.$city.$postcode;
-					$this->_data['account_ref'] = !empty($refDatas['account_ref']) ? $refDatas['account_ref'] : '';
 				}
 				$this->_data['serumdata'] = $this->OrdersModel->getSerumTestRecord($orderId);
 				$this->_data['respnedn'] = $respnedn;
@@ -11915,7 +11859,7 @@ class Orders extends CI_Controller{
 				$this->_data['ordeTypeID'] = $respnedn->id;
 
 				if($respnedn->name == 'PAX Food'){
-					$getAllergenParent = $this->AllergensModel->getFoodAllergenParentbyName($data['allergens']);
+					$getAllergenParent = $this->AllergensModel->getFoodAllergenParentbyName($order_details['allergens']);
 					$totalGroup0 = count($getAllergenParent);
 					$totalGroup2 = $totalGroup0/2;
 					$partA = ((round)($totalGroup2));
@@ -11923,15 +11867,16 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$allengesFArr = []; $allengesF3Arr = []; $allengesF4Arr = []; $dummyFtext = ""; $allengesIDFArr = array(); $foodtotal = 0;
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
+					$allengesIDFArr = array(); $allengesFArr = []; $dummyFtext = ""; $foodtotal = 0;
+					$subAllergnFArr = $this->AllergensModel->getFoodAllergensByID($order_details['allergens']);
+					if(!empty($subAllergnFArr)){
+						$allengesFArr = []; $allengesF3Arr = []; $allengesF4Arr = []; $foodtotal = 0;
+						foreach ($subAllergnFArr as $svalue){
 							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
 							if(!empty($subVlu->raptor_code)){
 								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
+									if($raptrVlu->result_value >= 30){
 										if($svalue['name'] != "N/A"){
 											$allengesF3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 										}else{
@@ -11944,44 +11889,41 @@ class Orders extends CI_Controller{
 								}
 							}
 						}
-					}
 
-					if(count($allengesFArr) > 1){
-						asort($allengesFArr);
-						$lastchnk = end($allengesFArr);
-						$lastchnkName = ', '.$lastchnk;
-						$lastchnkCng = ' '.$this->lang->line('recommendation_text_and').' '.$lastchnk;
-						$allengesStr = implode(", ",$allengesFArr);
-						$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
-					}else{
-						$allengeStr = implode(", ",$allengesFArr);
-					}
+						if(count($allengesFArr) > 1){
+							$lastchnk = end($allengesFArr);
+							$lastchnkName = ', '.$lastchnk;
+							$lastchnkCng = ' and '.$lastchnk;
+							$allengesStr = implode(", ",$allengesFArr);
+							$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
+						}else{
+							$allengeStr = implode(", ",$allengesFArr);
+						}
 
-					if(count($allengesF3Arr) > 1){
-						asort($allengesF3Arr);
-						$last3chnk = end($allengesF3Arr);
-						$lastchnk3Name = ', '.$last3chnk;
-						$lastchnk3Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last3chnk;
-						$allenges3Str = implode(", ",$allengesF3Arr);
-						$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
-					}else{
-						$allenge3Str = implode(", ",$allengesF3Arr);
-					}
+						if(count($allengesF3Arr) > 1){
+							$last3chnk = end($allengesF3Arr);
+							$lastchnk3Name = ', '.$last3chnk;
+							$lastchnk3Cng = ' and '.$last3chnk;
+							$allenges3Str = implode(", ",$allengesF3Arr);
+							$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
+						}else{
+							$allenge3Str = implode(", ",$allengesF3Arr);
+						}
 
-					if(count($allengesF4Arr) > 1){
-						asort($allengesF4Arr);
-						$last4chnk = end($allengesF4Arr);
-						$lastchnk4Name = ', '.$last4chnk;
-						$lastchnk4Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last4chnk;
-						$allenges4Str = implode(", ",$allengesF4Arr);
-						$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
-					}else{
-						$allenge4Str = implode(", ",$allengesF4Arr);
-					}
+						if(count($allengesF4Arr) > 1){
+							$last4chnk = end($allengesF4Arr);
+							$lastchnk4Name = ', '.$last4chnk;
+							$lastchnk4Cng = ' and '.$last4chnk;
+							$allenges4Str = implode(", ",$allengesF4Arr);
+							$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
+						}else{
+							$allenge4Str = implode(", ",$allengesF4Arr);
+						}
 
-					$dummyFtext .= "<p>". $this->lang->line('summery_text_1') . $allengeStr .".</p>";
-					$dummyFtext .= "<p>". $this->lang->line('summery_food_text_2') . $allengeStr . $this->lang->line('summery_food_text_2a') ."</p>";
-					$dummyFtext .= "<p>".$this->lang->line('summery_food_text_3')."</p>";
+						$dummyFtext .= "<p>This patient is sensitised to ". $allengeStr .".</p>";
+						$dummyFtext .= "<p>The sensitization to ". $allengeStr .", should be taken into consideration when prioritising ingredients for elimination trials and food challenges.</p>";
+						$dummyFtext .= "<p>Please find detailed results per allergen extract and component, detailed interpretation and diet selection chart in the following pages.</p>";
+					}
 					$this->_data['foodtotal'] = $foodtotal;
 					$this->_data['allengesIDsArr'] = $allengesIDFArr;
 					$this->_data['allengesArr'] = $allengesFArr;
@@ -12023,39 +11965,24 @@ class Orders extends CI_Controller{
 					$allergens_footer_pdf = $this->load->view('pax_pdf/raptor_allergens_footer_pdf', $this->_data, true);
 					$result_panel_pdf = $this->load->view('pax_pdf/raptor_result_panel_food', $this->_data, true);
 					$mpdf->SetHTMLHeader($allergen_header_pdf);
-					$mpdf->AddPage('','','','','',0,0,35,27,5,5);
+					$mpdf->AddPage('','','','','',0,0,35,30,5,5);
 					$mpdf->SetDisplayMode('fullpage');
 					$mpdf->SetHTMLFooter($allergens_footer_pdf);
 					$mpdf->WriteHTML($result_panel_pdf);
 					if($foodtotal > 0){
 						$interpretation_footer_pdf = $this->load->view('pax_pdf/raptor_footer_interpretation', $this->_data, true);
 						$interpretation_support_pdf = $this->load->view('pax_pdf/raptor_interpretation_support', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,22,35,5,5);
+						$mpdf->SetHTMLHeader($allergen_header_pdf);
+						$mpdf->AddPage('','','','','',0,0,35,35,5,5);
 						$mpdf->SetDisplayMode('fullpage');
 						$mpdf->SetHTMLFooter($interpretation_footer_pdf);
 						$mpdf->WriteHTML($interpretation_support_pdf);
 
-						$diet_chart_footer_pdf = $this->load->view('pax_pdf/raptor_diet_chart_footer', $this->_data, true);
-						if($this->session->userdata('export_site_lang') == 'export_spanish'){ 
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_spanish', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							$mpdf->AddPage('','','','','',0,0,40,20,5,5);
-						}elseif($this->session->userdata('export_site_lang') == 'export_dutch'){
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_dutch', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							$mpdf->AddPage('','','','','',0,0,33,20,5,5);
-						}else{ 
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_'.$this->session->userdata('site_lang').'', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							if($this->session->userdata('site_lang') == 'spanish'){
-								$mpdf->AddPage('','','','','',0,0,37,20,5,5);
-							}else{
-								$mpdf->AddPage('','','','','',0,0,33,20,5,5);
-							}
-						}
+						$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart', $this->_data, true);
+						$mpdf->SetHTMLHeader($diet_chart_header);
+						$mpdf->AddPage('','','','','',0,0,33,20,5,5);
 						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($diet_chart_footer_pdf);
+						$mpdf->SetHTMLFooter($pageno_footer_pdf);
 						$mpdf->WriteHTML($diet_chart_pdf);
 					}
 				}elseif($respnedn->name == 'PAX Environmental + Food'){
@@ -12068,81 +11995,63 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$allengesIDFArr = array(); $foodtotal = 0;
-					$subAllergnFArr = $this->AllergensModel->getFoodAllergensByID($data['allergens']);
+					$allengesIDFArr = array(); $allengesFArr = []; $dummyFtext = ""; $foodtotal = 0;
+					$subAllergnFArr = $this->AllergensModel->getFoodAllergensByID($order_details['allergens']);
 					if(!empty($subAllergnFArr)){
-						$foodtotal = 0;
+						$allengesFArr = []; $allengesF3Arr = []; $allengesF4Arr = []; $foodtotal = 0;
 						foreach ($subAllergnFArr as $svalue){
 							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
 							if(!empty($subVlu->raptor_code)){
 								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
-										$allengesIDFArr[] = $svalue['id'];
-										$foodtotal++;
-									}
-								}
-							}
-						}
-					}
-
-					$allengesFArr = []; $allengesF3Arr = []; $allengesF4Arr = []; $dummyFtext = "";
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
-							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-							if(!empty($subVlu->raptor_code)){
-								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
+									if($raptrVlu->result_value >= 30){
 										if($svalue['name'] != "N/A"){
 											$allengesF3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 										}else{
 											$allengesF4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 										}
 										$allengesFArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										$allengesIDFArr[] = $svalue['id'];
+										$foodtotal++;
 									}
 								}
 							}
 						}
-					}
 
-					if(count($allengesFArr) > 1){
-						asort($allengesFArr);
-						$lastchnk = end($allengesFArr);
-						$lastchnkName = ', '.$lastchnk;
-						$lastchnkCng = ' '.$this->lang->line('recommendation_text_and').' '.$lastchnk;
-						$allengesStr = implode(", ",$allengesFArr);
-						$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
-					}else{
-						$allengeStr = implode(", ",$allengesFArr);
-					}
+						if(count($allengesFArr) > 1){
+							$lastchnk = end($allengesFArr);
+							$lastchnkName = ', '.$lastchnk;
+							$lastchnkCng = ' and '.$lastchnk;
+							$allengesStr = implode(", ",$allengesFArr);
+							$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
+						}else{
+							$allengeStr = implode(", ",$allengesFArr);
+						}
 
-					if(count($allengesF3Arr) > 1){
-						asort($allengesF3Arr);
-						$last3chnk = end($allengesF3Arr);
-						$lastchnk3Name = ', '.$last3chnk;
-						$lastchnk3Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last3chnk;
-						$allenges3Str = implode(", ",$allengesF3Arr);
-						$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
-					}else{
-						$allenge3Str = implode(", ",$allengesF3Arr);
-					}
+						if(count($allengesF3Arr) > 1){
+							$last3chnk = end($allengesF3Arr);
+							$lastchnk3Name = ', '.$last3chnk;
+							$lastchnk3Cng = ' and '.$last3chnk;
+							$allenges3Str = implode(", ",$allengesF3Arr);
+							$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
+						}else{
+							$allenge3Str = implode(", ",$allengesF3Arr);
+						}
 
-					if(count($allengesF4Arr) > 1){
-						asort($allengesF4Arr);
-						$last4chnk = end($allengesF4Arr);
-						$lastchnk4Name = ', '.$last4chnk;
-						$lastchnk4Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last4chnk;
-						$allenges4Str = implode(", ",$allengesF4Arr);
-						$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
-					}else{
-						$allenge4Str = implode(", ",$allengesF4Arr);
-					}
+						if(count($allengesF4Arr) > 1){
+							$last4chnk = end($allengesF4Arr);
+							$lastchnk4Name = ', '.$last4chnk;
+							$lastchnk4Cng = ' and '.$last4chnk;
+							$allenges4Str = implode(", ",$allengesF4Arr);
+							$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
+						}else{
+							$allenge4Str = implode(", ",$allengesF4Arr);
+						}
 
-					$dummyFtext .= "<p>". $this->lang->line('summery_text_1') . $allengeStr .".</p>";
-					$dummyFtext .= "<p>". $this->lang->line('summery_food_text_2') . $allengeStr . $this->lang->line('summery_food_text_2a') ."</p>";
-					$dummyFtext .= "<p>".$this->lang->line('summery_food_text_3')."</p>";
+						$dummyFtext .= "<p>This patient is sensitised to ". $allengeStr .".</p>";
+						$dummyFtext .= "<p>The sensitization to ". $allengeStr .", should be taken into consideration when prioritising ingredients for elimination trials and food challenges.</p>";
+						$dummyFtext .= "<p>Please find detailed results per allergen extract and component, detailed interpretation and diet selection chart in the following pages.</p>";
+					}
 					$this->_data['foodtotal'] = $foodtotal;
 					$this->_data['allengesIDsArr'] = $allengesIDFArr;
 					$this->_data['allengesArr'] = $allengesFArr;
@@ -12184,44 +12093,28 @@ class Orders extends CI_Controller{
 					$allergens_footer_pdf = $this->load->view('pax_pdf/raptor_allergens_footer_pdf', $this->_data, true);
 					$result_panel_pdf = $this->load->view('pax_pdf/raptor_result_panel_food', $this->_data, true);
 					$mpdf->SetHTMLHeader($allergen_header_pdf);
-					$mpdf->AddPage('','','','','',0,0,35,27,5,5);
+					$mpdf->AddPage('','','','','',0,0,35,30,5,5);
 					$mpdf->SetDisplayMode('fullpage');
 					$mpdf->SetHTMLFooter($allergens_footer_pdf);
 					$mpdf->WriteHTML($result_panel_pdf);
 					if($foodtotal > 0){
 						$interpretation_footer_pdf = $this->load->view('pax_pdf/raptor_footer_interpretation', $this->_data, true);
 						$interpretation_support_pdf = $this->load->view('pax_pdf/raptor_interpretation_support', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,22,35,5,5);
+						$mpdf->SetHTMLHeader($allergen_header_pdf);
+						$mpdf->AddPage('','','','','',0,0,35,35,5,5);
 						$mpdf->SetDisplayMode('fullpage');
 						$mpdf->SetHTMLFooter($interpretation_footer_pdf);
 						$mpdf->WriteHTML($interpretation_support_pdf);
 
-						$diet_chart_footer_pdf = $this->load->view('pax_pdf/raptor_diet_chart_footer', $this->_data, true);
-						if($this->session->userdata('export_site_lang') == 'export_spanish'){ 
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_spanish', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							$mpdf->AddPage('','','','','',0,0,40,20,5,5);
-						}elseif($this->session->userdata('export_site_lang') == 'export_dutch'){
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_dutch', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							$mpdf->AddPage('','','','','',0,0,33,20,5,5);
-						}else{ 
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_'.$this->session->userdata('site_lang').'', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							if($this->session->userdata('site_lang') == 'spanish'){
-								$mpdf->AddPage('','','','','',0,0,37,20,5,5);
-							}else{
-								$mpdf->AddPage('','','','','',0,0,33,20,5,5);
-							}
-						}
+						$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart', $this->_data, true);
+						$mpdf->SetHTMLHeader($diet_chart_header);
+						$mpdf->AddPage('','','','','',0,0,33,20,5,5);
 						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($diet_chart_footer_pdf);
+						$mpdf->SetHTMLFooter($pageno_footer_pdf);
 						$mpdf->WriteHTML($diet_chart_pdf);
 					}
 				}
-				$pdfNameFood = seo_friendly_url('PAX_Food_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
-				$file_name = $pdfNameFood .".pdf";
+				$file_name = "PAX_Food_Serum_Test_Result_". $data['order_number'] .".pdf";
 			}
 			$mpdf->Output($file_name,'D');
 		}
@@ -12233,10 +12126,6 @@ class Orders extends CI_Controller{
 			$data = $this->OrdersModel->allData($orderId, "");
 			$order_details = $data;
 			$this->_data['order_details'] = $data;
-			$interpData = $this->OrdersModel->getOrderInterpretation($orderId);
-			$this->_data['order_details']['interpretation'] = $interpData->interpretation;
-			$this->_data['order_details']['interpretation_food'] = $interpData->interpretation_food;
-			$this->_data['order_details']['vet_interpretation'] = $interpData->vet_interpretation;
 			$raptorData = $this->OrdersModel->getRaptorData($data['order_number']);
 			$this->_data['raptorData'] = $raptorData;
 
@@ -12245,24 +12134,14 @@ class Orders extends CI_Controller{
 			}else{
 				$this->_data['serumTypes'] = 'NextLab';
 			}
-			if($data['pax_cutoff_version'] == 1){
-				$cutoffs = '30';
-				$this->_data['cutoffs'] = '30';
-			}else{
-				$cutoffs = '28';
-				$this->_data['cutoffs'] = '28';
-			}
-			$petOWFName = !empty($data['pet_owner_name'])?$data['pet_owner_name']:'';
-			$petOWLName = !empty($data['po_last'])?$data['po_last']:'';
-			$petownerName = $petOWFName.' '.$petOWLName;
+			$emailBody = $this->load->view('orders/send_serum_mail_template', $this->_data, true);
+			$emailBody = trim($emailBody);
+
+			$file_name = FCPATH . SERUM_REQUEST_PDF_PATH . "serum_result_". $data['order_number'] .".pdf";
+			$file_name_food = FCPATH . SERUM_REQUEST_PDF_PATH . "serum_result_food_". $data['order_number'] .".pdf";
+
 			$respnedn = $this->OrdersModel->getProductInfo($data['product_code_selection']);
 			if(preg_match('/\bScreening\b/', $respnedn->name)){
-				$pdfNameEnv = seo_friendly_url('PAX_Environmental_Screening_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
-				$pdfNameFood = seo_friendly_url('PAX_Food_Screening_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
-				$file_name = FCPATH . SERUM_REQUEST_PDF_PATH . $pdfNameEnv .".pdf";
-				$atcfileName = SERUM_REQUEST_PDF_PATH . $pdfNameEnv .".pdf";
-				$file_name_food = FCPATH . SERUM_REQUEST_PDF_PATH . $pdfNameFood .".pdf";
-				$atcfileFoodName = SERUM_REQUEST_PDF_PATH . $pdfNameFood .".pdf";
 				if((preg_match('/\bPAX Environmental\b/', $respnedn->name)) && (preg_match('/\bFood Screening\b/', $respnedn->name))){
 					ob_end_flush();
 					require_once(FCPATH.'vendor_pdf/autoload.php');
@@ -12308,13 +12187,6 @@ class Orders extends CI_Controller{
 					$mpdf->Output($file_name,'F');
 				}
 			}else{
-				$pdfNameEnv = seo_friendly_url('PAX_Environmental_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
-				$pdfNameFood = seo_friendly_url('PAX_Food_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
-				$file_name = FCPATH . SERUM_REQUEST_PDF_PATH . $pdfNameEnv .".pdf";
-				$atcfileName = SERUM_REQUEST_PDF_PATH . $pdfNameEnv .".pdf";
-				$file_name_food = FCPATH . SERUM_REQUEST_PDF_PATH . $pdfNameFood .".pdf";
-				$atcfileFoodName = SERUM_REQUEST_PDF_PATH . $pdfNameFood .".pdf";
-
 				$this->_data['fulladdress'] = '';
 				if($data['vet_user_id']>0){
 					$refDatas = $this->UsersDetailsModel->getColumnAllArray($data['vet_user_id']);
@@ -12325,26 +12197,11 @@ class Orders extends CI_Controller{
 					$city = !empty($refDatas['add_4']) ? $refDatas['add_4'] : '';
 					$postcode = !empty($refDatas['address_3']) ? $refDatas['address_3'] : '';
 					$this->_data['fulladdress'] = $add_1.$add_2.$add_3.$city.$postcode;
-					$this->_data['account_ref'] = !empty($refDatas['account_ref']) ? $refDatas['account_ref'] : '';
 				}
 				$this->_data['serumdata'] = $this->OrdersModel->getSerumTestRecord($orderId);
 				$this->_data['respnedn'] = $respnedn;
 				$this->_data['ordeType'] = $respnedn->name;
 				$this->_data['ordeTypeID'] = $respnedn->id;
-
-				/* get removed treatment 1 */
-				$removed_treatment_1 = array();
-				$removed_treatment_1 = $order_details['removed_treatment_1'];
-				if(!empty($removed_treatment_1)){
-					$removed_treatment_1 = json_decode($removed_treatment_1);
-				}
-
-				/* get removed treatment 2 */
-				$removed_treatment_2 = array();
-				$removed_treatment_2 = $order_details['removed_treatment_2'];
-				if(!empty($removed_treatment_2)){
-					$removed_treatment_2 = json_decode($removed_treatment_2);
-				}
 
 				if($respnedn->name == 'PAX Environmental'){
 					$getAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($order_details['allergens']);
@@ -12355,37 +12212,71 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = []; $block1 = []; $blocks1 = []; $allengesIDsArr = array();
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
+					$block1 = []; $allengesIDsArr = array(); $dummytext = "";
+					$subAllergnArr = $this->AllergensModel->getEnvAllergensByID($order_details['allergens']);
+					if(!empty($subAllergnArr)){
+						$allengesArr = []; $allenges3Arr = []; $allenges4Arr = [];
+						foreach ($subAllergnArr as $svalue){
 							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
 							if(!empty($subVlu->raptor_code)){
 								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
+									if($raptrVlu->result_value >= 30){
 										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID3Arr[] = $svalue['id'];
-											}
 											$block1[$svalue['id']] = $svalue['name'];
+											$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 										}else{
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID4Arr[] = $svalue['id'];
-											}
-											$blocks1[$svalue['id']] = $svalue['name'];
+											$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 										}
-										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-											$allengesIDArr[] = $svalue['id'];
-										}
-										$allengesIDsArr[] = $svalue['id'];
 										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										$allengesIDsArr[] = $svalue['id'];
 									}
 								}
 							}
 						}
+
+						if(count($allengesArr) > 1){
+							$lastchnk = end($allengesArr);
+							$lastchnkName = ', '.$lastchnk;
+							$lastchnkCng = ' and '.$lastchnk;
+							$allengesStr = implode(", ",$allengesArr);
+							$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
+						}else{
+							$allengeStr = implode(", ",$allengesArr);
+						}
+
+						if(count($allenges3Arr) > 1){
+							$last3chnk = end($allenges3Arr);
+							$lastchnk3Name = ', '.$last3chnk;
+							$lastchnk3Cng = ' and '.$last3chnk;
+							$allenges3Str = implode(", ",$allenges3Arr);
+							$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
+						}else{
+							$allenge3Str = implode(", ",$allenges3Arr);
+						}
+
+						if(count($allenges4Arr) > 1){
+							$last4chnk = end($allenges4Arr);
+							$lastchnk4Name = ', '.$last4chnk;
+							$lastchnk4Cng = ' and '.$last4chnk;
+							$allenges4Str = implode(", ",$allenges4Arr);
+							$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
+						}else{
+							$allenge4Str = implode(", ",$allenges4Arr);
+						}
+
+						$dummytext .= "This patient is sensitized to ". $allengeStr .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "If the corresponding clinical signs occur, allergen-specific immunotherapy is recommended for: ". $allenge3Str .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						if(!empty($allenges4Arr)){
+						$dummytext .= "Allergen-specific immunotherapy is currently not available for ". $allenge4Str ."; the treatment is symptomatic.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						}
+						$dummytext .= "Please find full interpretation and detailed results per allergen extract and component in the following pages.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "Based on these results we recommend the following immunotherapy composition(s):";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
 					}
 					if(array_key_exists("45994",$block1) && array_key_exists("73",$block1)){
 						unset($block1['45994']);
@@ -12393,28 +12284,18 @@ class Orders extends CI_Controller{
 						unset($block1['45994']);
 						$block1['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($data['treatment_1'] != "" && $data['treatment_1'] != "[]"){
+					if($order_details['treatment_1'] != "" && $order_details['treatment_1'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_1']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
 								$block1[$svalue['id']] = $svalue['name'];
-								if($svalue['name'] != "N/A"){
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID3Arr))){
-										$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}else{
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID4Arr))){
-										$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
 							}
 						}
 					}
-					//asort($block1);
+					asort($block1);
 					$this->_data['block1'] = $block1;
-					$this->_data['blocks1'] = $blocks1;
 
-					$block2 = []; $chk_alg_cunt = 0;
+					$block2 = [];
 					foreach($getAllergenParent as $apvalue){
 						$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
 						if(!empty($getGroupMixtures)){
@@ -12424,9 +12305,9 @@ class Orders extends CI_Controller{
 									$parentIdArr[] = $mvalue['id'];
 								}
 							}
-
 							if(!empty($parentIdArr)){
 								if(count($parentIdArr) > 1){
+									$emptyArr = [];
 									foreach($parentIdArr as $makey=>$mavalue){
 										$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
 										$testingArr = [];
@@ -12435,24 +12316,50 @@ class Orders extends CI_Controller{
 											if(!empty($rmcodes->raptor_code)){
 												$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
 												if(!empty($raptrmVlu)){
-													if(floor($raptrmVlu->result_value) >= $cutoffs){
+													if($raptrmVlu->result_value >= 30){
 														$testingArr[$mavalue] += 1;
 													}
 												}
 											}
 										}
 
-										if(count($allergenArr) >= 3){
-											$chk_alg_cunt = (count($allergenArr)-1);
-											if($testingArr[$mavalue] >= $chk_alg_cunt){
-												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
+										if($testingArr[$mavalue] >= 2){
+											if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+												$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
+											}
+											foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
+												$emptyArr[$apvalue['parent_id']][] = $emtrow;
+											}
+										}
+									}
+
+									if(!empty($emptyArr[$apvalue['parent_id']])){
+										$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown_empty($apvalue['parent_id'],$order_details['allergens'], $emptyArr[$apvalue['parent_id']]);
+										foreach($sub1Allergens as $s1value){
+											$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
+											if(!empty($sub1Vlu->raptor_code)){
+												$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr1Vlu)){
+													if($raptr1Vlu->result_value >= 30){
+														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
+															$block2[$s1value['id']] = $s1value['name'];
+														}
+													}
 												}
 											}
-										}else{
-											if($testingArr[$mavalue] >= 2){
-												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
+										}
+									}else{
+										$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+										foreach($sub2Allergens as $s2value){
+											$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+											if(!empty($sub2Vlu->raptor_code)){
+												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr2Vlu)){
+													if($raptr2Vlu->result_value >= 30){
+														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
+														$block2[$s2value['id']] = $s2value['name'];
+														}
+													}
 												}
 											}
 										}
@@ -12465,31 +12372,43 @@ class Orders extends CI_Controller{
 										if(!empty($rcodes->raptor_code)){
 											$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
 											if(!empty($raptrVlu)){
-												if(floor($raptrVlu->result_value) >= $cutoffs){
+												if($raptrVlu->result_value >= 30){
 													$tested++;
 												}
 											}
 										}
 									}
-									
-									if($apvalue['parent_id'] == 1){
-										if($tested >= 3){
-											if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-												$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+
+									if($tested >= 2){
+										if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
+										$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+										}
+										$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$order_details['allergens'], $getGroupMixtures[0]['mixture_allergens']);
+										foreach($sub1Allergens as $s1value){
+											$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
+											if(!empty($sub1Vlu->raptor_code)){
+												$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr1Vlu)){
+													if($raptr1Vlu->result_value >= 30){
+														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
+														$block2[$s1value['id']] = $s1value['name'];
+														}
+													}
+												}
 											}
 										}
 									}else{
-										if(count($allergensArr) >= 3){
-											$chk_alg_cunt = (count($allergensArr)-1);
-											if($tested >= $chk_alg_cunt){
-												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-												}
-											}
-										}else{
-											if($tested >= 2){
-												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+										$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+										foreach($sub2Allergens as $s2value){
+											$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+											if(!empty($sub2Vlu->raptor_code)){
+												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr2Vlu)){
+													if($raptr2Vlu->result_value >= 30){
+														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
+														$block2[$s2value['id']] = $s2value['name'];
+														}
+													}
 												}
 											}
 										}
@@ -12504,7 +12423,7 @@ class Orders extends CI_Controller{
 										if(!empty($raptr2Vlu)){
 											if($raptr2Vlu->result_value >= 30){
 												if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-													$block2[$s2value['id']] = $s2value['name'];
+												$block2[$s2value['id']] = $s2value['name'];
 												}
 											}
 										}
@@ -12520,7 +12439,7 @@ class Orders extends CI_Controller{
 									if(!empty($raptr3Vlu)){
 										if($raptr3Vlu->result_value >= 30){
 											if($s3value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s3value['id']) > 0){
-												$block2[$s3value['id']] = $s3value['name'];
+											$block2[$s3value['id']] = $s3value['name'];
 											}
 										}
 									}
@@ -12534,93 +12453,84 @@ class Orders extends CI_Controller{
 						unset($block2['45994']);
 						$block2['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($data['treatment_2'] != "" && $data['treatment_2'] != "[]"){
+					if($order_details['treatment_2'] != "" && $order_details['treatment_2'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_2']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
 								if($svalue['name'] != "N/A"){
-									$block2[$svalue['id']] = $svalue['name'];
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID3Arr))){
-										$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}else{
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID4Arr))){
-										$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
+								$block2[$svalue['id']] = $svalue['name'];
 								}
 							}
 						}
 					}
-					//asort($block2);
+					asort($block2);
 					$this->_data['block2'] = $block2;
 
-					if(count($allengesArr) > 1){
-						asort($allengesArr);
-						$lastchnk = end($allengesArr);
-						$lastchnkName = ', '.$lastchnk;
-						$lastchnkCng = ' '.$this->lang->line('recommendation_text_and').' '.$lastchnk;
-						$allengesStr = implode(", ",$allengesArr);
-						$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
-					}else{
-						$allengeStr = implode(", ",$allengesArr);
-					}
-
-					if(count($allenges3Arr) > 1){
-						asort($allenges3Arr);
-						$last3chnk = end($allenges3Arr);
-						$lastchnk3Name = ', '.$last3chnk;
-						$lastchnk3Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last3chnk;
-						$allenges3Str = implode(", ",$allenges3Arr);
-						$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
-					}else{
-						$allenge3Str = implode(", ",$allenges3Arr);
-					}
-
-					if(count($allenges4Arr) > 1){
-						asort($allenges4Arr);
-						$last4chnk = end($allenges4Arr);
-						$lastchnk4Name = ', '.$last4chnk;
-						$lastchnk4Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last4chnk;
-						$allenges4Str = implode(", ",$allenges4Arr);
-						$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
-					}else{
-						$allenge4Str = implode(", ",$allenges4Arr);
-					}
-
-					$dummytext = $this->lang->line('summery_text_1') . $allengeStr .".";
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					if(!empty($allenges3Arr)){
-					$dummytext .= $this->lang->line('summery_text_2') . $allenge3Str .".";
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					}
-					if(!empty($allenges4Arr)){
-					$dummytext .= $this->lang->line('summery_text_3') . $allenge4Str . $this->lang->line('summery_text_3a');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					}
-					$dummytext .= $this->lang->line('summery_text_4');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					$dummytext .= $this->lang->line('summery_text_5');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-
-					$sql = "SELECT result_value, name FROM `ci_raptor_result_allergens` WHERE result_id = '". $raptorData->result_id ."' AND (name LIKE 'CCD-HSA' OR name LIKE 'Hom s LF')";
-					$responce = $this->db->query($sql);
-					$ccd1Results = $responce->result();
-					$ccdresult1 = 0; $ccdresult2 = 0;
-					if(!empty($ccd1Results)){
-						foreach($ccd1Results as $cvalue){
-							if($cvalue->name == 'CCD-HSA'){
-								$ccdresult1 = $cvalue->result_value;
-							}
-							if($cvalue->name == 'Hom s LF'){
-								$ccdresult2 = $cvalue->result_value;
+					$allengesIDsArr = array(); $allengesArr = []; $dummytext = "";
+					$subAllergnArr = $this->AllergensModel->getEnvAllergensByID($data['allergens']);
+					if(!empty($subAllergnArr)){
+						$allengesArr = []; $allenges3Arr = []; $allenges4Arr = [];
+						foreach ($subAllergnArr as $svalue){
+							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+							if(!empty($subVlu->raptor_code)){
+								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+								if(!empty($raptrVlu)){
+									if($raptrVlu->result_value >= 30){
+										if($svalue['name'] != "N/A"){
+											$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										}else{
+											$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										}
+										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										$allengesIDsArr[] = $svalue['id'];
+									}
+								}
 							}
 						}
-					}
-					if(floor($ccdresult1) >= $cutoffs || floor($ccdresult2) >= $cutoffs){
-						$dummytext .= $this->lang->line('pax_ccd_text_'.$cutoffs.'');
+
+						if(count($allengesArr) > 1){
+							$lastchnk = end($allengesArr);
+							$lastchnkName = ', '.$lastchnk;
+							$lastchnkCng = ' and '.$lastchnk;
+							$allengesStr = implode(", ",$allengesArr);
+							$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
+						}else{
+							$allengeStr = implode(", ",$allengesArr);
+						}
+
+						if(count($allenges3Arr) > 1){
+							$last3chnk = end($allenges3Arr);
+							$lastchnk3Name = ', '.$last3chnk;
+							$lastchnk3Cng = ' and '.$last3chnk;
+							$allenges3Str = implode(", ",$allenges3Arr);
+							$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
+						}else{
+							$allenge3Str = implode(", ",$allenges3Arr);
+						}
+
+						if(count($allenges4Arr) > 1){
+							$last4chnk = end($allenges4Arr);
+							$lastchnk4Name = ', '.$last4chnk;
+							$lastchnk4Cng = ' and '.$last4chnk;
+							$allenges4Str = implode(", ",$allenges4Arr);
+							$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
+						}else{
+							$allenge4Str = implode(", ",$allenges4Arr);
+						}
+
+						$dummytext = "This patient is sensitized to ". $allengeStr .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "If the corresponding clinical signs occur, allergen-specific immunotherapy is recommended for: ". $allenge3Str .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						if(!empty($allenges4Arr)){
+						$dummytext .= "Allergen-specific immunotherapy is currently not available for ". $allenge4Str ."; the treatment is symptomatic.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						}
+						$dummytext .= "Please find full interpretation and detailed results per allergen extract and component in the following pages.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "Based on these results we recommend the following immunotherapy composition(s):";
 						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
 					}
-
 					$this->_data['allengesIDsArr'] = $allengesIDsArr;
 					$this->_data['allengesArr'] = $allengesArr;
 					$this->_data['dummytext'] = $dummytext;
@@ -12639,7 +12549,7 @@ class Orders extends CI_Controller{
 					$html_header = $this->load->view('pax_pdf/raptor_header_pdf', $this->_data, true);
 					$mpdf->WriteHTML($main_header_pdf);
 					$pageno_footer_pdf = $this->load->view('pax_pdf/raptor_footer', $this->_data, true);
-					if(empty($block1) && empty($blocks1)){
+					if(empty($block1)){
 						$negative_faq_pdf = $this->load->view('pax_pdf/raptor_negative_faq', $this->_data, true);
 						$mpdf->SetHTMLHeader($html_header);
 						$mpdf->AddPage('','','','','',0,0,22,22,5,5);
@@ -12647,7 +12557,7 @@ class Orders extends CI_Controller{
 						$mpdf->SetHTMLFooter($pageno_footer_pdf);
 						$mpdf->WriteHTML($negative_faq_pdf);
 					}
-					if(!empty($block1) || !empty($blocks1)){
+					if(!empty($block1)){
 						$summary_footer_pdf = $this->load->view('pax_pdf/raptor_summary_footer', $this->_data, true);
 						$summary_recommendation_pdf = $this->load->view('pax_pdf/raptor_summary_recommendation', $this->_data, true);
 						$mpdf->SetHTMLHeader($html_header);
@@ -12659,22 +12569,22 @@ class Orders extends CI_Controller{
 					$allergens_footer_pdf = $this->load->view('pax_pdf/raptor_allergens_footer_pdf', $this->_data, true);
 					$result_panel_pdf = $this->load->view('pax_pdf/raptor_result_panel', $this->_data, true);
 					$mpdf->SetHTMLHeader($allergen_header_pdf);
-					$mpdf->AddPage('','','','','',0,0,35,25,5,5);
+					$mpdf->AddPage('','','','','',0,0,35,30,5,5);
 					$mpdf->SetDisplayMode('fullpage');
 					$mpdf->SetHTMLFooter($allergens_footer_pdf);
 					$mpdf->WriteHTML($result_panel_pdf);
-					if(!empty($block1) || !empty($blocks1)){
+					if(!empty($block1)){
 						$interpretation_footer_pdf = $this->load->view('pax_pdf/raptor_footer_interpretation', $this->_data, true);
 						$interpretation_support_pdf = $this->load->view('pax_pdf/raptor_interpretation_support', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,20,30,5,5);
+						$mpdf->SetHTMLHeader($allergen_header_pdf);
+						$mpdf->AddPage('','','','','',0,0,35,35,5,5);
 						$mpdf->SetDisplayMode('fullpage');
 						$mpdf->SetHTMLFooter($interpretation_footer_pdf);
 						$mpdf->WriteHTML($interpretation_support_pdf);
 
 						$positive_faq_pdf = $this->load->view('pax_pdf/raptor_positive_faq', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,20,20,5,5);
+						$mpdf->SetHTMLHeader($allergen_header_pdf);
+						$mpdf->AddPage('','','','','',0,0,35,35,5,5);
 						$mpdf->SetDisplayMode('fullpage');
 						$mpdf->SetHTMLFooter($pageno_footer_pdf);
 						$mpdf->WriteHTML($positive_faq_pdf);
@@ -12689,15 +12599,16 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$allengesFArr = []; $allengesF3Arr = []; $allengesF4Arr = []; $dummyFtext = ""; $allengesIDFArr = array(); $foodtotal = 0;
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
+					$allengesIDFArr = array(); $allengesFArr = []; $dummyFtext = ""; $foodtotal = 0;
+					$subAllergnFArr = $this->AllergensModel->getFoodAllergensByID($order_details['allergens']);
+					if(!empty($subAllergnFArr)){
+						$allengesFArr = []; $allengesF3Arr = []; $allengesF4Arr = []; $foodtotal = 0;
+						foreach ($subAllergnFArr as $svalue){
 							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
 							if(!empty($subVlu->raptor_code)){
 								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
+									if($raptrVlu->result_value >= 30){
 										if($svalue['name'] != "N/A"){
 											$allengesF3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 										}else{
@@ -12710,44 +12621,41 @@ class Orders extends CI_Controller{
 								}
 							}
 						}
-					}
 
-					if(count($allengesFArr) > 1){
-						asort($allengesFArr);
-						$lastchnk = end($allengesFArr);
-						$lastchnkName = ', '.$lastchnk;
-						$lastchnkCng = ' '.$this->lang->line('recommendation_text_and').' '.$lastchnk;
-						$allengesStr = implode(", ",$allengesFArr);
-						$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
-					}else{
-						$allengeStr = implode(", ",$allengesFArr);
-					}
+						if(count($allengesFArr) > 1){
+							$lastchnk = end($allengesFArr);
+							$lastchnkName = ', '.$lastchnk;
+							$lastchnkCng = ' and '.$lastchnk;
+							$allengesStr = implode(", ",$allengesFArr);
+							$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
+						}else{
+							$allengeStr = implode(", ",$allengesFArr);
+						}
 
-					if(count($allengesF3Arr) > 1){
-						asort($allengesF3Arr);
-						$last3chnk = end($allengesF3Arr);
-						$lastchnk3Name = ', '.$last3chnk;
-						$lastchnk3Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last3chnk;
-						$allenges3Str = implode(", ",$allengesF3Arr);
-						$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
-					}else{
-						$allenge3Str = implode(", ",$allengesF3Arr);
-					}
+						if(count($allengesF3Arr) > 1){
+							$last3chnk = end($allengesF3Arr);
+							$lastchnk3Name = ', '.$last3chnk;
+							$lastchnk3Cng = ' and '.$last3chnk;
+							$allenges3Str = implode(", ",$allengesF3Arr);
+							$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
+						}else{
+							$allenge3Str = implode(", ",$allengesF3Arr);
+						}
 
-					if(count($allengesF4Arr) > 1){
-						asort($allengesF4Arr);
-						$last4chnk = end($allengesF4Arr);
-						$lastchnk4Name = ', '.$last4chnk;
-						$lastchnk4Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last4chnk;
-						$allenges4Str = implode(", ",$allengesF4Arr);
-						$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
-					}else{
-						$allenge4Str = implode(", ",$allengesF4Arr);
-					}
+						if(count($allengesF4Arr) > 1){
+							$last4chnk = end($allengesF4Arr);
+							$lastchnk4Name = ', '.$last4chnk;
+							$lastchnk4Cng = ' and '.$last4chnk;
+							$allenges4Str = implode(", ",$allengesF4Arr);
+							$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
+						}else{
+							$allenge4Str = implode(", ",$allengesF4Arr);
+						}
 
-					$dummyFtext .= "<p>". $this->lang->line('summery_text_1') . $allengeStr .".</p>";
-					$dummyFtext .= "<p>". $this->lang->line('summery_food_text_2') . $allengeStr . $this->lang->line('summery_food_text_2a') ."</p>";
-					$dummyFtext .= "<p>".$this->lang->line('summery_food_text_3')."</p>";
+						$dummyFtext .= "<p>This patient is sensitised to ". $allengeStr .".</p>";
+						$dummyFtext .= "<p>The sensitization to ". $allengeStr .", should be taken into consideration when prioritising ingredients for elimination trials and food challenges.</p>";
+						$dummyFtext .= "<p>Please find detailed results per allergen extract and component, detailed interpretation and diet selection chart in the following pages.</p>";
+					}
 					$this->_data['foodtotal'] = $foodtotal;
 					$this->_data['allengesIDsArr'] = $allengesIDFArr;
 					$this->_data['allengesArr'] = $allengesFArr;
@@ -12789,42 +12697,27 @@ class Orders extends CI_Controller{
 					$allergens_footer_pdf = $this->load->view('pax_pdf/raptor_allergens_footer_pdf', $this->_data, true);
 					$result_panel_pdf = $this->load->view('pax_pdf/raptor_result_panel_food', $this->_data, true);
 					$mpdf->SetHTMLHeader($allergen_header_pdf);
-					$mpdf->AddPage('','','','','',0,0,35,27,5,5);
+					$mpdf->AddPage('','','','','',0,0,35,30,5,5);
 					$mpdf->SetDisplayMode('fullpage');
 					$mpdf->SetHTMLFooter($allergens_footer_pdf);
 					$mpdf->WriteHTML($result_panel_pdf);
 					if($foodtotal > 0){
 						$interpretation_footer_pdf = $this->load->view('pax_pdf/raptor_footer_interpretation', $this->_data, true);
 						$interpretation_support_pdf = $this->load->view('pax_pdf/raptor_interpretation_support', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,22,35,5,5);
+						$mpdf->SetHTMLHeader($allergen_header_pdf);
+						$mpdf->AddPage('','','','','',0,0,35,35,5,5);
 						$mpdf->SetDisplayMode('fullpage');
 						$mpdf->SetHTMLFooter($interpretation_footer_pdf);
 						$mpdf->WriteHTML($interpretation_support_pdf);
 
-						$diet_chart_footer_pdf = $this->load->view('pax_pdf/raptor_diet_chart_footer', $this->_data, true);
-						if($this->session->userdata('export_site_lang') == 'export_spanish'){ 
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_spanish', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							$mpdf->AddPage('','','','','',0,0,40,20,5,5);
-						}elseif($this->session->userdata('export_site_lang') == 'export_dutch'){
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_dutch', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							$mpdf->AddPage('','','','','',0,0,33,20,5,5);
-						}else{ 
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_'.$this->session->userdata('site_lang').'', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							if($this->session->userdata('site_lang') == 'spanish'){
-								$mpdf->AddPage('','','','','',0,0,37,20,5,5);
-							}else{
-								$mpdf->AddPage('','','','','',0,0,33,20,5,5);
-							}
-						}
+						$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart', $this->_data, true);
+						$mpdf->SetHTMLHeader($diet_chart_header);
+						$mpdf->AddPage('','','','','',0,0,33,20,5,5);
 						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($diet_chart_footer_pdf);
+						$mpdf->SetHTMLFooter($pageno_footer_pdf);
 						$mpdf->WriteHTML($diet_chart_pdf);
 					}
-					$mpdf->Output($file_name_food,'F');
+					$mpdf->Output($file_name,'F');
 				}elseif($respnedn->name == 'PAX Environmental + Food'){
 					$getAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($order_details['allergens']);
 					$totalGroup0 = count($getAllergenParent);
@@ -12834,37 +12727,71 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = []; $block1 = []; $blocks1 = []; $allengesIDsArr = array();
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
+					$block1 = []; $allengesIDsArr = array(); $dummytext = "";
+					$subAllergnArr = $this->AllergensModel->getEnvAllergensByID($order_details['allergens']);
+					if(!empty($subAllergnArr)){
+						$allengesArr = []; $allenges3Arr = []; $allenges4Arr = [];
+						foreach ($subAllergnArr as $svalue){
 							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
 							if(!empty($subVlu->raptor_code)){
 								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
+									if($raptrVlu->result_value >= 30){
 										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID3Arr[] = $svalue['id'];
-											}
 											$block1[$svalue['id']] = $svalue['name'];
+											$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 										}else{
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID4Arr[] = $svalue['id'];
-											}
-											$blocks1[$svalue['id']] = $svalue['name'];
+											$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 										}
-										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-											$allengesIDArr[] = $svalue['id'];
-										}
-										$allengesIDsArr[] = $svalue['id'];
 										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										$allengesIDsArr[] = $svalue['id'];
 									}
 								}
 							}
 						}
+
+						if(count($allengesArr) > 1){
+							$lastchnk = end($allengesArr);
+							$lastchnkName = ', '.$lastchnk;
+							$lastchnkCng = ' and '.$lastchnk;
+							$allengesStr = implode(", ",$allengesArr);
+							$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
+						}else{
+							$allengeStr = implode(", ",$allengesArr);
+						}
+
+						if(count($allenges3Arr) > 1){
+							$last3chnk = end($allenges3Arr);
+							$lastchnk3Name = ', '.$last3chnk;
+							$lastchnk3Cng = ' and '.$last3chnk;
+							$allenges3Str = implode(", ",$allenges3Arr);
+							$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
+						}else{
+							$allenge3Str = implode(", ",$allenges3Arr);
+						}
+
+						if(count($allenges4Arr) > 1){
+							$last4chnk = end($allenges4Arr);
+							$lastchnk4Name = ', '.$last4chnk;
+							$lastchnk4Cng = ' and '.$last4chnk;
+							$allenges4Str = implode(", ",$allenges4Arr);
+							$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
+						}else{
+							$allenge4Str = implode(", ",$allenges4Arr);
+						}
+
+						$dummytext .= "This patient is sensitized to ". $allengeStr .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "If the corresponding clinical signs occur, allergen-specific immunotherapy is recommended for: ". $allenge3Str .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						if(!empty($allenges4Arr)){
+						$dummytext .= "Allergen-specific immunotherapy is currently not available for ". $allenge4Str ."; the treatment is symptomatic.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						}
+						$dummytext .= "Please find full interpretation and detailed results per allergen extract and component in the following pages.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "Based on these results we recommend the following immunotherapy composition(s):";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
 					}
 					if(array_key_exists("45994",$block1) && array_key_exists("73",$block1)){
 						unset($block1['45994']);
@@ -12872,28 +12799,18 @@ class Orders extends CI_Controller{
 						unset($block1['45994']);
 						$block1['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($data['treatment_1'] != "" && $data['treatment_1'] != "[]"){
+					if($order_details['treatment_1'] != "" && $order_details['treatment_1'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_1']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
 								$block1[$svalue['id']] = $svalue['name'];
-								if($svalue['name'] != "N/A"){
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID3Arr))){
-										$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}else{
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID4Arr))){
-										$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
 							}
 						}
 					}
-					//asort($block1);
+					asort($block1);
 					$this->_data['block1'] = $block1;
-					$this->_data['blocks1'] = $blocks1;
 
-					$block2 = []; $chk_alg_cunt = 0;
+					$block2 = [];
 					foreach($getAllergenParent as $apvalue){
 						$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
 						if(!empty($getGroupMixtures)){
@@ -12903,9 +12820,9 @@ class Orders extends CI_Controller{
 									$parentIdArr[] = $mvalue['id'];
 								}
 							}
-
 							if(!empty($parentIdArr)){
 								if(count($parentIdArr) > 1){
+									$emptyArr = [];
 									foreach($parentIdArr as $makey=>$mavalue){
 										$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
 										$testingArr = [];
@@ -12914,24 +12831,50 @@ class Orders extends CI_Controller{
 											if(!empty($rmcodes->raptor_code)){
 												$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
 												if(!empty($raptrmVlu)){
-													if(floor($raptrmVlu->result_value) >= $cutoffs){
+													if($raptrmVlu->result_value >= 30){
 														$testingArr[$mavalue] += 1;
 													}
 												}
 											}
 										}
 
-										if(count($allergenArr) >= 3){
-											$chk_alg_cunt = (count($allergenArr)-1);
-											if($testingArr[$mavalue] >= $chk_alg_cunt){
-												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
+										if($testingArr[$mavalue] >= 2){
+											if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+												$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
+											}
+											foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
+												$emptyArr[$apvalue['parent_id']][] = $emtrow;
+											}
+										}
+									}
+
+									if(!empty($emptyArr[$apvalue['parent_id']])){
+										$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown_empty($apvalue['parent_id'],$order_details['allergens'], $emptyArr[$apvalue['parent_id']]);
+										foreach($sub1Allergens as $s1value){
+											$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
+											if(!empty($sub1Vlu->raptor_code)){
+												$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr1Vlu)){
+													if($raptr1Vlu->result_value >= 30){
+														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
+															$block2[$s1value['id']] = $s1value['name'];
+														}
+													}
 												}
 											}
-										}else{
-											if($testingArr[$mavalue] >= 2){
-												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
+										}
+									}else{
+										$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+										foreach($sub2Allergens as $s2value){
+											$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+											if(!empty($sub2Vlu->raptor_code)){
+												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr2Vlu)){
+													if($raptr2Vlu->result_value >= 30){
+														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
+														$block2[$s2value['id']] = $s2value['name'];
+														}
+													}
 												}
 											}
 										}
@@ -12944,31 +12887,43 @@ class Orders extends CI_Controller{
 										if(!empty($rcodes->raptor_code)){
 											$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
 											if(!empty($raptrVlu)){
-												if(floor($raptrVlu->result_value) >= $cutoffs){
+												if($raptrVlu->result_value >= 30){
 													$tested++;
 												}
 											}
 										}
 									}
-									
-									if($apvalue['parent_id'] == 1){
-										if($tested >= 3){
-											if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-												$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+
+									if($tested >= 2){
+										if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
+										$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+										}
+										$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$order_details['allergens'], $getGroupMixtures[0]['mixture_allergens']);
+										foreach($sub1Allergens as $s1value){
+											$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
+											if(!empty($sub1Vlu->raptor_code)){
+												$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr1Vlu)){
+													if($raptr1Vlu->result_value >= 30){
+														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
+														$block2[$s1value['id']] = $s1value['name'];
+														}
+													}
+												}
 											}
 										}
 									}else{
-										if(count($allergensArr) >= 3){
-											$chk_alg_cunt = (count($allergensArr)-1);
-											if($tested >= $chk_alg_cunt){
-												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-												}
-											}
-										}else{
-											if($tested >= 2){
-												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+										$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+										foreach($sub2Allergens as $s2value){
+											$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+											if(!empty($sub2Vlu->raptor_code)){
+												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr2Vlu)){
+													if($raptr2Vlu->result_value >= 30){
+														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
+														$block2[$s2value['id']] = $s2value['name'];
+														}
+													}
 												}
 											}
 										}
@@ -12983,7 +12938,7 @@ class Orders extends CI_Controller{
 										if(!empty($raptr2Vlu)){
 											if($raptr2Vlu->result_value >= 30){
 												if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-													$block2[$s2value['id']] = $s2value['name'];
+												$block2[$s2value['id']] = $s2value['name'];
 												}
 											}
 										}
@@ -12999,7 +12954,7 @@ class Orders extends CI_Controller{
 									if(!empty($raptr3Vlu)){
 										if($raptr3Vlu->result_value >= 30){
 											if($s3value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s3value['id']) > 0){
-												$block2[$s3value['id']] = $s3value['name'];
+											$block2[$s3value['id']] = $s3value['name'];
 											}
 										}
 									}
@@ -13013,93 +12968,84 @@ class Orders extends CI_Controller{
 						unset($block2['45994']);
 						$block2['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($data['treatment_2'] != "" && $data['treatment_2'] != "[]"){
+					if($order_details['treatment_2'] != "" && $order_details['treatment_2'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_2']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
 								if($svalue['name'] != "N/A"){
-									$block2[$svalue['id']] = $svalue['name'];
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID3Arr))){
-										$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}else{
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID4Arr))){
-										$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
+								$block2[$svalue['id']] = $svalue['name'];
 								}
 							}
 						}
 					}
-					//asort($block2);
+					asort($block2);
 					$this->_data['block2'] = $block2;
 
-					if(count($allengesArr) > 1){
-						asort($allengesArr);
-						$lastchnk = end($allengesArr);
-						$lastchnkName = ', '.$lastchnk;
-						$lastchnkCng = ' '.$this->lang->line('recommendation_text_and').' '.$lastchnk;
-						$allengesStr = implode(", ",$allengesArr);
-						$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
-					}else{
-						$allengeStr = implode(", ",$allengesArr);
-					}
-
-					if(count($allenges3Arr) > 1){
-						asort($allenges3Arr);
-						$last3chnk = end($allenges3Arr);
-						$lastchnk3Name = ', '.$last3chnk;
-						$lastchnk3Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last3chnk;
-						$allenges3Str = implode(", ",$allenges3Arr);
-						$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
-					}else{
-						$allenge3Str = implode(", ",$allenges3Arr);
-					}
-
-					if(count($allenges4Arr) > 1){
-						asort($allenges4Arr);
-						$last4chnk = end($allenges4Arr);
-						$lastchnk4Name = ', '.$last4chnk;
-						$lastchnk4Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last4chnk;
-						$allenges4Str = implode(", ",$allenges4Arr);
-						$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
-					}else{
-						$allenge4Str = implode(", ",$allenges4Arr);
-					}
-
-					$dummytext = $this->lang->line('summery_text_1') . $allengeStr .".";
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					if(!empty($allenges3Arr)){
-					$dummytext .= $this->lang->line('summery_text_2') . $allenge3Str .".";
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					}
-					if(!empty($allenges4Arr)){
-					$dummytext .= $this->lang->line('summery_text_3') . $allenge4Str . $this->lang->line('summery_text_3a');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					}
-					$dummytext .= $this->lang->line('summery_text_4');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					$dummytext .= $this->lang->line('summery_text_5');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-
-					$sql = "SELECT result_value, name FROM `ci_raptor_result_allergens` WHERE result_id = '". $raptorData->result_id ."' AND (name LIKE 'CCD-HSA' OR name LIKE 'Hom s LF')";
-					$responce = $this->db->query($sql);
-					$ccd1Results = $responce->result();
-					$ccdresult1 = 0; $ccdresult2 = 0;
-					if(!empty($ccd1Results)){
-						foreach($ccd1Results as $cvalue){
-							if($cvalue->name == 'CCD-HSA'){
-								$ccdresult1 = $cvalue->result_value;
-							}
-							if($cvalue->name == 'Hom s LF'){
-								$ccdresult2 = $cvalue->result_value;
+					$allengesIDsArr = array(); $allengesArr = []; $dummytext = "";
+					$subAllergnArr = $this->AllergensModel->getEnvAllergensByID($data['allergens']);
+					if(!empty($subAllergnArr)){
+						$allengesArr = []; $allenges3Arr = []; $allenges4Arr = [];
+						foreach ($subAllergnArr as $svalue){
+							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+							if(!empty($subVlu->raptor_code)){
+								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+								if(!empty($raptrVlu)){
+									if($raptrVlu->result_value >= 30){
+										if($svalue['name'] != "N/A"){
+											$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										}else{
+											$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										}
+										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										$allengesIDsArr[] = $svalue['id'];
+									}
+								}
 							}
 						}
-					}
-					if(floor($ccdresult1) >= $cutoffs || floor($ccdresult2) >= $cutoffs){
-						$dummytext .= $this->lang->line('pax_ccd_text_'.$cutoffs.'');
+
+						if(count($allengesArr) > 1){
+							$lastchnk = end($allengesArr);
+							$lastchnkName = ', '.$lastchnk;
+							$lastchnkCng = ' and '.$lastchnk;
+							$allengesStr = implode(", ",$allengesArr);
+							$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
+						}else{
+							$allengeStr = implode(", ",$allengesArr);
+						}
+
+						if(count($allenges3Arr) > 1){
+							$last3chnk = end($allenges3Arr);
+							$lastchnk3Name = ', '.$last3chnk;
+							$lastchnk3Cng = ' and '.$last3chnk;
+							$allenges3Str = implode(", ",$allenges3Arr);
+							$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
+						}else{
+							$allenge3Str = implode(", ",$allenges3Arr);
+						}
+
+						if(count($allenges4Arr) > 1){
+							$last4chnk = end($allenges4Arr);
+							$lastchnk4Name = ', '.$last4chnk;
+							$lastchnk4Cng = ' and '.$last4chnk;
+							$allenges4Str = implode(", ",$allenges4Arr);
+							$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
+						}else{
+							$allenge4Str = implode(", ",$allenges4Arr);
+						}
+
+						$dummytext = "This patient is sensitized to ". $allengeStr .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "If the corresponding clinical signs occur, allergen-specific immunotherapy is recommended for: ". $allenge3Str .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						if(!empty($allenges4Arr)){
+						$dummytext .= "Allergen-specific immunotherapy is currently not available for ". $allenge4Str ."; the treatment is symptomatic.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						}
+						$dummytext .= "Please find full interpretation and detailed results per allergen extract and component in the following pages.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "Based on these results we recommend the following immunotherapy composition(s):";
 						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
 					}
-
 					$this->_data['allengesIDsArr'] = $allengesIDsArr;
 					$this->_data['allengesArr'] = $allengesArr;
 					$this->_data['dummytext'] = $dummytext;
@@ -13118,7 +13064,7 @@ class Orders extends CI_Controller{
 					$env_html_header = $this->load->view('pax_pdf/raptor_header_pdf', $this->_data, true);
 					$mpdf->WriteHTML($env_main_header_pdf);
 					$env_pageno_footer_pdf = $this->load->view('pax_pdf/raptor_footer', $this->_data, true);
-					if(empty($block1) && empty($blocks1)){
+					if(empty($block1)){
 						$env_negative_faq_pdf = $this->load->view('pax_pdf/raptor_negative_faq', $this->_data, true);
 						$mpdf->SetHTMLHeader($env_html_header);
 						$mpdf->AddPage('','','','','',0,0,22,22,5,5);
@@ -13126,7 +13072,7 @@ class Orders extends CI_Controller{
 						$mpdf->SetHTMLFooter($env_pageno_footer_pdf);
 						$mpdf->WriteHTML($env_negative_faq_pdf);
 					}
-					if(!empty($block1) || !empty($blocks1)){
+					if(!empty($block1)){
 						$env_summary_footer_pdf = $this->load->view('pax_pdf/raptor_summary_footer', $this->_data, true);
 						$env_summary_recommendation_pdf = $this->load->view('pax_pdf/raptor_summary_recommendation', $this->_data, true);
 						$mpdf->SetHTMLHeader($env_html_header);
@@ -13138,22 +13084,22 @@ class Orders extends CI_Controller{
 					$env_allergens_footer_pdf = $this->load->view('pax_pdf/raptor_allergens_footer_pdf', $this->_data, true);
 					$env_result_panel_pdf = $this->load->view('pax_pdf/raptor_result_panel', $this->_data, true);
 					$mpdf->SetHTMLHeader($env_allergen_header_pdf);
-					$mpdf->AddPage('','','','','',0,0,35,25,5,5);
+					$mpdf->AddPage('','','','','',0,0,35,30,5,5);
 					$mpdf->SetDisplayMode('fullpage');
 					$mpdf->SetHTMLFooter($env_allergens_footer_pdf);
 					$mpdf->WriteHTML($env_result_panel_pdf);
-					if(!empty($block1) || !empty($blocks1)){
+					if(!empty($block1)){
 						$env_interpretation_footer_pdf = $this->load->view('pax_pdf/raptor_footer_interpretation', $this->_data, true);
 						$env_interpretation_support_pdf = $this->load->view('pax_pdf/raptor_interpretation_support', $this->_data, true);
-						$mpdf->SetHTMLHeader($env_html_header);
-						$mpdf->AddPage('','','','','',0,0,20,30,5,5);
+						$mpdf->SetHTMLHeader($env_allergen_header_pdf);
+						$mpdf->AddPage('','','','','',0,0,35,35,5,5);
 						$mpdf->SetDisplayMode('fullpage');
 						$mpdf->SetHTMLFooter($env_interpretation_footer_pdf);
 						$mpdf->WriteHTML($env_interpretation_support_pdf);
 
 						$env_positive_faq_pdf = $this->load->view('pax_pdf/raptor_positive_faq', $this->_data, true);
-						$mpdf->SetHTMLHeader($env_html_header);
-						$mpdf->AddPage('','','','','',0,0,20,20,5,5);
+						$mpdf->SetHTMLHeader($env_allergen_header_pdf);
+						$mpdf->AddPage('','','','','',0,0,35,35,5,5);
 						$mpdf->SetDisplayMode('fullpage');
 						$mpdf->SetHTMLFooter($env_pageno_footer_pdf);
 						$mpdf->WriteHTML($env_positive_faq_pdf);
@@ -13169,15 +13115,16 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$allengesFArr = []; $allengesF3Arr = []; $allengesF4Arr = []; $dummyFtext = ""; $allengesIDFArr = array(); $foodtotal = 0;
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
+					$allengesIDFArr = array(); $allengesFArr = []; $dummyFtext = ""; $foodtotal = 0;
+					$subAllergnFArr = $this->AllergensModel->getFoodAllergensByID($order_details['allergens']);
+					if(!empty($subAllergnFArr)){
+						$allengesFArr = []; $allengesF3Arr = []; $allengesF4Arr = []; $foodtotal = 0;
+						foreach ($subAllergnFArr as $svalue){
 							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
 							if(!empty($subVlu->raptor_code)){
 								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
+									if($raptrVlu->result_value >= 30){
 										if($svalue['name'] != "N/A"){
 											$allengesF3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 										}else{
@@ -13190,44 +13137,41 @@ class Orders extends CI_Controller{
 								}
 							}
 						}
-					}
 
-					if(count($allengesFArr) > 1){
-						asort($allengesFArr);
-						$lastchnk = end($allengesFArr);
-						$lastchnkName = ', '.$lastchnk;
-						$lastchnkCng = ' '.$this->lang->line('recommendation_text_and').' '.$lastchnk;
-						$allengesStr = implode(", ",$allengesFArr);
-						$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
-					}else{
-						$allengeStr = implode(", ",$allengesFArr);
-					}
+						if(count($allengesFArr) > 1){
+							$lastchnk = end($allengesFArr);
+							$lastchnkName = ', '.$lastchnk;
+							$lastchnkCng = ' and '.$lastchnk;
+							$allengesStr = implode(", ",$allengesFArr);
+							$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
+						}else{
+							$allengeStr = implode(", ",$allengesFArr);
+						}
 
-					if(count($allengesF3Arr) > 1){
-						asort($allengesF3Arr);
-						$last3chnk = end($allengesF3Arr);
-						$lastchnk3Name = ', '.$last3chnk;
-						$lastchnk3Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last3chnk;
-						$allenges3Str = implode(", ",$allengesF3Arr);
-						$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
-					}else{
-						$allenge3Str = implode(", ",$allengesF3Arr);
-					}
+						if(count($allengesF3Arr) > 1){
+							$last3chnk = end($allengesF3Arr);
+							$lastchnk3Name = ', '.$last3chnk;
+							$lastchnk3Cng = ' and '.$last3chnk;
+							$allenges3Str = implode(", ",$allengesF3Arr);
+							$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
+						}else{
+							$allenge3Str = implode(", ",$allengesF3Arr);
+						}
 
-					if(count($allengesF4Arr) > 1){
-						asort($allengesF4Arr);
-						$last4chnk = end($allengesF4Arr);
-						$lastchnk4Name = ', '.$last4chnk;
-						$lastchnk4Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last4chnk;
-						$allenges4Str = implode(", ",$allengesF4Arr);
-						$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
-					}else{
-						$allenge4Str = implode(", ",$allengesF4Arr);
-					}
+						if(count($allengesF4Arr) > 1){
+							$last4chnk = end($allengesF4Arr);
+							$lastchnk4Name = ', '.$last4chnk;
+							$lastchnk4Cng = ' and '.$last4chnk;
+							$allenges4Str = implode(", ",$allengesF4Arr);
+							$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
+						}else{
+							$allenge4Str = implode(", ",$allengesF4Arr);
+						}
 
-					$dummyFtext .= "<p>". $this->lang->line('summery_text_1') . $allengeStr .".</p>";
-					$dummyFtext .= "<p>". $this->lang->line('summery_food_text_2') . $allengeStr . $this->lang->line('summery_food_text_2a') ."</p>";
-					$dummyFtext .= "<p>".$this->lang->line('summery_food_text_3')."</p>";
+						$dummyFtext .= "<p>This patient is sensitised to ". $allengeStr .".</p>";
+						$dummyFtext .= "<p>The sensitization to ". $allengeStr .", should be taken into consideration when prioritising ingredients for elimination trials and food challenges.</p>";
+						$dummyFtext .= "<p>Please find detailed results per allergen extract and component, detailed interpretation and diet selection chart in the following pages.</p>";
+					}
 					$this->_data['foodtotal'] = $foodtotal;
 					$this->_data['allengesIDsArr'] = $allengesIDFArr;
 					$this->_data['allengesArr'] = $allengesFArr;
@@ -13269,74 +13213,31 @@ class Orders extends CI_Controller{
 					$allergens_footer_pdf = $this->load->view('pax_pdf/raptor_allergens_footer_pdf', $this->_data, true);
 					$result_panel_pdf = $this->load->view('pax_pdf/raptor_result_panel_food', $this->_data, true);
 					$mpdf->SetHTMLHeader($allergen_header_pdf);
-					$mpdf->AddPage('','','','','',0,0,35,27,5,5);
+					$mpdf->AddPage('','','','','',0,0,35,30,5,5);
 					$mpdf->SetDisplayMode('fullpage');
 					$mpdf->SetHTMLFooter($allergens_footer_pdf);
 					$mpdf->WriteHTML($result_panel_pdf);
 					if($foodtotal > 0){
 						$interpretation_footer_pdf = $this->load->view('pax_pdf/raptor_footer_interpretation', $this->_data, true);
 						$interpretation_support_pdf = $this->load->view('pax_pdf/raptor_interpretation_support', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,22,35,5,5);
+						$mpdf->SetHTMLHeader($allergen_header_pdf);
+						$mpdf->AddPage('','','','','',0,0,35,35,5,5);
 						$mpdf->SetDisplayMode('fullpage');
 						$mpdf->SetHTMLFooter($interpretation_footer_pdf);
 						$mpdf->WriteHTML($interpretation_support_pdf);
 
-						$diet_chart_footer_pdf = $this->load->view('pax_pdf/raptor_diet_chart_footer', $this->_data, true);
-						if($this->session->userdata('export_site_lang') == 'export_spanish'){ 
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_spanish', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							$mpdf->AddPage('','','','','',0,0,40,20,5,5);
-						}elseif($this->session->userdata('export_site_lang') == 'export_dutch'){
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_dutch', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							$mpdf->AddPage('','','','','',0,0,33,20,5,5);
-						}else{ 
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_'.$this->session->userdata('site_lang').'', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							if($this->session->userdata('site_lang') == 'spanish'){
-								$mpdf->AddPage('','','','','',0,0,37,20,5,5);
-							}else{
-								$mpdf->AddPage('','','','','',0,0,33,20,5,5);
-							}
-						}
+						$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart', $this->_data, true);
+						$mpdf->SetHTMLHeader($diet_chart_header);
+						$mpdf->AddPage('','','','','',0,0,33,20,5,5);
 						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($diet_chart_footer_pdf);
+						$mpdf->SetHTMLFooter($pageno_footer_pdf);
 						$mpdf->WriteHTML($diet_chart_pdf);
 					}
 					$mpdf->Output($file_name_food,'F');
 				}
 			}
-
-			$zonesIds = $this->checkZones($orderId);
-			if(!empty($zonesIds) && !in_array("1", $zonesIds)){
-				if($this->site_lang != $this->export_site_lang && $this->export_site_lang == 'export_dutch'){
-					$from_email = "info.eu@nextmune.com";
-				}elseif($this->site_lang != $this->export_site_lang && $this->export_site_lang == 'export_spanish'){
-					$from_email = "diagnosticos.es@nextmune.com";
-				}else{
-					$zoneFEmail = $this->getZoneFromEmail($zonesIds);
-					if(!empty($zoneFEmail)){
-						$from_email = $zoneFEmail;
-					}
-				}
-				if(in_array("5", $zonesIds)){
-					$emailBody = $this->load->view('orders/send_pax_serum_mail_templateIT', $this->_data, true);
-				}else{
-					$emailBody = $this->load->view('orders/send_pax_serum_mail_template', $this->_data, true);
-				}
-			}else{
-				if($this->site_lang != $this->export_site_lang && $this->export_site_lang == 'export_dutch'){
-					$from_email = "info.eu@nextmune.com";
-				}elseif($this->site_lang != $this->export_site_lang && $this->export_site_lang == 'export_spanish'){
-					$from_email = "diagnosticos.es@nextmune.com";
-				}else{
-					$from_email = "vetorders.uk@nextmune.com";
-				}
-				$emailBody = $this->load->view('orders/send_pax_serum_mail_template', $this->_data, true);
-			}
-			$emailBody = trim($emailBody);
-
+			$atcfileName = SERUM_REQUEST_PDF_PATH . "serum_result_". $data['order_number'] .".pdf";
+			$practice_email = $data['practice_email'];
 			if($data['lab_id'] > 0 && $data['lab_id'] == '13786'){
 				$to_email = 'immunotherapy@axiomvetlab.co.uk';
 			}elseif($data['lab_id'] > 0 && $data['lab_id'] == '13788'){
@@ -13344,7 +13245,7 @@ class Orders extends CI_Controller{
 			}else{
 				$to_email = $data['email'];
 			}
-
+			$from_email = "vetorders.uk@nextmune.com";
 			$config = array(
 				'mailtype'  => 'html',
 				'charset'   => 'iso-8859-1'
@@ -13352,37 +13253,16 @@ class Orders extends CI_Controller{
 			$this->load->library('email', $config);
 			$this->email->from($from_email, "Nextmune");
 			$this->email->to($to_email);
-			$this->email->subject(''.$this->lang->line('pax_result_subject1').' '.$data['pet_name'].' '.$petownerName.' '.$this->lang->line('pax_result_subject2').'');
+			$this->email->subject('PAX Serum Sample for '.$data['pet_name'].' '.$data['po_last'].' received.');
 			$this->email->message($emailBody);
 			$this->email->set_mailtype("html");
-			if(preg_match('/\bPAX Environmental\b/', $respnedn->name)){
-				$this->email->attach($atcfileName);
-			}
-			if((preg_match('/\bFood Screening\b/', $respnedn->name)) || (preg_match('/\bFood\b/', $respnedn->name))){
+			$this->email->attach($atcfileName);
+			if(((preg_match('/\bPAX Environmental\b/', $respnedn->name)) && (preg_match('/\bFood Screening\b/', $respnedn->name))) || ((preg_match('/\bPAX Environmental\b/', $respnedn->name)) && (preg_match('/\bFood\b/', $respnedn->name)))){
+				$atcfileFoodName = SERUM_REQUEST_PDF_PATH . "serum_result_food_". $data['order_number'] .".pdf";
 				$this->email->attach($atcfileFoodName);
 			}
-
 			$is_send = $this->email->send();
 			if ($is_send) {
-				$zonesIds = $this->checkZones($orderId);
-				if(!empty($zonesIds) && !in_array("1", $zonesIds)){
-					$this->email->from($from_email, "Nextmune");
-
-					$zoneEmail = $this->getZoneEmail($zonesIds);
-					if(!empty($zoneEmail)){
-						$this->email->to($zoneEmail);
-						if(in_array("5", $zonesIds)){
-							$emailZBody = $this->load->view('orders/send_pax_serum_mail_templateIT', $this->_data, true);
-						}else{
-							$emailZBody = $this->load->view('orders/send_pax_serum_mail_template', $this->_data, true);
-						}
-						$emailZBody = trim($emailZBody);
-						$this->email->subject(''.$this->lang->line('pax_result_subject1').' '.$data['pet_name'].' '.$petownerName.' '.$this->lang->line('pax_result_subject2').'');
-						$this->email->message($emailZBody);
-						$this->email->send();
-					}
-				}
-
 				$orderData['id'] = $orderId;
 				$orderData['is_serum_result_sent'] = 1;
 				$orderData['is_authorised'] = 2;
@@ -13416,10 +13296,6 @@ class Orders extends CI_Controller{
 			$data = $this->OrdersModel->allData($orderId, "");
 			$order_details = $data;
 			$this->_data['order_details'] = $data;
-			$interpData = $this->OrdersModel->getOrderInterpretation($orderId);
-			$this->_data['order_details']['interpretation'] = $interpData->interpretation;
-			$this->_data['order_details']['interpretation_food'] = $interpData->interpretation_food;
-			$this->_data['order_details']['vet_interpretation'] = $interpData->vet_interpretation;
 			$raptorData = $this->OrdersModel->getRaptorData($data['order_number']);
 			$this->_data['raptorData'] = $raptorData;
 
@@ -13428,24 +13304,14 @@ class Orders extends CI_Controller{
 			}else{
 				$this->_data['serumTypes'] = 'NextLab';
 			}
-			if($data['pax_cutoff_version'] == 1){
-				$cutoffs = '30';
-				$this->_data['cutoffs'] = '30';
-			}else{
-				$cutoffs = '28';
-				$this->_data['cutoffs'] = '28';
-			}
-			$petOWFName = !empty($data['pet_owner_name'])?$data['pet_owner_name']:'';
-			$petOWLName = !empty($data['po_last'])?$data['po_last']:'';
-			$petownerName = $petOWFName.' '.$petOWLName;
+			$emailBody = $this->load->view('orders/send_serum_mail_template_petowner', $this->_data, true);
+			$emailBody = trim($emailBody);
+
+			$file_name = FCPATH . SERUM_REQUEST_PDF_PATH . "serum_result_". $data['order_number'] .".pdf";
+			$file_name_food = FCPATH . SERUM_REQUEST_PDF_PATH . "serum_result_food_". $data['order_number'] .".pdf";
+
 			$respnedn = $this->OrdersModel->getProductInfo($data['product_code_selection']);
 			if(preg_match('/\bScreening\b/', $respnedn->name)){
-				$pdfNameEnv = seo_friendly_url('PAX_Environmental_Screening_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
-				$pdfNameFood = seo_friendly_url('PAX_Food_Screening_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
-				$file_name = FCPATH . SERUM_REQUEST_PDF_PATH . $pdfNameEnv .".pdf";
-				$atcfileName = SERUM_REQUEST_PDF_PATH . $pdfNameEnv .".pdf";
-				$file_name_food = FCPATH . SERUM_REQUEST_PDF_PATH . $pdfNameFood .".pdf";
-				$atcfileFoodName = SERUM_REQUEST_PDF_PATH . $pdfNameFood .".pdf";
 				if((preg_match('/\bPAX Environmental\b/', $respnedn->name)) && (preg_match('/\bFood Screening\b/', $respnedn->name))){
 					ob_end_flush();
 					require_once(FCPATH.'vendor_pdf/autoload.php');
@@ -13491,13 +13357,6 @@ class Orders extends CI_Controller{
 					$mpdf->Output($file_name,'F');
 				}
 			}else{
-				$pdfNameEnv = seo_friendly_url('PAX_Environmental_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
-				$pdfNameFood = seo_friendly_url('PAX_Food_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
-				$file_name = FCPATH . SERUM_REQUEST_PDF_PATH . $pdfNameEnv .".pdf";
-				$atcfileName = SERUM_REQUEST_PDF_PATH . $pdfNameEnv .".pdf";
-				$file_name_food = FCPATH . SERUM_REQUEST_PDF_PATH . $pdfNameFood .".pdf";
-				$atcfileFoodName = SERUM_REQUEST_PDF_PATH . $pdfNameFood .".pdf";
-
 				$this->_data['fulladdress'] = '';
 				if($data['vet_user_id']>0){
 					$refDatas = $this->UsersDetailsModel->getColumnAllArray($data['vet_user_id']);
@@ -13508,26 +13367,11 @@ class Orders extends CI_Controller{
 					$city = !empty($refDatas['add_4']) ? $refDatas['add_4'] : '';
 					$postcode = !empty($refDatas['address_3']) ? $refDatas['address_3'] : '';
 					$this->_data['fulladdress'] = $add_1.$add_2.$add_3.$city.$postcode;
-					$this->_data['account_ref'] = !empty($refDatas['account_ref']) ? $refDatas['account_ref'] : '';
 				}
 				$this->_data['serumdata'] = $this->OrdersModel->getSerumTestRecord($orderId);
 				$this->_data['respnedn'] = $respnedn;
 				$this->_data['ordeType'] = $respnedn->name;
 				$this->_data['ordeTypeID'] = $respnedn->id;
-
-				/* get removed treatment 1 */
-				$removed_treatment_1 = array();
-				$removed_treatment_1 = $order_details['removed_treatment_1'];
-				if(!empty($removed_treatment_1)){
-					$removed_treatment_1 = json_decode($removed_treatment_1);
-				}
-
-				/* get removed treatment 2 */
-				$removed_treatment_2 = array();
-				$removed_treatment_2 = $order_details['removed_treatment_2'];
-				if(!empty($removed_treatment_2)){
-					$removed_treatment_2 = json_decode($removed_treatment_2);
-				}
 
 				if($respnedn->name == 'PAX Environmental'){
 					$getAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($order_details['allergens']);
@@ -13538,37 +13382,71 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = []; $block1 = []; $blocks1 = []; $allengesIDsArr = array();
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
+					$block1 = []; $allengesIDsArr = array(); $dummytext = "";
+					$subAllergnArr = $this->AllergensModel->getEnvAllergensByID($order_details['allergens']);
+					if(!empty($subAllergnArr)){
+						$allengesArr = []; $allenges3Arr = []; $allenges4Arr = [];
+						foreach ($subAllergnArr as $svalue){
 							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
 							if(!empty($subVlu->raptor_code)){
 								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
+									if($raptrVlu->result_value >= 30){
 										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID3Arr[] = $svalue['id'];
-											}
 											$block1[$svalue['id']] = $svalue['name'];
+											$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 										}else{
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID4Arr[] = $svalue['id'];
-											}
-											$blocks1[$svalue['id']] = $svalue['name'];
+											$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 										}
-										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-											$allengesIDArr[] = $svalue['id'];
-										}
-										$allengesIDsArr[] = $svalue['id'];
 										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										$allengesIDsArr[] = $svalue['id'];
 									}
 								}
 							}
 						}
+
+						if(count($allengesArr) > 1){
+							$lastchnk = end($allengesArr);
+							$lastchnkName = ', '.$lastchnk;
+							$lastchnkCng = ' and '.$lastchnk;
+							$allengesStr = implode(", ",$allengesArr);
+							$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
+						}else{
+							$allengeStr = implode(", ",$allengesArr);
+						}
+
+						if(count($allenges3Arr) > 1){
+							$last3chnk = end($allenges3Arr);
+							$lastchnk3Name = ', '.$last3chnk;
+							$lastchnk3Cng = ' and '.$last3chnk;
+							$allenges3Str = implode(", ",$allenges3Arr);
+							$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
+						}else{
+							$allenge3Str = implode(", ",$allenges3Arr);
+						}
+
+						if(count($allenges4Arr) > 1){
+							$last4chnk = end($allenges4Arr);
+							$lastchnk4Name = ', '.$last4chnk;
+							$lastchnk4Cng = ' and '.$last4chnk;
+							$allenges4Str = implode(", ",$allenges4Arr);
+							$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
+						}else{
+							$allenge4Str = implode(", ",$allenges4Arr);
+						}
+
+						$dummytext .= "This patient is sensitized to ". $allengeStr .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "If the corresponding clinical signs occur, allergen-specific immunotherapy is recommended for: ". $allenge3Str .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						if(!empty($allenges4Arr)){
+						$dummytext .= "Allergen-specific immunotherapy is currently not available for ". $allenge4Str ."; the treatment is symptomatic.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						}
+						$dummytext .= "Please find full interpretation and detailed results per allergen extract and component in the following pages.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "Based on these results we recommend the following immunotherapy composition(s):";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
 					}
 					if(array_key_exists("45994",$block1) && array_key_exists("73",$block1)){
 						unset($block1['45994']);
@@ -13576,28 +13454,18 @@ class Orders extends CI_Controller{
 						unset($block1['45994']);
 						$block1['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($data['treatment_1'] != "" && $data['treatment_1'] != "[]"){
+					if($order_details['treatment_1'] != "" && $order_details['treatment_1'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_1']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
 								$block1[$svalue['id']] = $svalue['name'];
-								if($svalue['name'] != "N/A"){
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID3Arr))){
-										$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}else{
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID4Arr))){
-										$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
 							}
 						}
 					}
-					//asort($block1);
+					asort($block1);
 					$this->_data['block1'] = $block1;
-					$this->_data['blocks1'] = $blocks1;
 
-					$block2 = []; $chk_alg_cunt = 0;
+					$block2 = [];
 					foreach($getAllergenParent as $apvalue){
 						$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
 						if(!empty($getGroupMixtures)){
@@ -13607,9 +13475,9 @@ class Orders extends CI_Controller{
 									$parentIdArr[] = $mvalue['id'];
 								}
 							}
-
 							if(!empty($parentIdArr)){
 								if(count($parentIdArr) > 1){
+									$emptyArr = [];
 									foreach($parentIdArr as $makey=>$mavalue){
 										$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
 										$testingArr = [];
@@ -13618,24 +13486,50 @@ class Orders extends CI_Controller{
 											if(!empty($rmcodes->raptor_code)){
 												$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
 												if(!empty($raptrmVlu)){
-													if(floor($raptrmVlu->result_value) >= $cutoffs){
+													if($raptrmVlu->result_value >= 30){
 														$testingArr[$mavalue] += 1;
 													}
 												}
 											}
 										}
 
-										if(count($allergenArr) >= 3){
-											$chk_alg_cunt = (count($allergenArr)-1);
-											if($testingArr[$mavalue] >= $chk_alg_cunt){
-												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
+										if($testingArr[$mavalue] >= 2){
+											if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+												$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
+											}
+											foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
+												$emptyArr[$apvalue['parent_id']][] = $emtrow;
+											}
+										}
+									}
+
+									if(!empty($emptyArr[$apvalue['parent_id']])){
+										$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown_empty($apvalue['parent_id'],$order_details['allergens'], $emptyArr[$apvalue['parent_id']]);
+										foreach($sub1Allergens as $s1value){
+											$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
+											if(!empty($sub1Vlu->raptor_code)){
+												$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr1Vlu)){
+													if($raptr1Vlu->result_value >= 30){
+														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
+															$block2[$s1value['id']] = $s1value['name'];
+														}
+													}
 												}
 											}
-										}else{
-											if($testingArr[$mavalue] >= 2){
-												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
+										}
+									}else{
+										$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+										foreach($sub2Allergens as $s2value){
+											$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+											if(!empty($sub2Vlu->raptor_code)){
+												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr2Vlu)){
+													if($raptr2Vlu->result_value >= 30){
+														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
+														$block2[$s2value['id']] = $s2value['name'];
+														}
+													}
 												}
 											}
 										}
@@ -13648,31 +13542,43 @@ class Orders extends CI_Controller{
 										if(!empty($rcodes->raptor_code)){
 											$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
 											if(!empty($raptrVlu)){
-												if(floor($raptrVlu->result_value) >= $cutoffs){
+												if($raptrVlu->result_value >= 30){
 													$tested++;
 												}
 											}
 										}
 									}
-									
-									if($apvalue['parent_id'] == 1){
-										if($tested >= 3){
-											if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-												$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+
+									if($tested >= 2){
+										if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
+										$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+										}
+										$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$order_details['allergens'], $getGroupMixtures[0]['mixture_allergens']);
+										foreach($sub1Allergens as $s1value){
+											$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
+											if(!empty($sub1Vlu->raptor_code)){
+												$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr1Vlu)){
+													if($raptr1Vlu->result_value >= 30){
+														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
+														$block2[$s1value['id']] = $s1value['name'];
+														}
+													}
+												}
 											}
 										}
 									}else{
-										if(count($allergensArr) >= 3){
-											$chk_alg_cunt = (count($allergensArr)-1);
-											if($tested >= $chk_alg_cunt){
-												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-												}
-											}
-										}else{
-											if($tested >= 2){
-												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+										$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+										foreach($sub2Allergens as $s2value){
+											$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+											if(!empty($sub2Vlu->raptor_code)){
+												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr2Vlu)){
+													if($raptr2Vlu->result_value >= 30){
+														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
+														$block2[$s2value['id']] = $s2value['name'];
+														}
+													}
 												}
 											}
 										}
@@ -13687,7 +13593,7 @@ class Orders extends CI_Controller{
 										if(!empty($raptr2Vlu)){
 											if($raptr2Vlu->result_value >= 30){
 												if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-													$block2[$s2value['id']] = $s2value['name'];
+												$block2[$s2value['id']] = $s2value['name'];
 												}
 											}
 										}
@@ -13703,7 +13609,7 @@ class Orders extends CI_Controller{
 									if(!empty($raptr3Vlu)){
 										if($raptr3Vlu->result_value >= 30){
 											if($s3value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s3value['id']) > 0){
-												$block2[$s3value['id']] = $s3value['name'];
+											$block2[$s3value['id']] = $s3value['name'];
 											}
 										}
 									}
@@ -13717,93 +13623,84 @@ class Orders extends CI_Controller{
 						unset($block2['45994']);
 						$block2['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($data['treatment_2'] != "" && $data['treatment_2'] != "[]"){
+					if($order_details['treatment_2'] != "" && $order_details['treatment_2'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_2']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
 								if($svalue['name'] != "N/A"){
-									$block2[$svalue['id']] = $svalue['name'];
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID3Arr))){
-										$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}else{
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID4Arr))){
-										$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
+								$block2[$svalue['id']] = $svalue['name'];
 								}
 							}
 						}
 					}
-					//asort($block2);
+					asort($block2);
 					$this->_data['block2'] = $block2;
 
-					if(count($allengesArr) > 1){
-						asort($allengesArr);
-						$lastchnk = end($allengesArr);
-						$lastchnkName = ', '.$lastchnk;
-						$lastchnkCng = ' '.$this->lang->line('recommendation_text_and').' '.$lastchnk;
-						$allengesStr = implode(", ",$allengesArr);
-						$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
-					}else{
-						$allengeStr = implode(", ",$allengesArr);
-					}
-
-					if(count($allenges3Arr) > 1){
-						asort($allenges3Arr);
-						$last3chnk = end($allenges3Arr);
-						$lastchnk3Name = ', '.$last3chnk;
-						$lastchnk3Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last3chnk;
-						$allenges3Str = implode(", ",$allenges3Arr);
-						$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
-					}else{
-						$allenge3Str = implode(", ",$allenges3Arr);
-					}
-
-					if(count($allenges4Arr) > 1){
-						asort($allenges4Arr);
-						$last4chnk = end($allenges4Arr);
-						$lastchnk4Name = ', '.$last4chnk;
-						$lastchnk4Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last4chnk;
-						$allenges4Str = implode(", ",$allenges4Arr);
-						$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
-					}else{
-						$allenge4Str = implode(", ",$allenges4Arr);
-					}
-
-					$dummytext = $this->lang->line('summery_text_1') . $allengeStr .".";
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					if(!empty($allenges3Arr)){
-					$dummytext .= $this->lang->line('summery_text_2') . $allenge3Str .".";
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					}
-					if(!empty($allenges4Arr)){
-					$dummytext .= $this->lang->line('summery_text_3') . $allenge4Str . $this->lang->line('summery_text_3a');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					}
-					$dummytext .= $this->lang->line('summery_text_4');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					$dummytext .= $this->lang->line('summery_text_5');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-
-					$sql = "SELECT result_value, name FROM `ci_raptor_result_allergens` WHERE result_id = '". $raptorData->result_id ."' AND (name LIKE 'CCD-HSA' OR name LIKE 'Hom s LF')";
-					$responce = $this->db->query($sql);
-					$ccd1Results = $responce->result();
-					$ccdresult1 = 0; $ccdresult2 = 0;
-					if(!empty($ccd1Results)){
-						foreach($ccd1Results as $cvalue){
-							if($cvalue->name == 'CCD-HSA'){
-								$ccdresult1 = $cvalue->result_value;
-							}
-							if($cvalue->name == 'Hom s LF'){
-								$ccdresult2 = $cvalue->result_value;
+					$allengesIDsArr = array(); $allengesArr = []; $dummytext = "";
+					$subAllergnArr = $this->AllergensModel->getEnvAllergensByID($data['allergens']);
+					if(!empty($subAllergnArr)){
+						$allengesArr = []; $allenges3Arr = []; $allenges4Arr = [];
+						foreach ($subAllergnArr as $svalue){
+							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+							if(!empty($subVlu->raptor_code)){
+								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+								if(!empty($raptrVlu)){
+									if($raptrVlu->result_value >= 30){
+										if($svalue['name'] != "N/A"){
+											$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										}else{
+											$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										}
+										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										$allengesIDsArr[] = $svalue['id'];
+									}
+								}
 							}
 						}
-					}
-					if(floor($ccdresult1) >= $cutoffs || floor($ccdresult2) >= $cutoffs){
-						$dummytext .= $this->lang->line('pax_ccd_text_'.$cutoffs.'');
+
+						if(count($allengesArr) > 1){
+							$lastchnk = end($allengesArr);
+							$lastchnkName = ', '.$lastchnk;
+							$lastchnkCng = ' and '.$lastchnk;
+							$allengesStr = implode(", ",$allengesArr);
+							$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
+						}else{
+							$allengeStr = implode(", ",$allengesArr);
+						}
+
+						if(count($allenges3Arr) > 1){
+							$last3chnk = end($allenges3Arr);
+							$lastchnk3Name = ', '.$last3chnk;
+							$lastchnk3Cng = ' and '.$last3chnk;
+							$allenges3Str = implode(", ",$allenges3Arr);
+							$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
+						}else{
+							$allenge3Str = implode(", ",$allenges3Arr);
+						}
+
+						if(count($allenges4Arr) > 1){
+							$last4chnk = end($allenges4Arr);
+							$lastchnk4Name = ', '.$last4chnk;
+							$lastchnk4Cng = ' and '.$last4chnk;
+							$allenges4Str = implode(", ",$allenges4Arr);
+							$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
+						}else{
+							$allenge4Str = implode(", ",$allenges4Arr);
+						}
+
+						$dummytext = "This patient is sensitized to ". $allengeStr .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "If the corresponding clinical signs occur, allergen-specific immunotherapy is recommended for: ". $allenge3Str .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						if(!empty($allenges4Arr)){
+						$dummytext .= "Allergen-specific immunotherapy is currently not available for ". $allenge4Str ."; the treatment is symptomatic.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						}
+						$dummytext .= "Please find full interpretation and detailed results per allergen extract and component in the following pages.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "Based on these results we recommend the following immunotherapy composition(s):";
 						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
 					}
-
 					$this->_data['allengesIDsArr'] = $allengesIDsArr;
 					$this->_data['allengesArr'] = $allengesArr;
 					$this->_data['dummytext'] = $dummytext;
@@ -13822,7 +13719,7 @@ class Orders extends CI_Controller{
 					$html_header = $this->load->view('pax_pdf/raptor_header_pdf', $this->_data, true);
 					$mpdf->WriteHTML($main_header_pdf);
 					$pageno_footer_pdf = $this->load->view('pax_pdf/raptor_footer', $this->_data, true);
-					if(empty($block1) && empty($blocks1)){
+					if(empty($block1)){
 						$negative_faq_pdf = $this->load->view('pax_pdf/raptor_negative_faq', $this->_data, true);
 						$mpdf->SetHTMLHeader($html_header);
 						$mpdf->AddPage('','','','','',0,0,22,22,5,5);
@@ -13830,7 +13727,7 @@ class Orders extends CI_Controller{
 						$mpdf->SetHTMLFooter($pageno_footer_pdf);
 						$mpdf->WriteHTML($negative_faq_pdf);
 					}
-					if(!empty($block1) || !empty($blocks1)){
+					if(!empty($block1)){
 						$summary_footer_pdf = $this->load->view('pax_pdf/raptor_summary_footer', $this->_data, true);
 						$summary_recommendation_pdf = $this->load->view('pax_pdf/raptor_summary_recommendation', $this->_data, true);
 						$mpdf->SetHTMLHeader($html_header);
@@ -13842,22 +13739,22 @@ class Orders extends CI_Controller{
 					$allergens_footer_pdf = $this->load->view('pax_pdf/raptor_allergens_footer_pdf', $this->_data, true);
 					$result_panel_pdf = $this->load->view('pax_pdf/raptor_result_panel', $this->_data, true);
 					$mpdf->SetHTMLHeader($allergen_header_pdf);
-					$mpdf->AddPage('','','','','',0,0,35,25,5,5);
+					$mpdf->AddPage('','','','','',0,0,35,30,5,5);
 					$mpdf->SetDisplayMode('fullpage');
 					$mpdf->SetHTMLFooter($allergens_footer_pdf);
 					$mpdf->WriteHTML($result_panel_pdf);
-					if(!empty($block1) || !empty($blocks1)){
+					if(!empty($block1)){
 						$interpretation_footer_pdf = $this->load->view('pax_pdf/raptor_footer_interpretation', $this->_data, true);
 						$interpretation_support_pdf = $this->load->view('pax_pdf/raptor_interpretation_support', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,20,30,5,5);
+						$mpdf->SetHTMLHeader($allergen_header_pdf);
+						$mpdf->AddPage('','','','','',0,0,35,35,5,5);
 						$mpdf->SetDisplayMode('fullpage');
 						$mpdf->SetHTMLFooter($interpretation_footer_pdf);
 						$mpdf->WriteHTML($interpretation_support_pdf);
 
 						$positive_faq_pdf = $this->load->view('pax_pdf/raptor_positive_faq', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,20,20,5,5);
+						$mpdf->SetHTMLHeader($allergen_header_pdf);
+						$mpdf->AddPage('','','','','',0,0,35,35,5,5);
 						$mpdf->SetDisplayMode('fullpage');
 						$mpdf->SetHTMLFooter($pageno_footer_pdf);
 						$mpdf->WriteHTML($positive_faq_pdf);
@@ -13872,15 +13769,16 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$allengesFArr = []; $allengesF3Arr = []; $allengesF4Arr = []; $dummyFtext = ""; $allengesIDFArr = array(); $foodtotal = 0;
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
+					$allengesIDFArr = array(); $allengesFArr = []; $dummyFtext = ""; $foodtotal = 0;
+					$subAllergnFArr = $this->AllergensModel->getFoodAllergensByID($order_details['allergens']);
+					if(!empty($subAllergnFArr)){
+						$allengesFArr = []; $allengesF3Arr = []; $allengesF4Arr = []; $foodtotal = 0;
+						foreach ($subAllergnFArr as $svalue){
 							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
 							if(!empty($subVlu->raptor_code)){
 								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
+									if($raptrVlu->result_value >= 30){
 										if($svalue['name'] != "N/A"){
 											$allengesF3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 										}else{
@@ -13893,44 +13791,41 @@ class Orders extends CI_Controller{
 								}
 							}
 						}
-					}
 
-					if(count($allengesFArr) > 1){
-						asort($allengesFArr);
-						$lastchnk = end($allengesFArr);
-						$lastchnkName = ', '.$lastchnk;
-						$lastchnkCng = ' '.$this->lang->line('recommendation_text_and').' '.$lastchnk;
-						$allengesStr = implode(", ",$allengesFArr);
-						$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
-					}else{
-						$allengeStr = implode(", ",$allengesFArr);
-					}
+						if(count($allengesFArr) > 1){
+							$lastchnk = end($allengesFArr);
+							$lastchnkName = ', '.$lastchnk;
+							$lastchnkCng = ' and '.$lastchnk;
+							$allengesStr = implode(", ",$allengesFArr);
+							$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
+						}else{
+							$allengeStr = implode(", ",$allengesFArr);
+						}
 
-					if(count($allengesF3Arr) > 1){
-						asort($allengesF3Arr);
-						$last3chnk = end($allengesF3Arr);
-						$lastchnk3Name = ', '.$last3chnk;
-						$lastchnk3Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last3chnk;
-						$allenges3Str = implode(", ",$allengesF3Arr);
-						$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
-					}else{
-						$allenge3Str = implode(", ",$allengesF3Arr);
-					}
+						if(count($allengesF3Arr) > 1){
+							$last3chnk = end($allengesF3Arr);
+							$lastchnk3Name = ', '.$last3chnk;
+							$lastchnk3Cng = ' and '.$last3chnk;
+							$allenges3Str = implode(", ",$allengesF3Arr);
+							$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
+						}else{
+							$allenge3Str = implode(", ",$allengesF3Arr);
+						}
 
-					if(count($allengesF4Arr) > 1){
-						asort($allengesF4Arr);
-						$last4chnk = end($allengesF4Arr);
-						$lastchnk4Name = ', '.$last4chnk;
-						$lastchnk4Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last4chnk;
-						$allenges4Str = implode(", ",$allengesF4Arr);
-						$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
-					}else{
-						$allenge4Str = implode(", ",$allengesF4Arr);
-					}
+						if(count($allengesF4Arr) > 1){
+							$last4chnk = end($allengesF4Arr);
+							$lastchnk4Name = ', '.$last4chnk;
+							$lastchnk4Cng = ' and '.$last4chnk;
+							$allenges4Str = implode(", ",$allengesF4Arr);
+							$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
+						}else{
+							$allenge4Str = implode(", ",$allengesF4Arr);
+						}
 
-					$dummyFtext .= "<p>". $this->lang->line('summery_text_1') . $allengeStr .".</p>";
-					$dummyFtext .= "<p>". $this->lang->line('summery_food_text_2') . $allengeStr . $this->lang->line('summery_food_text_2a') ."</p>";
-					$dummyFtext .= "<p>".$this->lang->line('summery_food_text_3')."</p>";
+						$dummyFtext .= "<p>This patient is sensitised to ". $allengeStr .".</p>";
+						$dummyFtext .= "<p>The sensitization to ". $allengeStr .", should be taken into consideration when prioritising ingredients for elimination trials and food challenges.</p>";
+						$dummyFtext .= "<p>Please find detailed results per allergen extract and component, detailed interpretation and diet selection chart in the following pages.</p>";
+					}
 					$this->_data['foodtotal'] = $foodtotal;
 					$this->_data['allengesIDsArr'] = $allengesIDFArr;
 					$this->_data['allengesArr'] = $allengesFArr;
@@ -13972,42 +13867,27 @@ class Orders extends CI_Controller{
 					$allergens_footer_pdf = $this->load->view('pax_pdf/raptor_allergens_footer_pdf', $this->_data, true);
 					$result_panel_pdf = $this->load->view('pax_pdf/raptor_result_panel_food', $this->_data, true);
 					$mpdf->SetHTMLHeader($allergen_header_pdf);
-					$mpdf->AddPage('','','','','',0,0,35,27,5,5);
+					$mpdf->AddPage('','','','','',0,0,35,30,5,5);
 					$mpdf->SetDisplayMode('fullpage');
 					$mpdf->SetHTMLFooter($allergens_footer_pdf);
 					$mpdf->WriteHTML($result_panel_pdf);
 					if($foodtotal > 0){
 						$interpretation_footer_pdf = $this->load->view('pax_pdf/raptor_footer_interpretation', $this->_data, true);
 						$interpretation_support_pdf = $this->load->view('pax_pdf/raptor_interpretation_support', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,22,35,5,5);
+						$mpdf->SetHTMLHeader($allergen_header_pdf);
+						$mpdf->AddPage('','','','','',0,0,35,35,5,5);
 						$mpdf->SetDisplayMode('fullpage');
 						$mpdf->SetHTMLFooter($interpretation_footer_pdf);
 						$mpdf->WriteHTML($interpretation_support_pdf);
 
-						$diet_chart_footer_pdf = $this->load->view('pax_pdf/raptor_diet_chart_footer', $this->_data, true);
-						if($this->session->userdata('export_site_lang') == 'export_spanish'){ 
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_spanish', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							$mpdf->AddPage('','','','','',0,0,40,20,5,5);
-						}elseif($this->session->userdata('export_site_lang') == 'export_dutch'){
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_dutch', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							$mpdf->AddPage('','','','','',0,0,33,20,5,5);
-						}else{ 
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_'.$this->session->userdata('site_lang').'', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							if($this->session->userdata('site_lang') == 'spanish'){
-								$mpdf->AddPage('','','','','',0,0,37,20,5,5);
-							}else{
-								$mpdf->AddPage('','','','','',0,0,33,20,5,5);
-							}
-						}
+						$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart', $this->_data, true);
+						$mpdf->SetHTMLHeader($diet_chart_header);
+						$mpdf->AddPage('','','','','',0,0,33,20,5,5);
 						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($diet_chart_footer_pdf);
+						$mpdf->SetHTMLFooter($pageno_footer_pdf);
 						$mpdf->WriteHTML($diet_chart_pdf);
 					}
-					$mpdf->Output($file_name_food,'F');
+					$mpdf->Output($file_name,'F');
 				}elseif($respnedn->name == 'PAX Environmental + Food'){
 					$getAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($order_details['allergens']);
 					$totalGroup0 = count($getAllergenParent);
@@ -14017,37 +13897,71 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = []; $block1 = []; $blocks1 = []; $allengesIDsArr = array();
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
+					$block1 = []; $allengesIDsArr = array(); $dummytext = "";
+					$subAllergnArr = $this->AllergensModel->getEnvAllergensByID($order_details['allergens']);
+					if(!empty($subAllergnArr)){
+						$allengesArr = []; $allenges3Arr = []; $allenges4Arr = [];
+						foreach ($subAllergnArr as $svalue){
 							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
 							if(!empty($subVlu->raptor_code)){
 								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
+									if($raptrVlu->result_value >= 30){
 										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID3Arr[] = $svalue['id'];
-											}
 											$block1[$svalue['id']] = $svalue['name'];
+											$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 										}else{
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID4Arr[] = $svalue['id'];
-											}
-											$blocks1[$svalue['id']] = $svalue['name'];
+											$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 										}
-										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-											$allengesIDArr[] = $svalue['id'];
-										}
-										$allengesIDsArr[] = $svalue['id'];
 										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										$allengesIDsArr[] = $svalue['id'];
 									}
 								}
 							}
 						}
+
+						if(count($allengesArr) > 1){
+							$lastchnk = end($allengesArr);
+							$lastchnkName = ', '.$lastchnk;
+							$lastchnkCng = ' and '.$lastchnk;
+							$allengesStr = implode(", ",$allengesArr);
+							$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
+						}else{
+							$allengeStr = implode(", ",$allengesArr);
+						}
+
+						if(count($allenges3Arr) > 1){
+							$last3chnk = end($allenges3Arr);
+							$lastchnk3Name = ', '.$last3chnk;
+							$lastchnk3Cng = ' and '.$last3chnk;
+							$allenges3Str = implode(", ",$allenges3Arr);
+							$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
+						}else{
+							$allenge3Str = implode(", ",$allenges3Arr);
+						}
+
+						if(count($allenges4Arr) > 1){
+							$last4chnk = end($allenges4Arr);
+							$lastchnk4Name = ', '.$last4chnk;
+							$lastchnk4Cng = ' and '.$last4chnk;
+							$allenges4Str = implode(", ",$allenges4Arr);
+							$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
+						}else{
+							$allenge4Str = implode(", ",$allenges4Arr);
+						}
+
+						$dummytext .= "This patient is sensitized to ". $allengeStr .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "If the corresponding clinical signs occur, allergen-specific immunotherapy is recommended for: ". $allenge3Str .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						if(!empty($allenges4Arr)){
+						$dummytext .= "Allergen-specific immunotherapy is currently not available for ". $allenge4Str ."; the treatment is symptomatic.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						}
+						$dummytext .= "Please find full interpretation and detailed results per allergen extract and component in the following pages.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "Based on these results we recommend the following immunotherapy composition(s):";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
 					}
 					if(array_key_exists("45994",$block1) && array_key_exists("73",$block1)){
 						unset($block1['45994']);
@@ -14055,28 +13969,18 @@ class Orders extends CI_Controller{
 						unset($block1['45994']);
 						$block1['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($data['treatment_1'] != "" && $data['treatment_1'] != "[]"){
+					if($order_details['treatment_1'] != "" && $order_details['treatment_1'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_1']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
 								$block1[$svalue['id']] = $svalue['name'];
-								if($svalue['name'] != "N/A"){
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID3Arr))){
-										$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}else{
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID4Arr))){
-										$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
 							}
 						}
 					}
-					//asort($block1);
+					asort($block1);
 					$this->_data['block1'] = $block1;
-					$this->_data['blocks1'] = $blocks1;
 
-					$block2 = []; $chk_alg_cunt = 0;
+					$block2 = [];
 					foreach($getAllergenParent as $apvalue){
 						$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
 						if(!empty($getGroupMixtures)){
@@ -14086,9 +13990,9 @@ class Orders extends CI_Controller{
 									$parentIdArr[] = $mvalue['id'];
 								}
 							}
-
 							if(!empty($parentIdArr)){
 								if(count($parentIdArr) > 1){
+									$emptyArr = [];
 									foreach($parentIdArr as $makey=>$mavalue){
 										$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
 										$testingArr = [];
@@ -14097,24 +14001,50 @@ class Orders extends CI_Controller{
 											if(!empty($rmcodes->raptor_code)){
 												$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
 												if(!empty($raptrmVlu)){
-													if(floor($raptrmVlu->result_value) >= $cutoffs){
+													if($raptrmVlu->result_value >= 30){
 														$testingArr[$mavalue] += 1;
 													}
 												}
 											}
 										}
 
-										if(count($allergenArr) >= 3){
-											$chk_alg_cunt = (count($allergenArr)-1);
-											if($testingArr[$mavalue] >= $chk_alg_cunt){
-												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
+										if($testingArr[$mavalue] >= 2){
+											if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+												$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
+											}
+											foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
+												$emptyArr[$apvalue['parent_id']][] = $emtrow;
+											}
+										}
+									}
+
+									if(!empty($emptyArr[$apvalue['parent_id']])){
+										$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown_empty($apvalue['parent_id'],$order_details['allergens'], $emptyArr[$apvalue['parent_id']]);
+										foreach($sub1Allergens as $s1value){
+											$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
+											if(!empty($sub1Vlu->raptor_code)){
+												$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr1Vlu)){
+													if($raptr1Vlu->result_value >= 30){
+														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
+															$block2[$s1value['id']] = $s1value['name'];
+														}
+													}
 												}
 											}
-										}else{
-											if($testingArr[$mavalue] >= 2){
-												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
+										}
+									}else{
+										$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+										foreach($sub2Allergens as $s2value){
+											$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+											if(!empty($sub2Vlu->raptor_code)){
+												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr2Vlu)){
+													if($raptr2Vlu->result_value >= 30){
+														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
+														$block2[$s2value['id']] = $s2value['name'];
+														}
+													}
 												}
 											}
 										}
@@ -14127,31 +14057,43 @@ class Orders extends CI_Controller{
 										if(!empty($rcodes->raptor_code)){
 											$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
 											if(!empty($raptrVlu)){
-												if(floor($raptrVlu->result_value) >= $cutoffs){
+												if($raptrVlu->result_value >= 30){
 													$tested++;
 												}
 											}
 										}
 									}
-									
-									if($apvalue['parent_id'] == 1){
-										if($tested >= 3){
-											if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-												$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+
+									if($tested >= 2){
+										if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
+										$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+										}
+										$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$order_details['allergens'], $getGroupMixtures[0]['mixture_allergens']);
+										foreach($sub1Allergens as $s1value){
+											$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
+											if(!empty($sub1Vlu->raptor_code)){
+												$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr1Vlu)){
+													if($raptr1Vlu->result_value >= 30){
+														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
+														$block2[$s1value['id']] = $s1value['name'];
+														}
+													}
+												}
 											}
 										}
 									}else{
-										if(count($allergensArr) >= 3){
-											$chk_alg_cunt = (count($allergensArr)-1);
-											if($tested >= $chk_alg_cunt){
-												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-												}
-											}
-										}else{
-											if($tested >= 2){
-												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+										$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+										foreach($sub2Allergens as $s2value){
+											$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+											if(!empty($sub2Vlu->raptor_code)){
+												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+												if(!empty($raptr2Vlu)){
+													if($raptr2Vlu->result_value >= 30){
+														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
+														$block2[$s2value['id']] = $s2value['name'];
+														}
+													}
 												}
 											}
 										}
@@ -14166,7 +14108,7 @@ class Orders extends CI_Controller{
 										if(!empty($raptr2Vlu)){
 											if($raptr2Vlu->result_value >= 30){
 												if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-													$block2[$s2value['id']] = $s2value['name'];
+												$block2[$s2value['id']] = $s2value['name'];
 												}
 											}
 										}
@@ -14182,7 +14124,7 @@ class Orders extends CI_Controller{
 									if(!empty($raptr3Vlu)){
 										if($raptr3Vlu->result_value >= 30){
 											if($s3value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s3value['id']) > 0){
-												$block2[$s3value['id']] = $s3value['name'];
+											$block2[$s3value['id']] = $s3value['name'];
 											}
 										}
 									}
@@ -14196,93 +14138,84 @@ class Orders extends CI_Controller{
 						unset($block2['45994']);
 						$block2['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($data['treatment_2'] != "" && $data['treatment_2'] != "[]"){
+					if($order_details['treatment_2'] != "" && $order_details['treatment_2'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_2']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
 								if($svalue['name'] != "N/A"){
-									$block2[$svalue['id']] = $svalue['name'];
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID3Arr))){
-										$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}else{
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID4Arr))){
-										$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
+								$block2[$svalue['id']] = $svalue['name'];
 								}
 							}
 						}
 					}
-					//asort($block2);
+					asort($block2);
 					$this->_data['block2'] = $block2;
 
-					if(count($allengesArr) > 1){
-						asort($allengesArr);
-						$lastchnk = end($allengesArr);
-						$lastchnkName = ', '.$lastchnk;
-						$lastchnkCng = ' '.$this->lang->line('recommendation_text_and').' '.$lastchnk;
-						$allengesStr = implode(", ",$allengesArr);
-						$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
-					}else{
-						$allengeStr = implode(", ",$allengesArr);
-					}
-
-					if(count($allenges3Arr) > 1){
-						asort($allenges3Arr);
-						$last3chnk = end($allenges3Arr);
-						$lastchnk3Name = ', '.$last3chnk;
-						$lastchnk3Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last3chnk;
-						$allenges3Str = implode(", ",$allenges3Arr);
-						$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
-					}else{
-						$allenge3Str = implode(", ",$allenges3Arr);
-					}
-
-					if(count($allenges4Arr) > 1){
-						asort($allenges4Arr);
-						$last4chnk = end($allenges4Arr);
-						$lastchnk4Name = ', '.$last4chnk;
-						$lastchnk4Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last4chnk;
-						$allenges4Str = implode(", ",$allenges4Arr);
-						$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
-					}else{
-						$allenge4Str = implode(", ",$allenges4Arr);
-					}
-
-					$dummytext = $this->lang->line('summery_text_1') . $allengeStr .".";
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					if(!empty($allenges3Arr)){
-					$dummytext .= $this->lang->line('summery_text_2') . $allenge3Str .".";
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					}
-					if(!empty($allenges4Arr)){
-					$dummytext .= $this->lang->line('summery_text_3') . $allenge4Str . $this->lang->line('summery_text_3a');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					}
-					$dummytext .= $this->lang->line('summery_text_4');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					$dummytext .= $this->lang->line('summery_text_5');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-
-					$sql = "SELECT result_value, name FROM `ci_raptor_result_allergens` WHERE result_id = '". $raptorData->result_id ."' AND (name LIKE 'CCD-HSA' OR name LIKE 'Hom s LF')";
-					$responce = $this->db->query($sql);
-					$ccd1Results = $responce->result();
-					$ccdresult1 = 0; $ccdresult2 = 0;
-					if(!empty($ccd1Results)){
-						foreach($ccd1Results as $cvalue){
-							if($cvalue->name == 'CCD-HSA'){
-								$ccdresult1 = $cvalue->result_value;
-							}
-							if($cvalue->name == 'Hom s LF'){
-								$ccdresult2 = $cvalue->result_value;
+					$allengesIDsArr = array(); $allengesArr = []; $dummytext = "";
+					$subAllergnArr = $this->AllergensModel->getEnvAllergensByID($data['allergens']);
+					if(!empty($subAllergnArr)){
+						$allengesArr = []; $allenges3Arr = []; $allenges4Arr = [];
+						foreach ($subAllergnArr as $svalue){
+							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+							if(!empty($subVlu->raptor_code)){
+								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+								if(!empty($raptrVlu)){
+									if($raptrVlu->result_value >= 30){
+										if($svalue['name'] != "N/A"){
+											$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										}else{
+											$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										}
+										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+										$allengesIDsArr[] = $svalue['id'];
+									}
+								}
 							}
 						}
-					}
-					if(floor($ccdresult1) >= $cutoffs || floor($ccdresult2) >= $cutoffs){
-						$dummytext .= $this->lang->line('pax_ccd_text_'.$cutoffs.'');
+
+						if(count($allengesArr) > 1){
+							$lastchnk = end($allengesArr);
+							$lastchnkName = ', '.$lastchnk;
+							$lastchnkCng = ' and '.$lastchnk;
+							$allengesStr = implode(", ",$allengesArr);
+							$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
+						}else{
+							$allengeStr = implode(", ",$allengesArr);
+						}
+
+						if(count($allenges3Arr) > 1){
+							$last3chnk = end($allenges3Arr);
+							$lastchnk3Name = ', '.$last3chnk;
+							$lastchnk3Cng = ' and '.$last3chnk;
+							$allenges3Str = implode(", ",$allenges3Arr);
+							$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
+						}else{
+							$allenge3Str = implode(", ",$allenges3Arr);
+						}
+
+						if(count($allenges4Arr) > 1){
+							$last4chnk = end($allenges4Arr);
+							$lastchnk4Name = ', '.$last4chnk;
+							$lastchnk4Cng = ' and '.$last4chnk;
+							$allenges4Str = implode(", ",$allenges4Arr);
+							$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
+						}else{
+							$allenge4Str = implode(", ",$allenges4Arr);
+						}
+
+						$dummytext = "This patient is sensitized to ". $allengeStr .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "If the corresponding clinical signs occur, allergen-specific immunotherapy is recommended for: ". $allenge3Str .".";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						if(!empty($allenges4Arr)){
+						$dummytext .= "Allergen-specific immunotherapy is currently not available for ". $allenge4Str ."; the treatment is symptomatic.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						}
+						$dummytext .= "Please find full interpretation and detailed results per allergen extract and component in the following pages.";
+						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
+						$dummytext .= "Based on these results we recommend the following immunotherapy composition(s):";
 						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
 					}
-
 					$this->_data['allengesIDsArr'] = $allengesIDsArr;
 					$this->_data['allengesArr'] = $allengesArr;
 					$this->_data['dummytext'] = $dummytext;
@@ -14301,7 +14234,7 @@ class Orders extends CI_Controller{
 					$env_html_header = $this->load->view('pax_pdf/raptor_header_pdf', $this->_data, true);
 					$mpdf->WriteHTML($env_main_header_pdf);
 					$env_pageno_footer_pdf = $this->load->view('pax_pdf/raptor_footer', $this->_data, true);
-					if(empty($block1) && empty($blocks1)){
+					if(empty($block1)){
 						$env_negative_faq_pdf = $this->load->view('pax_pdf/raptor_negative_faq', $this->_data, true);
 						$mpdf->SetHTMLHeader($env_html_header);
 						$mpdf->AddPage('','','','','',0,0,22,22,5,5);
@@ -14309,7 +14242,7 @@ class Orders extends CI_Controller{
 						$mpdf->SetHTMLFooter($env_pageno_footer_pdf);
 						$mpdf->WriteHTML($env_negative_faq_pdf);
 					}
-					if(!empty($block1) || !empty($blocks1)){
+					if(!empty($block1)){
 						$env_summary_footer_pdf = $this->load->view('pax_pdf/raptor_summary_footer', $this->_data, true);
 						$env_summary_recommendation_pdf = $this->load->view('pax_pdf/raptor_summary_recommendation', $this->_data, true);
 						$mpdf->SetHTMLHeader($env_html_header);
@@ -14321,22 +14254,22 @@ class Orders extends CI_Controller{
 					$env_allergens_footer_pdf = $this->load->view('pax_pdf/raptor_allergens_footer_pdf', $this->_data, true);
 					$env_result_panel_pdf = $this->load->view('pax_pdf/raptor_result_panel', $this->_data, true);
 					$mpdf->SetHTMLHeader($env_allergen_header_pdf);
-					$mpdf->AddPage('','','','','',0,0,35,25,5,5);
+					$mpdf->AddPage('','','','','',0,0,35,30,5,5);
 					$mpdf->SetDisplayMode('fullpage');
 					$mpdf->SetHTMLFooter($env_allergens_footer_pdf);
 					$mpdf->WriteHTML($env_result_panel_pdf);
-					if(!empty($block1) || !empty($blocks1)){
+					if(!empty($block1)){
 						$env_interpretation_footer_pdf = $this->load->view('pax_pdf/raptor_footer_interpretation', $this->_data, true);
 						$env_interpretation_support_pdf = $this->load->view('pax_pdf/raptor_interpretation_support', $this->_data, true);
-						$mpdf->SetHTMLHeader($env_html_header);
-						$mpdf->AddPage('','','','','',0,0,20,30,5,5);
+						$mpdf->SetHTMLHeader($env_allergen_header_pdf);
+						$mpdf->AddPage('','','','','',0,0,35,35,5,5);
 						$mpdf->SetDisplayMode('fullpage');
 						$mpdf->SetHTMLFooter($env_interpretation_footer_pdf);
 						$mpdf->WriteHTML($env_interpretation_support_pdf);
 
 						$env_positive_faq_pdf = $this->load->view('pax_pdf/raptor_positive_faq', $this->_data, true);
-						$mpdf->SetHTMLHeader($env_html_header);
-						$mpdf->AddPage('','','','','',0,0,20,20,5,5);
+						$mpdf->SetHTMLHeader($env_allergen_header_pdf);
+						$mpdf->AddPage('','','','','',0,0,35,35,5,5);
 						$mpdf->SetDisplayMode('fullpage');
 						$mpdf->SetHTMLFooter($env_pageno_footer_pdf);
 						$mpdf->WriteHTML($env_positive_faq_pdf);
@@ -14352,15 +14285,16 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$allengesFArr = []; $allengesF3Arr = []; $allengesF4Arr = []; $dummyFtext = ""; $allengesIDFArr = array(); $foodtotal = 0;
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
+					$allengesIDFArr = array(); $allengesFArr = []; $dummyFtext = ""; $foodtotal = 0;
+					$subAllergnFArr = $this->AllergensModel->getFoodAllergensByID($order_details['allergens']);
+					if(!empty($subAllergnFArr)){
+						$allengesFArr = []; $allengesF3Arr = []; $allengesF4Arr = []; $foodtotal = 0;
+						foreach ($subAllergnFArr as $svalue){
 							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
 							if(!empty($subVlu->raptor_code)){
 								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
+									if($raptrVlu->result_value >= 30){
 										if($svalue['name'] != "N/A"){
 											$allengesF3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 										}else{
@@ -14373,44 +14307,41 @@ class Orders extends CI_Controller{
 								}
 							}
 						}
-					}
 
-					if(count($allengesFArr) > 1){
-						asort($allengesFArr);
-						$lastchnk = end($allengesFArr);
-						$lastchnkName = ', '.$lastchnk;
-						$lastchnkCng = ' '.$this->lang->line('recommendation_text_and').' '.$lastchnk;
-						$allengesStr = implode(", ",$allengesFArr);
-						$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
-					}else{
-						$allengeStr = implode(", ",$allengesFArr);
-					}
+						if(count($allengesFArr) > 1){
+							$lastchnk = end($allengesFArr);
+							$lastchnkName = ', '.$lastchnk;
+							$lastchnkCng = ' and '.$lastchnk;
+							$allengesStr = implode(", ",$allengesFArr);
+							$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
+						}else{
+							$allengeStr = implode(", ",$allengesFArr);
+						}
 
-					if(count($allengesF3Arr) > 1){
-						asort($allengesF3Arr);
-						$last3chnk = end($allengesF3Arr);
-						$lastchnk3Name = ', '.$last3chnk;
-						$lastchnk3Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last3chnk;
-						$allenges3Str = implode(", ",$allengesF3Arr);
-						$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
-					}else{
-						$allenge3Str = implode(", ",$allengesF3Arr);
-					}
+						if(count($allengesF3Arr) > 1){
+							$last3chnk = end($allengesF3Arr);
+							$lastchnk3Name = ', '.$last3chnk;
+							$lastchnk3Cng = ' and '.$last3chnk;
+							$allenges3Str = implode(", ",$allengesF3Arr);
+							$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
+						}else{
+							$allenge3Str = implode(", ",$allengesF3Arr);
+						}
 
-					if(count($allengesF4Arr) > 1){
-						asort($allengesF4Arr);
-						$last4chnk = end($allengesF4Arr);
-						$lastchnk4Name = ', '.$last4chnk;
-						$lastchnk4Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last4chnk;
-						$allenges4Str = implode(", ",$allengesF4Arr);
-						$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
-					}else{
-						$allenge4Str = implode(", ",$allengesF4Arr);
-					}
+						if(count($allengesF4Arr) > 1){
+							$last4chnk = end($allengesF4Arr);
+							$lastchnk4Name = ', '.$last4chnk;
+							$lastchnk4Cng = ' and '.$last4chnk;
+							$allenges4Str = implode(", ",$allengesF4Arr);
+							$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
+						}else{
+							$allenge4Str = implode(", ",$allengesF4Arr);
+						}
 
-					$dummyFtext .= "<p>". $this->lang->line('summery_text_1') . $allengeStr .".</p>";
-					$dummyFtext .= "<p>". $this->lang->line('summery_food_text_2') . $allengeStr . $this->lang->line('summery_food_text_2a') ."</p>";
-					$dummyFtext .= "<p>".$this->lang->line('summery_food_text_3')."</p>";
+						$dummyFtext .= "<p>This patient is sensitised to ". $allengeStr .".</p>";
+						$dummyFtext .= "<p>The sensitization to ". $allengeStr .", should be taken into consideration when prioritising ingredients for elimination trials and food challenges.</p>";
+						$dummyFtext .= "<p>Please find detailed results per allergen extract and component, detailed interpretation and diet selection chart in the following pages.</p>";
+					}
 					$this->_data['foodtotal'] = $foodtotal;
 					$this->_data['allengesIDsArr'] = $allengesIDFArr;
 					$this->_data['allengesArr'] = $allengesFArr;
@@ -14452,74 +14383,31 @@ class Orders extends CI_Controller{
 					$allergens_footer_pdf = $this->load->view('pax_pdf/raptor_allergens_footer_pdf', $this->_data, true);
 					$result_panel_pdf = $this->load->view('pax_pdf/raptor_result_panel_food', $this->_data, true);
 					$mpdf->SetHTMLHeader($allergen_header_pdf);
-					$mpdf->AddPage('','','','','',0,0,35,27,5,5);
+					$mpdf->AddPage('','','','','',0,0,35,30,5,5);
 					$mpdf->SetDisplayMode('fullpage');
 					$mpdf->SetHTMLFooter($allergens_footer_pdf);
 					$mpdf->WriteHTML($result_panel_pdf);
 					if($foodtotal > 0){
 						$interpretation_footer_pdf = $this->load->view('pax_pdf/raptor_footer_interpretation', $this->_data, true);
 						$interpretation_support_pdf = $this->load->view('pax_pdf/raptor_interpretation_support', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,22,35,5,5);
+						$mpdf->SetHTMLHeader($allergen_header_pdf);
+						$mpdf->AddPage('','','','','',0,0,35,35,5,5);
 						$mpdf->SetDisplayMode('fullpage');
 						$mpdf->SetHTMLFooter($interpretation_footer_pdf);
 						$mpdf->WriteHTML($interpretation_support_pdf);
 
-						$diet_chart_footer_pdf = $this->load->view('pax_pdf/raptor_diet_chart_footer', $this->_data, true);
-						if($this->session->userdata('export_site_lang') == 'export_spanish'){ 
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_spanish', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							$mpdf->AddPage('','','','','',0,0,40,20,5,5);
-						}elseif($this->session->userdata('export_site_lang') == 'export_dutch'){
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_dutch', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							$mpdf->AddPage('','','','','',0,0,33,20,5,5);
-						}else{ 
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_'.$this->session->userdata('site_lang').'', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							if($this->session->userdata('site_lang') == 'spanish'){
-								$mpdf->AddPage('','','','','',0,0,37,20,5,5);
-							}else{
-								$mpdf->AddPage('','','','','',0,0,33,20,5,5);
-							}
-						}
+						$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart', $this->_data, true);
+						$mpdf->SetHTMLHeader($diet_chart_header);
+						$mpdf->AddPage('','','','','',0,0,33,20,5,5);
 						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($diet_chart_footer_pdf);
+						$mpdf->SetHTMLFooter($pageno_footer_pdf);
 						$mpdf->WriteHTML($diet_chart_pdf);
 					}
 					$mpdf->Output($file_name_food,'F');
 				}
 			}
-
-			$zonesIds = $this->checkZones($orderId);
-			if(!empty($zonesIds) && !in_array("1", $zonesIds)){
-				if($this->site_lang != $this->export_site_lang && $this->export_site_lang == 'export_dutch'){
-					$from_email = "info.eu@nextmune.com";
-				}elseif($this->site_lang != $this->export_site_lang && $this->export_site_lang == 'export_spanish'){
-					$from_email = "diagnosticos.es@nextmune.com";
-				}else{
-					$zoneFEmail = $this->getZoneFromEmail($zonesIds);
-					if(!empty($zoneFEmail)){
-						$from_email = $zoneFEmail;
-					}
-				}
-				if(in_array("5", $zonesIds)){
-					$emailBody = $this->load->view('orders/send_pax_serum_mail_templateIT', $this->_data, true);
-				}else{
-					$emailBody = $this->load->view('orders/send_serum_mail_template_petowner', $this->_data, true);
-				}
-			}else{
-				if($this->site_lang != $this->export_site_lang && $this->export_site_lang == 'export_dutch'){
-					$from_email = "info.eu@nextmune.com";
-				}elseif($this->site_lang != $this->export_site_lang && $this->export_site_lang == 'export_spanish'){
-					$from_email = "diagnosticos.es@nextmune.com";
-				}else{
-					$from_email = "vetorders.uk@nextmune.com";
-				}
-				$emailBody = $this->load->view('orders/send_serum_mail_template_petowner', $this->_data, true);
-			}
-			$emailBody = trim($emailBody);
-
+			$atcfileName = SERUM_REQUEST_PDF_PATH . "serum_result_". $data['order_number'] .".pdf";
+			$practice_email = $data['practice_email'];
 			if($data['lab_id'] > 0 && $data['lab_id'] == '13786'){
 				$to_email = 'immunotherapy@axiomvetlab.co.uk';
 			}elseif($data['lab_id'] > 0 && $data['lab_id'] == '13788'){
@@ -14527,7 +14415,7 @@ class Orders extends CI_Controller{
 			}else{
 				$to_email = $data['email'];
 			}
-
+			$from_email = "vetorders.uk@nextmune.com";
 			$config = array(
 				'mailtype'  => 'html',
 				'charset'   => 'iso-8859-1'
@@ -14535,25 +14423,34 @@ class Orders extends CI_Controller{
 			$this->load->library('email', $config);
 			$this->email->from($from_email, "Nextmune");
 			$this->email->to($to_email);
-			$this->email->subject(''.$this->lang->line('pax_result_subject1').' '.$data['pet_name'].' '.$petownerName.' '.$this->lang->line('pax_result_subject2').'');
+			$this->email->subject('PAX Serum Sample for '.$data['pet_name'].' '.$data['po_last'].' received.');
 			$this->email->message($emailBody);
 			$this->email->set_mailtype("html");
-			if(preg_match('/\bPAX Environmental\b/', $respnedn->name)){
-				$this->email->attach($atcfileName);
-			}
-			if((preg_match('/\bFood Screening\b/', $respnedn->name)) || (preg_match('/\bFood\b/', $respnedn->name))){
+			$this->email->attach($atcfileName);
+			if(((preg_match('/\bPAX Environmental\b/', $respnedn->name)) && (preg_match('/\bFood Screening\b/', $respnedn->name))) || ((preg_match('/\bPAX Environmental\b/', $respnedn->name)) && (preg_match('/\bFood\b/', $respnedn->name)))){
+				$atcfileFoodName = SERUM_REQUEST_PDF_PATH . "serum_result_food_". $data['order_number'] .".pdf";
 				$this->email->attach($atcfileFoodName);
 			}
-
 			$is_send = $this->email->send();
 			if ($is_send) {
-				$orderhData['text'] = 'Serum Result sent to Petowner.';
+				$orderData['id'] = $orderId;
+				$orderData['is_serum_result_sent'] = 1;
+				$orderData['is_authorised'] = 2;
+				$orderData['is_confirmed'] = 4;
+				$orderData['is_order_completed'] = 1;
+				$orderData['shipping_date'] = date("Y-m-d");
+				if(preg_match('/\bScreening\b/', $respnedn->name)){
+				$orderData['is_expand'] = 1;
+				}
+				$this->OrdersModel->add_edit($orderData);
+
+				$orderhData['text'] = 'Reported';
 				$orderhData['order_id'] = $orderId;
 				$orderhData['created_by'] = $this->user_id;;
 				$orderhData['created_at'] = date("Y-m-d H:i:s");
 				$this->db->insert('ci_order_history', $orderhData);
 
-				$this->session->set_flashdata("success", "Serum Result sent to Petowner successfully.");
+				$this->session->set_flashdata("success", "Email sent successfully.");
 			} else {
 				$this->session->set_flashdata("error", $this->email->print_debugger());
 			}
@@ -14578,77 +14475,22 @@ class Orders extends CI_Controller{
 		$this->_data['slected_treatment'] = $slected;
 
 		$allergenTotal = !empty($this->input->post('allergen_total'))?$this->input->post('allergen_total'):0;
-		$is_interpretation = !empty($this->input->post('is_interpretation'))?$this->input->post('is_interpretation'):0;
-		if($allergenTotal > 0){
+		if($allergenTotal>0){
 			$allergenArr = json_decode($this->input->post('allergenArr'));
 			$slectedTreatment = $this->input->post('slected_treatment');
 			$newAllergens = $this->input->post('allergens');
 			if(!empty($newAllergens)){
-				$resAllergens = array();
-				foreach ($newAllergens as $key => $value){
-					if(!in_array($value, $allergenArr)){
-						$resAllergens[] = $value;
-					}
-				}
-
 				$orderData['id'] = $id;
 				if($slectedTreatment == 1){
-					$orderData['treatment_1'] = json_encode($resAllergens);
-					$removed_allergens = $this->input->post('removed_allergens');
-					if(!empty($removed_allergens)){
-						$orderData['removed_treatment_1'] = json_encode($removed_allergens);
-					}
-					if(empty($removed_allergens)){
-						$orderData['removed_treatment_1'] = '';
-					}
+					$orderData['treatment_1'] = json_encode($newAllergens);
 				}elseif($slectedTreatment == 2){
-					$orderData['treatment_2'] = json_encode($resAllergens);
-					$removed_allergens = $this->input->post('removed_allergens');
-					if(!empty($removed_allergens)){
-						$orderData['removed_treatment_2'] = json_encode($removed_allergens);
-					}
-					if(empty($removed_allergens)){
-						$orderData['removed_treatment_2'] = '';
-					}
+					$orderData['treatment_2'] = json_encode($newAllergens);
 				}else{
-					$orderData['treatment_3'] = json_encode($resAllergens);
+					$orderData['treatment_3'] = json_encode($newAllergens);
 				}
-
 				$this->OrdersModel->add_edit($orderData);
 				$this->session->set_flashdata("success", "New recommendation saved successfully and Result Interpretation Updated.");
 			}
-			if($data['serum_type'] == 1){
-				redirect('orders/interpretation/'.$id);
-			}else{
-				redirect('orders/treatment/'.$id);
-			}
-		}elseif($allergenTotal == 0 && $is_interpretation == 1){
-			$slectedTreatment = $this->input->post('slected_treatment');
-			$orderData['id'] = $id;
-			if($slectedTreatment == 1){
-				$orderData['treatment_1'] = '[]';
-				$removed_allergens = $this->input->post('removed_allergens');
-				if(!empty($removed_allergens)){
-					$orderData['removed_treatment_1'] = json_encode($removed_allergens);
-				}
-				if(empty($removed_allergens)){
-					$orderData['removed_treatment_1'] = '';
-				}
-			}elseif($slectedTreatment == 2){
-				$orderData['treatment_2'] = '[]';
-				$removed_allergens = $this->input->post('removed_allergens');
-				if(!empty($removed_allergens)){
-					$orderData['removed_treatment_2'] = json_encode($removed_allergens);
-				}
-				if(empty($removed_allergens)){
-					$orderData['removed_treatment_2'] = '';
-				}
-			}else{
-				$orderData['treatment_3'] = '[]';
-			}
-
-			$this->OrdersModel->add_edit($orderData);
-			$this->session->set_flashdata("success", "New recommendation saved successfully and Result Interpretation Updated.");
 			if($data['serum_type'] == 1){
 				redirect('orders/interpretation/'.$id);
 			}else{
@@ -14660,36 +14502,6 @@ class Orders extends CI_Controller{
 			$this->_data['data'] = $data;
 		}
 		$this->load->view("orders/serum_allergens", $this->_data);
-	}
-
-	function remove_nextlab_treatment2($id = ''){
-		$orderData['id'] = $id;
-		$orderData['remove_treatment_2'] = '1';
-		$orderData['updated_by'] = $this->user_id;
-		$orderData['updated_at'] = date("Y-m-d H:i:s");
-		$this->OrdersModel->add_edit($orderData);
-
-		redirect('orders/treatment/'.$id);
-	}
-
-	function remove_pax_treatment2($id = ''){
-		$orderData['id'] = $id;
-		$orderData['remove_treatment_2'] = '1';
-		$orderData['updated_by'] = $this->user_id;
-		$orderData['updated_at'] = date("Y-m-d H:i:s");
-		$this->OrdersModel->add_edit($orderData);
-
-		redirect('orders/interpretation/'. $id);
-	}
-
-	function add_pax_treatment2($id = ''){
-		$orderData['id'] = $id;
-		$orderData['remove_treatment_2'] = '0';
-		$orderData['updated_by'] = $this->user_id;
-		$orderData['updated_at'] = date("Y-m-d H:i:s");
-		$this->OrdersModel->add_edit($orderData);
-
-		redirect('orders/interpretation/'. $id);
 	}
 
 	function serum_treatment($id=''){
@@ -14936,9 +14748,6 @@ class Orders extends CI_Controller{
 	function sendBloodReceivedNotification($orderId){
 		if($orderId > 0){
 			$data = $this->OrdersModel->allData($orderId, "");
-			$petOWFName = !empty($data['pet_owner_name'])?$data['pet_owner_name']:'';
-			$petOWLName = !empty($data['po_last'])?$data['po_last']:'';
-			$petownerName = $petOWFName.' '.$petOWLName;
 			$emailBody = '<!DOCTYPE html>
 			<html>
 				<head>
@@ -14971,8 +14780,8 @@ class Orders extends CI_Controller{
 											<div style="display:inline-block; max-width:55%; min-width:100px; vertical-align:top; width:100%;">
 												<table align="left" border="0" cellpadding="0" cellspacing="0" width="100%">
 													<tr>
-														<td align="center" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 36px; font-weight: 800; line-height: 48px;text-align: center;" class="mobile-center">
-															<img class="logo-img" src="'. base_url("/assets/images/Nextmune_Email_Logo.png") .'" alt="NextVu" style="height: 41px;max-width:180px;width:auto;">
+														<td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 36px; font-weight: 800; line-height: 48px;" class="mobile-center">
+															<img class="logo-img" src="'. base_url("/assets/images/Nextmune_H-Logo_White.png") .'" alt="NextVu" style="height: 41px;max-width:180px;width:auto;">
 														</td>
 													</tr>
 												</table>
@@ -14984,13 +14793,13 @@ class Orders extends CI_Controller{
 											<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
 												<tr>
 													<td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 20px;">
-														<h2 style="font-size:24px; font-weight: 800; line-height:28px; color: #333333; margin: 0;"> PAX Serum Sample received for '.$data['pet_name'].' '.$petownerName.' </h2>
+														<h2 style="font-size:24px; font-weight: 800; line-height:28px; color: #333333; margin: 0;"> PAX Serum Sample for '.$data['pet_name'].' '.$data['po_last'].' received </h2>
 													</td>
 												</tr>
 												<tr>
 													<td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height:20px; padding-top: 10px;">
 														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">
-															The serum sample for your patient '.$data['pet_name'].' '.$petownerName.' has been received at Nextmune’s testing facility. You can expect your results in 5-6 business days. You can view the live status of your sample in our online portal NextView.
+															The serum sample for your patient '.$data['pet_name'].' '.$data['po_last'].' has been received at Nextmune’s testing facility. You can expect your results in 10-14 business days. You can view the live status of your sample in our online portal NextView.
 														</p>
 													</td>
 												</tr>
@@ -15004,9 +14813,9 @@ class Orders extends CI_Controller{
 												<tr>
 													<td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height:20px; padding-top: 10px;">
 														<p style="font-size: 18px; font-weight: bold; line-height: 20px; color: #777777;">Our allergy portal NextView</p>
-														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">When placing an order for an allergy test order with Nextmune we automatically create an account for you in NextView.</p>
+														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">When placing an allergy test order with Nextmune we automatically create an account for you in NextView.</p>
 														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">
-															With NextView you can place orders for allergy tests and immunotherapy. You can easily see where in the analysis/production process your order is. The system also allows you full visibility of your order history, gives immunotherapy refill reminders and more.
+															NextView allows you to place orders for allergy tests and immunotherapy. You can also easily see where in the analysis/production process your order is. The system also allows you full visibility of your order history, gives immunotherapy refill reminders and more.
 														</p>
 													</td>
 												</tr>
@@ -15018,9 +14827,9 @@ class Orders extends CI_Controller{
 											<div style="display:inline-block; max-width:55%; min-width:100px; vertical-align:top; width:100%;">
 												<table align="left" border="0" cellpadding="0" cellspacing="0" width="100%">
 													<tbody><tr>
-														<td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif;font-size:32px;font-weight: 800;line-height:42px;color: #fff;text-align: center;" class="mobile-center">
+														<td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif;font-size: 36px;font-weight: 800;line-height: 48px;color: #fff;text-align: center;" class="mobile-center">
 															Thank you,<br>
-															Nextmune team.
+															Nextmune.
 														</td>
 													</tr>
 												</tbody></table>
@@ -15033,18 +14842,15 @@ class Orders extends CI_Controller{
 					</table>
 				</body>
 			</html>';
-			$to_email = 'stewart@webbagency.co.uk';
-			$zonesIds = $this->checkZones($orderId);
-			if(!empty($zonesIds) && !in_array("1", $zonesIds)){
-				$zoneEmail = $this->getZoneFromEmail($zonesIds);
-				if(!empty($zoneEmail)){
-					$from_email = $zoneEmail;
-				}else{
-					$from_email = "vetorders.uk@nextmune.com";
-				}
+			$practice_email = $data['practice_email'];
+			if($data['lab_id'] > 0 && $data['lab_id'] == '13786'){
+				$to_email = 'immunotherapy@axiomvetlab.co.uk';
+			}elseif($data['lab_id'] > 0 && $data['lab_id'] == '13788'){
+				$to_email = 'admin@nwlabs.co.uk';
 			}else{
-				$from_email = "vetorders.uk@nextmune.com";
+				$to_email = $data['email'];
 			}
+			$from_email = "vetorders.uk@nextmune.com";
 			$config = array(
 				'mailtype'  => 'html',
 				'charset'   => 'iso-8859-1'
@@ -15052,7 +14858,7 @@ class Orders extends CI_Controller{
 			$this->load->library('email', $config);
 			$this->email->from($from_email, "Nextmune");
 			$this->email->to($to_email);
-			$this->email->subject('PAX Serum Sample received for '.$data['po_last'].' '.$petownerName.'.');
+			$this->email->subject('PAX Serum Sample for '.$data['pet_name'].' '.$data['po_last'].' received.');
 			$this->email->message($emailBody);
 			$this->email->set_mailtype("html");
 			$is_send = $this->email->send();
@@ -15062,15 +14868,11 @@ class Orders extends CI_Controller{
 				$this->session->set_flashdata("error", $this->email->print_debugger());
 			}
 		}
-		redirect('orders');
 	}
 
 	function sendBloodanalyzedNotification($orderId){
 		if($orderId > 0){
 			$data = $this->OrdersModel->allData($orderId, "");
-			$petOWFName = !empty($data['pet_owner_name'])?$data['pet_owner_name']:'';
-			$petOWLName = !empty($data['po_last'])?$data['po_last']:'';
-			$petownerName = $petOWFName.' '.$petOWLName;
 			$emailBody = '<!DOCTYPE html>
 			<html>
 				<head>
@@ -15103,8 +14905,8 @@ class Orders extends CI_Controller{
 											<div style="display:inline-block; max-width:55%; min-width:100px; vertical-align:top; width:100%;">
 												<table align="left" border="0" cellpadding="0" cellspacing="0" width="100%">
 													<tr>
-														<td align="center" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 36px; font-weight: 800; line-height: 48px;text-align:center;" class="mobile-center">
-															<img class="logo-img" src="'. base_url("/assets/images/Nextmune_Email_Logo.png") .'" alt="NextVu" style="height: 41px;max-width:180px;width:auto;">
+														<td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 36px; font-weight: 800; line-height: 48px;" class="mobile-center">
+															<img class="logo-img" src="'. base_url("/assets/images/Nextmune_H-Logo_White.png") .'" alt="NextVu" style="height: 41px;max-width:180px;width:auto;">
 														</td>
 													</tr>
 												</table>
@@ -15116,13 +14918,13 @@ class Orders extends CI_Controller{
 											<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
 												<tr>
 													<td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 20px;">
-														<h2 style="font-size:24px; font-weight: 800; line-height:28px; color: #333333; margin: 0;"> PAX Serum Sample for '.$data['pet_name'].' '.$petownerName.' analyzed </h2>
+														<h2 style="font-size:24px; font-weight: 800; line-height:28px; color: #333333; margin: 0;"> PAX Serum Sample for '.$data['pet_name'].' '.$data['po_last'].' analyzed </h2>
 													</td>
 												</tr>
 												<tr>
 													<td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height:20px; padding-top: 10px;">
 														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">
-															The serum sample for your patient '.$data['pet_name'].' '.$petownerName.' has been analysed at Nextmune’s testing facility and will be interpreted shortly. You can expect your results in 5-7 business days. You can view the live status of your sample in our online portal NextView.
+															The serum sample for your patient '.$data['pet_name'].' '.$data['po_last'].' has been analysed at Nextmune’s testing facility and will be interpreted shortly. You can expect your results in 10-14 business days. You can view the live status of your sample in our online portal NextView.
 														</p>
 													</td>
 												</tr>
@@ -15136,9 +14938,9 @@ class Orders extends CI_Controller{
 												<tr>
 													<td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height:20px; padding-top: 10px;">
 														<p style="font-size: 18px; font-weight: bold; line-height: 20px; color: #777777;">Our allergy portal NextView</p>
-														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">When placing an order for an allergy test order with Nextmune we automatically create an account for you in NextView.</p>
+														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">When placing an allergy test order with Nextmune we automatically create an account for you in NextView.</p>
 														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">
-															With NextView you can place orders for allergy tests and immunotherapy. You can easily see where in the analysis/production process your order is. The system also allows you full visibility of your order history, gives immunotherapy refill reminders and more.
+															NextView allows you to place orders for allergy tests and immunotherapy. You can also easily see where in the analysis/production process your order is. The system also allows you full visibility of your order history, gives immunotherapy refill reminders and more.
 														</p>
 													</td>
 												</tr>
@@ -15150,9 +14952,9 @@ class Orders extends CI_Controller{
 											<div style="display:inline-block; max-width:55%; min-width:100px; vertical-align:top; width:100%;">
 												<table align="left" border="0" cellpadding="0" cellspacing="0" width="100%">
 													<tbody><tr>
-														<td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif;font-size:32px;font-weight: 800;line-height:32px;color: #fff;text-align: center;" class="mobile-center">
+														<td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif;font-size: 36px;font-weight: 800;line-height: 48px;color: #fff;text-align: center;" class="mobile-center">
 															Thank you,<br>
-															Nextmune team.
+															Nextmune.
 														</td>
 													</tr>
 												</tbody></table>
@@ -15165,26 +14967,15 @@ class Orders extends CI_Controller{
 					</table>
 				</body>
 			</html>';
-			/* $practice_email = $data['practice_email'];
+			$practice_email = $data['practice_email'];
 			if($data['lab_id'] > 0 && $data['lab_id'] == '13786'){
 				$to_email = 'immunotherapy@axiomvetlab.co.uk';
 			}elseif($data['lab_id'] > 0 && $data['lab_id'] == '13788'){
 				$to_email = 'admin@nwlabs.co.uk';
 			}else{
 				$to_email = $data['email'];
-			} */
-			$to_email = 'stewart@webbagency.co.uk';
-			$zonesIds = $this->checkZones($orderId);
-			if(!empty($zonesIds) && !in_array("1", $zonesIds)){
-				$zoneEmail = $this->getZoneFromEmail($zonesIds);
-				if(!empty($zoneEmail)){
-					$from_email = $zoneEmail;
-				}else{
-					$from_email = "vetorders.uk@nextmune.com";
-				}
-			}else{
-				$from_email = "vetorders.uk@nextmune.com";
 			}
+			$from_email = "vetorders.uk@nextmune.com";
 			$config = array(
 				'mailtype'  => 'html',
 				'charset'   => 'iso-8859-1'
@@ -15192,7 +14983,7 @@ class Orders extends CI_Controller{
 			$this->load->library('email', $config);
 			$this->email->from($from_email, "Nextmune");
 			$this->email->to($to_email);
-			$this->email->subject('PAX Serum Sample for '.$data['po_last'].' '.$petownerName.' analyzed.');
+			$this->email->subject('PAX Serum Sample for '.$data['pet_name'].' '.$data['po_last'].' received.');
 			$this->email->message($emailBody);
 			$this->email->set_mailtype("html");
 			$is_send = $this->email->send();
@@ -15202,429 +14993,6 @@ class Orders extends CI_Controller{
 				$this->session->set_flashdata("error", $this->email->print_debugger());
 			}
 		}
-		redirect('orders');
-	}
-
-	function sendImmunotherapyReceivalVet($orderId){
-		if($orderId > 0){
-			$data = $this->OrdersModel->allData($orderId, "");
-			$petOWFName = !empty($data['pet_owner_name'])?$data['pet_owner_name']:'';
-			$petOWLName = !empty($data['po_last'])?$data['po_last']:'';
-			$petownerName = $petOWFName.' '.$petOWLName;
-			$emailBody = '<!DOCTYPE html>
-			<html>
-				<head>
-					<title>Immunotherapy order receival email to vet.</title>
-					<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-					<meta name="viewport" content="width=device-width, initial-scale=1">
-					<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-					<style type="text/css">
-					body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
-					table,td{mso-table-lspace:0;mso-table-rspace:0}
-					img{-ms-interpolation-mode:bicubic;border:0;height:auto;line-height:100%;outline:none;text-decoration:none}
-					table{border-collapse:collapse!important}
-					body{height:100%!important;margin:0!important;padding:0!important;width:100%!important}
-					a[x-apple-data-detectors]{color:inherit!important;text-decoration:none!important;font-size:inherit!important; font-family:inherit!important;font-weight:inherit!important;line-height:inherit!important}
-					@media screen and (max-width: 480px) {
-					.mobile-hide{display:none!important}
-					.mobile-center{text-align:center!important}
-					}
-					div[style*="margin: 16px 0;"]{margin:0!important}
-					.align_class{padding-left:2.7em}
-					</style>
-				</head>
-				<body style="margin: 0 !important; padding: 0 !important; background-color: #fff;" bgcolor="#fff">
-					<table border="0" cellpadding="0" cellspacing="0" width="100%">
-						<tr>
-							<td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-								<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-									<tr>
-										<td align="center" valign="top" style="font-size:0; padding:10px 35px" bgcolor="#3c8dbc">
-											<div style="display:inline-block; max-width:55%; min-width:100px; vertical-align:top; width:100%;">
-												<table align="left" border="0" cellpadding="0" cellspacing="0" width="100%">
-													<tr>
-														<td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 36px; font-weight: 800; line-height: 48px;text-align: center;" class="mobile-center">
-															<img class="logo-img" src="'. base_url("/assets/images/Nextmune_Email_Logo.png") .'" alt="NextVu" style="height: 41px;max-width:180px;width:auto;">
-														</td>
-													</tr>
-												</table>
-											</div>
-										</td>
-									</tr>
-									<tr>
-										<td align="center" style="padding: 0px 35px 10px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-											<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-												<tr>
-													<td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 20px;">
-														<h2 style="font-size:24px; font-weight: 800; line-height:28px; color: #333333; margin: 0;">Immunotherapy order for '.$data['pet_name'].' '.$petownerName.' received</h2>
-													</td>
-												</tr>
-												<tr>
-													<td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height:20px; padding-top: 10px;">
-														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">
-															The immunotherapy order for your patient '.$data['pet_name'].' '.$petownerName.' has been received at Nextmune’s production facility. You can expect the immunotherapy to ship in 5-7 business days. You can view the live status of your order in our online portal NextView.
-														</p>
-													</td>
-												</tr>
-												<tr>
-													<td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height:20px; padding-top: 10px;text-align: center;">
-														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">
-															<a href="'. base_url() .'" style="background-color: #3c8dbc;border-color: #367fa9;border-radius: 0px;box-shadow: none;color: #fff;display: inline-block;margin-bottom: 0;font-weight: 400;text-align: center;white-space: nowrap;vertical-align: middle;-ms-touch-action: manipulation;touch-action: manipulation;cursor: pointer;background-image: none;border: 1px solid transparent;padding: 6px 12px;font-size: 14px;line-height: 1.42857143;-webkit-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;text-decoration: none;">View order status in NextView</a>
-														</p>
-													</td>
-												</tr>
-												<tr>
-													<td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height:20px; padding-top: 10px;">
-														<p style="font-size: 18px; font-weight: bold; line-height: 20px; color: #777777;">Our allergy portal NextView</p>
-														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">When placing an order for an allergy test order with Nextmune we automatically create an account for you in NextView.</p>
-														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">
-															With NextView you can place orders for allergy tests and immunotherapy. You can easily see where in the analysis/production process your order is. The system also allows you full visibility of your order history, gives immunotherapy refill reminders and more.
-														</p>
-													</td>
-												</tr>
-											</table>
-										</td>
-									</tr>
-									<tr>
-										<td align="center" valign="top" style="font-size:0; padding:10px 35px" bgcolor="#3c8dbc">
-											<div style="display:inline-block; max-width:55%; min-width:100px; vertical-align:top; width:100%;">
-												<table align="left" border="0" cellpadding="0" cellspacing="0" width="100%">
-													<tbody><tr>
-														<td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif;font-size:32px;font-weight: 800;line-height:42px;color: #fff;text-align: center;" class="mobile-center">
-															Thank you,<br>
-															Nextmune team.
-														</td>
-													</tr>
-												</tbody></table>
-											</div>
-										</td>
-									</tr>
-								</table>
-							</td>
-						</tr>
-					</table>
-				</body>
-			</html>';
-			/* $practice_email = $data['practice_email'];
-			if($data['lab_id'] > 0 && $data['lab_id'] == '13786'){
-				$to_email = 'immunotherapy@axiomvetlab.co.uk';
-			}elseif($data['lab_id'] > 0 && $data['lab_id'] == '13788'){
-				$to_email = 'admin@nwlabs.co.uk';
-			}else{
-				$to_email = $data['email'];
-			} */
-			$to_email = 'stewart@webbagency.co.uk';
-			$zonesIds = $this->checkZones($orderId);
-			if(!empty($zonesIds) && !in_array("1", $zonesIds)){
-				$zoneEmail = $this->getZoneFromEmail($zonesIds);
-				if(!empty($zoneEmail)){
-					$from_email = $zoneEmail;
-				}else{
-					$from_email = "vetorders.uk@nextmune.com";
-				}
-			}else{
-				$from_email = "vetorders.uk@nextmune.com";
-			}
-			$config = array(
-				'mailtype'  => 'html',
-				'charset'   => 'iso-8859-1'
-			);
-			$this->load->library('email', $config);
-			$this->email->from($from_email, "Nextview");
-			$this->email->to($to_email);
-			$this->email->subject('Immunotherapy order for '.$data['po_last'].' '.$petownerName.' received.');
-			$this->email->message($emailBody);
-			$this->email->set_mailtype("html");
-			$is_send = $this->email->send();
-			if ($is_send) {
-				$this->session->set_flashdata("success", "Email sent successfully.");
-			} else {
-				$this->session->set_flashdata("error", $this->email->print_debugger());
-			}
-		}
-		redirect('orders');
-	}
-
-	function sendImmunotherapyProductionVet($orderId){
-		if($orderId > 0){
-			$data = $this->OrdersModel->allData($orderId, "");
-			$petOWFName = !empty($data['pet_owner_name'])?$data['pet_owner_name']:'';
-			$petOWLName = !empty($data['po_last'])?$data['po_last']:'';
-			$petownerName = $petOWFName.' '.$petOWLName;
-			$emailBody = '<!DOCTYPE html>
-			<html>
-				<head>
-					<title>Immunotherapy is in production email to vet</title>
-					<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-					<meta name="viewport" content="width=device-width, initial-scale=1">
-					<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-					<style type="text/css">
-					body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
-					table,td{mso-table-lspace:0;mso-table-rspace:0}
-					img{-ms-interpolation-mode:bicubic;border:0;height:auto;line-height:100%;outline:none;text-decoration:none}
-					table{border-collapse:collapse!important}
-					body{height:100%!important;margin:0!important;padding:0!important;width:100%!important}
-					a[x-apple-data-detectors]{color:inherit!important;text-decoration:none!important;font-size:inherit!important; font-family:inherit!important;font-weight:inherit!important;line-height:inherit!important}
-					@media screen and (max-width: 480px) {
-					.mobile-hide{display:none!important}
-					.mobile-center{text-align:center!important}
-					}
-					div[style*="margin: 16px 0;"]{margin:0!important}
-					.align_class{padding-left:2.7em}
-					</style>
-				</head>
-				<body style="margin: 0 !important; padding: 0 !important; background-color: #fff;" bgcolor="#fff">
-					<table border="0" cellpadding="0" cellspacing="0" width="100%">
-						<tr>
-							<td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-								<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-									<tr>
-										<td align="center" valign="top" style="font-size:0; padding:10px 35px" bgcolor="#3c8dbc">
-											<div style="display:inline-block; max-width:55%; min-width:100px; vertical-align:top; width:100%;">
-												<table align="left" border="0" cellpadding="0" cellspacing="0" width="100%">
-													<tr>
-														<td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 36px; font-weight: 800; line-height: 48px;text-align: center;" class="mobile-center">
-															<img class="logo-img" src="'. base_url("/assets/images/Nextmune_Email_Logo.png") .'" alt="NextVu" style="height: 41px;max-width:180px;width:auto;">
-														</td>
-													</tr>
-												</table>
-											</div>
-										</td>
-									</tr>
-									<tr>
-										<td align="center" style="padding: 0px 35px 10px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-											<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-												<tr>
-													<td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 20px;">
-														<h2 style="font-size:24px; font-weight: 800; line-height:28px; color: #333333; margin: 0;">Immunotherapy order for '.$data['pet_name'].' '.$petownerName.' in production</h2>
-													</td>
-												</tr>
-												<tr>
-													<td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height:20px; padding-top: 10px;">
-														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">
-															The immunotherapy order for your patient '.$data['pet_name'].' '.$petownerName.' is being produced at Nextmune’s production facility. You can expect the immunotherapy to ship in 5-7 business days. You can view the live status of your order in our online portal NextView.
-														</p>
-													</td>
-												</tr>
-												<tr>
-													<td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height:20px; padding-top: 10px;text-align: center;">
-														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">
-															<a href="'. base_url() .'" style="background-color: #3c8dbc;border-color: #367fa9;border-radius: 0px;box-shadow: none;color: #fff;display: inline-block;margin-bottom: 0;font-weight: 400;text-align: center;white-space: nowrap;vertical-align: middle;-ms-touch-action: manipulation;touch-action: manipulation;cursor: pointer;background-image: none;border: 1px solid transparent;padding: 6px 12px;font-size: 14px;line-height: 1.42857143;-webkit-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;text-decoration: none;">View order status in NextView</a>
-														</p>
-													</td>
-												</tr>
-												<tr>
-													<td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height:20px; padding-top: 10px;">
-														<p style="font-size: 18px; font-weight: bold; line-height: 20px; color: #777777;">Our allergy portal NextView</p>
-														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">When placing an order for an allergy test order with Nextmune we automatically create an account for you in NextView.</p>
-														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">
-															With NextView you can place orders for allergy tests and immunotherapy. You can easily see where in the analysis/production process your order is. The system also allows you full visibility of your order history, gives immunotherapy refill reminders and more.
-														</p>
-													</td>
-												</tr>
-											</table>
-										</td>
-									</tr>
-									<tr>
-										<td align="center" valign="top" style="font-size:0; padding:10px 35px" bgcolor="#3c8dbc">
-											<div style="display:inline-block; max-width:55%; min-width:100px; vertical-align:top; width:100%;">
-												<table align="left" border="0" cellpadding="0" cellspacing="0" width="100%">
-													<tbody><tr>
-														<td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif;font-size:32px;font-weight: 800;line-height:42px;color: #fff;text-align: center;" class="mobile-center">
-															Thank you,<br>
-															Nextmune team.
-														</td>
-													</tr>
-												</tbody></table>
-											</div>
-										</td>
-									</tr>
-								</table>
-							</td>
-						</tr>
-					</table>
-				</body>
-			</html>';
-			/* $practice_email = $data['practice_email'];
-			if($data['lab_id'] > 0 && $data['lab_id'] == '13786'){
-				$to_email = 'immunotherapy@axiomvetlab.co.uk';
-			}elseif($data['lab_id'] > 0 && $data['lab_id'] == '13788'){
-				$to_email = 'admin@nwlabs.co.uk';
-			}else{
-				$to_email = $data['email'];
-			} */
-			$to_email = 'stewart@webbagency.co.uk';
-			$zonesIds = $this->checkZones($orderId);
-			if(!empty($zonesIds) && !in_array("1", $zonesIds)){
-				$zoneEmail = $this->getZoneFromEmail($zonesIds);
-				if(!empty($zoneEmail)){
-					$from_email = $zoneEmail;
-				}else{
-					$from_email = "vetorders.uk@nextmune.com";
-				}
-			}else{
-				$from_email = "vetorders.uk@nextmune.com";
-			}
-			$config = array(
-				'mailtype'  => 'html',
-				'charset'   => 'iso-8859-1'
-			);
-			$this->load->library('email', $config);
-			$this->email->from($from_email, "Nextmune");
-			$this->email->to($to_email);
-			$this->email->subject('Immunotherapy order for '.$data['po_last'].' '.$petownerName.' in production.');
-			$this->email->message($emailBody);
-			$this->email->set_mailtype("html");
-			$is_send = $this->email->send();
-			if ($is_send) {
-				$this->session->set_flashdata("success", "Email sent successfully.");
-			} else {
-				$this->session->set_flashdata("error", $this->email->print_debugger());
-			}
-		}
-		redirect('orders');
-	}
-
-	function sendImmunotherapySentVet($orderId){
-		if($orderId > 0){
-			$data = $this->OrdersModel->allData($orderId, "");
-			$petOWFName = !empty($data['pet_owner_name'])?$data['pet_owner_name']:'';
-			$petOWLName = !empty($data['po_last'])?$data['po_last']:'';
-			$petownerName = $petOWFName.' '.$petOWLName;
-			$emailBody = '<!DOCTYPE html>
-			<html>
-				<head>
-					<title>Immunotherapy has been sent email to vet</title>
-					<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-					<meta name="viewport" content="width=device-width, initial-scale=1">
-					<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-					<style type="text/css">
-					body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
-					table,td{mso-table-lspace:0;mso-table-rspace:0}
-					img{-ms-interpolation-mode:bicubic;border:0;height:auto;line-height:100%;outline:none;text-decoration:none}
-					table{border-collapse:collapse!important}
-					body{height:100%!important;margin:0!important;padding:0!important;width:100%!important}
-					a[x-apple-data-detectors]{color:inherit!important;text-decoration:none!important;font-size:inherit!important; font-family:inherit!important;font-weight:inherit!important;line-height:inherit!important}
-					@media screen and (max-width: 480px) {
-					.mobile-hide{display:none!important}
-					.mobile-center{text-align:center!important}
-					}
-					div[style*="margin: 16px 0;"]{margin:0!important}
-					.align_class{padding-left:2.7em}
-					</style>
-				</head>
-				<body style="margin: 0 !important; padding: 0 !important; background-color: #fff;" bgcolor="#fff">
-					<table border="0" cellpadding="0" cellspacing="0" width="100%">
-						<tr>
-							<td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-								<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-									<tr>
-										<td align="center" valign="top" style="font-size:0; padding:10px 35px" bgcolor="#3c8dbc">
-											<div style="display:inline-block; max-width:55%; min-width:100px; vertical-align:top; width:100%;">
-												<table align="left" border="0" cellpadding="0" cellspacing="0" width="100%">
-													<tr>
-														<td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 36px; font-weight: 800; line-height: 48px;text-align: center;" class="mobile-center">
-															<img class="logo-img" src="'. base_url("/assets/images/Nextmune_Email_Logo.png") .'" alt="NextVu" style="height: 41px;max-width:180px;width:auto;">
-														</td>
-													</tr>
-												</table>
-											</div>
-										</td>
-									</tr>
-									<tr>
-										<td align="center" style="padding: 0px 35px 10px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-											<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-												<tr>
-													<td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 20px;">
-														<h2 style="font-size:24px; font-weight: 800; line-height:28px; color: #333333; margin: 0;">Immunotherapy order for '.$data['pet_name'].' '.$petownerName.' shipped</h2>
-													</td>
-												</tr>
-												<tr>
-													<td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height:20px; padding-top: 10px;">
-														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">
-															The immunotherapy order for your patient '.$data['pet_name'].' '.$petownerName.' has been shipped from Nextmune.
-														</p>
-													</td>
-												</tr>
-												<tr>
-													<td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height:20px; padding-top: 10px;text-align: center;">
-														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">
-															<a href="'. base_url() .'" style="background-color: #3c8dbc;border-color: #367fa9;border-radius: 0px;box-shadow: none;color: #fff;display: inline-block;margin-bottom: 0;font-weight: 400;text-align: center;white-space: nowrap;vertical-align: middle;-ms-touch-action: manipulation;touch-action: manipulation;cursor: pointer;background-image: none;border: 1px solid transparent;padding: 6px 12px;font-size: 14px;line-height: 1.42857143;-webkit-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;text-decoration: none;">View tracking information in NextView</a>
-														</p>
-													</td>
-												</tr>
-												<tr>
-													<td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height:20px; padding-top: 10px;">
-														<p style="font-size: 18px; font-weight: bold; line-height: 20px; color: #777777;">Our allergy portal NextView</p>
-														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">When placing an order for an allergy test order with Nextmune we automatically create an account for you in NextView.</p>
-														<p style="font-size: 16px; font-weight: 400; line-height: 20px; color: #777777;">
-															With NextView you can place orders for allergy tests and immunotherapy. You can easily see where in the analysis/production process your order is. The system also allows you full visibility of your order history, gives immunotherapy refill reminders and more.
-														</p>
-													</td>
-												</tr>
-											</table>
-										</td>
-									</tr>
-									<tr>
-										<td align="center" valign="top" style="font-size:0; padding:10px 35px" bgcolor="#3c8dbc">
-											<div style="display:inline-block; max-width:55%; min-width:100px; vertical-align:top; width:100%;">
-												<table align="left" border="0" cellpadding="0" cellspacing="0" width="100%">
-													<tbody>
-														<tr>
-															<td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif;font-size:32px;font-weight: 800;line-height:42px;color: #fff;text-align: center;" class="mobile-center">
-																Thank you,<br>
-																Nextmune team.
-															</td>
-														</tr>
-													</tbody>
-												</table>
-											</div>
-										</td>
-									</tr>
-								</table>
-							</td>
-						</tr>
-					</table>
-				</body>
-			</html>';
-			/* $practice_email = $data['practice_email'];
-			if($data['lab_id'] > 0 && $data['lab_id'] == '13786'){
-				$to_email = 'immunotherapy@axiomvetlab.co.uk';
-			}elseif($data['lab_id'] > 0 && $data['lab_id'] == '13788'){
-				$to_email = 'admin@nwlabs.co.uk';
-			}else{
-				$to_email = $data['email'];
-			} */
-			$to_email = 'stewart@webbagency.co.uk';
-			$zonesIds = $this->checkZones($orderId);
-			if(!empty($zonesIds) && !in_array("1", $zonesIds)){
-				$zoneEmail = $this->getZoneFromEmail($zonesIds);
-				if(!empty($zoneEmail)){
-					$from_email = $zoneEmail;
-				}else{
-					$from_email = "vetorders.uk@nextmune.com";
-				}
-			}else{
-				$from_email = "vetorders.uk@nextmune.com";
-			}
-			$config = array(
-				'mailtype'  => 'html',
-				'charset'   => 'iso-8859-1'
-			);
-			$this->load->library('email', $config);
-			$this->email->from($from_email, "Nextmune");
-			$this->email->to($to_email);
-			$this->email->subject('Immunotherapy order for '.$data['po_last'].' '.$petownerName.' shipped.');
-			$this->email->message($emailBody);
-			$this->email->set_mailtype("html");
-			$is_send = $this->email->send();
-			if ($is_send) {
-				$this->session->set_flashdata("success", "Email sent successfully.");
-			} else {
-				$this->session->set_flashdata("error", $this->email->print_debugger());
-			}
-		}
-		redirect('orders');
 	}
 
 	function getSerumResultExcel($orderId){
@@ -15639,14 +15007,9 @@ class Orders extends CI_Controller{
 			$order_number = $data['order_number'];
 			$NextmuneRef = !empty($data['reference_number'])?$data['reference_number']:$data['order_number'];
 			if($data['serum_type']=='1'){
-				if($data['pax_cutoff_version'] == 1){
-					$cutoffs = '30';
-				}else{
-					$cutoffs = '28';
-				}
 				$raptorData = $this->OrdersModel->getRaptorData($data['order_number']);
 				if($respnedn->name == 'PAX Environmental'){
-					$fileName = 'PAX_Complete_Environmental_Result_'.$NextmuneRef;
+					$fileName = 'PAX_Environmental_Result_'.$NextmuneRef;
 					$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
 					$objPHPExcel->getActiveSheet()->SetCellValue('C1', '');
@@ -15672,7 +15035,7 @@ class Orders extends CI_Controller{
 					$objPHPExcel->getActiveSheet()->SetCellValue('C6', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D6', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('A7', 'ANALYSIS');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B7', 'ng/mL');
+					$objPHPExcel->getActiveSheet()->SetCellValue('B7', 'O.D.');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C7', 'RESULT');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D7', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('A8', '');
@@ -15680,93 +15043,34 @@ class Orders extends CI_Controller{
 					$objPHPExcel->getActiveSheet()->SetCellValue('C8', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D8', '');
 
-					$rowCount = 9;
-					$getEAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($data['allergens']);
-					foreach($getEAllergenParent as $apkey => $apvalue){
-						$subAllergndArr = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
-						if(!empty($subAllergndArr)){
-							$pax1name = []; $paxname = '';
-							foreach ($subAllergndArr as $rpvalue){
-								if($rpvalue['name'] != "N/A"){
-									$pax1name = explode("(",$rpvalue['name']);
-									$paxname = !empty($pax1name[0])?$pax1name[0].' ('.$rpvalue['pax_latin_name'].')':$rpvalue['name'];
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $paxname);
-								}else{
-									$pax1name = explode("(",$rpvalue['pax_name']);
-									$paxname = !empty($pax1name[0])?$pax1name[0].' ('.$rpvalue['pax_latin_name'].')':$rpvalue['pax_name'];
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $paxname);
-								}
-								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-								if($rpvalue['id'] == '81'){
-									$submVluArr = $this->OrdersModel->getsubAllergensforPanel('459674',$raptorData->result_id);
-									if(!empty($submVluArr)){
-										$rowCount = $rowCount+1;
-										foreach ($submVluArr as $mrow){
-											if(floor($mrow->result_value) >= $cutoffs){
-												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $mrow->raptor_code);
-												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $mrow->result_value);
-												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-											}else{
-												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $mrow->raptor_code);
-												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $mrow->result_value);
-												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
-												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-											}
-											$rowCount++;
-										}
-									}
-
-									$subpVluArr = $this->OrdersModel->getsubAllergensforPanel($rpvalue['id'],$raptorData->result_id);
-									if(!empty($subpVluArr)){
-										$rowCount = $rowCount;
-										foreach ($subpVluArr as $srow){
-											if(floor($srow->result_value) >= $cutoffs){
-												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
-												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
-												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-											}else{
-												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
-												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
-												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
-												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-											}
-											$rowCount++;
-										}
-									}
-								}else{
-									$subpVluArr = $this->OrdersModel->getsubAllergensforPanel($rpvalue['id'],$raptorData->result_id);
-									if(!empty($subpVluArr)){
-										$rowCount = $rowCount+1;
-										foreach ($subpVluArr as $srow){
-											if(floor($srow->result_value) >= $cutoffs){
-												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
-												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
-												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-											}else{
-												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
-												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
-												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
-												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-											}
-											$rowCount++;
+					$subAllergnArr = $this->AllergensModel->getEnvAllergensByID($data['allergens']);
+					if(!empty($subAllergnArr)){
+						$rowCount = 9;
+						foreach ($subAllergnArr as $svalue){
+							if($svalue['name'] != "N/A"){
+								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+								if(!empty($subVlu->raptor_code)){
+									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+									if(!empty($raptrVlu)){
+										if($raptrVlu->result_value >= 30){
+											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $svalue['name']);
+											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $raptrVlu->result_value);
+											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
+											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
+										}else{
+											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $svalue['name']);
+											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $raptrVlu->result_value);
+											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
+											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
 										}
 									}
 								}
 								$rowCount++;
-								$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
 							}
 						}
 					}
 				}elseif($respnedn->name == 'PAX Food'){
-					$fileName = 'PAX_Complete_Food_Result_'.$NextmuneRef;
+					$fileName = 'PAX_Food_Result_'.$NextmuneRef;
 					$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
 					$objPHPExcel->getActiveSheet()->SetCellValue('C1', '');
@@ -15792,7 +15096,7 @@ class Orders extends CI_Controller{
 					$objPHPExcel->getActiveSheet()->SetCellValue('C6', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D6', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('A7', 'ANALYSIS');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B7', 'ng/mL');
+					$objPHPExcel->getActiveSheet()->SetCellValue('B7', 'O.D.');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C7', 'RESULT');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D7', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('A8', '');
@@ -15800,48 +15104,34 @@ class Orders extends CI_Controller{
 					$objPHPExcel->getActiveSheet()->SetCellValue('C8', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D8', '');
 
-					$rowCount = 9;
-					$getFAllergenParent = $this->AllergensModel->getFoodAllergenParentbyName($data['allergens']);
-					foreach($getFAllergenParent as $apkey => $apvalue){
-						$subAllergndArr = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
-						if(!empty($subAllergndArr)){
-							foreach ($subAllergndArr as $rpvalue){
-								if($rpvalue['name'] != "N/A"){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['name'].' ('.$rpvalue['pax_latin_name'].')');
-								}else{
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['pax_name'].' ('.$rpvalue['pax_latin_name'].')');
-								}
-								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-								$subpVluArr = $this->OrdersModel->getsubAllergensforPanel($rpvalue['id'],$raptorData->result_id);
-								if(!empty($subpVluArr)){
-									$rowCount = $rowCount+1;
-									foreach ($subpVluArr as $srow){
-										if(floor($srow->result_value) >= $cutoffs){
-											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
-											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
+					$subAllergnFArr = $this->AllergensModel->getFoodAllergensByID($data['allergens']);
+					if(!empty($subAllergnFArr)){
+						$rowCount = 9;
+						foreach ($subAllergnFArr as $svalue){
+							if($svalue['name'] != "N/A"){
+								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+								if(!empty($subVlu->raptor_code)){
+									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+									if(!empty($raptrVlu)){
+										if($raptrVlu->result_value >= 30){
+											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $svalue['name']);
+											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $raptrVlu->result_value);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
+											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
 										}else{
-											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
-											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
+											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $svalue['name']);
+											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $raptrVlu->result_value);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
 											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
 										}
-										$rowCount++;
 									}
 								}
 								$rowCount++;
-								$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
 							}
 						}
 					}
 				}elseif($respnedn->name == 'PAX Environmental + Food'){
-					$fileName = 'PAX_Complete_Environmental_+_Food_Result_'.$NextmuneRef;
+					$fileName = 'PAX_Environmental_Result_'.$NextmuneRef;
 					$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
 					$objPHPExcel->getActiveSheet()->SetCellValue('C1', '');
@@ -15867,7 +15157,7 @@ class Orders extends CI_Controller{
 					$objPHPExcel->getActiveSheet()->SetCellValue('C6', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D6', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('A7', 'ANALYSIS');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B7', 'ng/mL');
+					$objPHPExcel->getActiveSheet()->SetCellValue('B7', 'O.D.');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C7', 'RESULT');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D7', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('A8', '');
@@ -15876,128 +15166,56 @@ class Orders extends CI_Controller{
 					$objPHPExcel->getActiveSheet()->SetCellValue('D8', '');
 
 					$rowCount = 9;
-					$getEAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($data['allergens']);
-					foreach($getEAllergenParent as $apkey => $apvalue){
-						$subAllergndArr = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
-						if(!empty($subAllergndArr)){
-							$pax1name = []; $paxname = '';
-							foreach ($subAllergndArr as $rpvalue){
-								if($rpvalue['name'] != "N/A"){
-									$pax1name = explode("(",$rpvalue['name']);
-									$paxname = !empty($pax1name[0])?$pax1name[0].' ('.$rpvalue['pax_latin_name'].')':$rpvalue['name'];
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $paxname);
-								}else{
-									$pax1name = explode("(",$rpvalue['pax_name']);
-									$paxname = !empty($pax1name[0])?$pax1name[0].' ('.$rpvalue['pax_latin_name'].')':$rpvalue['pax_name'];
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $paxname);
-								}
-								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-								if($rpvalue['id'] == '81'){
-									$submVluArr = $this->OrdersModel->getsubAllergensforPanel('459674',$raptorData->result_id);
-									if(!empty($submVluArr)){
-										$rowCount = $rowCount+1;
-										foreach ($submVluArr as $mrow){
-											if(floor($mrow->result_value) >= $cutoffs){
-												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $mrow->raptor_code);
-												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $mrow->result_value);
-												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-											}else{
-												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $mrow->raptor_code);
-												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $mrow->result_value);
-												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
-												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-											}
-											$rowCount++;
-										}
-									}
-
-									$subpVluArr = $this->OrdersModel->getsubAllergensforPanel($rpvalue['id'],$raptorData->result_id);
-									if(!empty($subpVluArr)){
-										$rowCount = $rowCount;
-										foreach ($subpVluArr as $srow){
-											if(floor($srow->result_value) >= $cutoffs){
-												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
-												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
-												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-											}else{
-												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
-												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
-												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
-												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-											}
-											$rowCount++;
-										}
-									}
-								}else{
-									$subpVluArr = $this->OrdersModel->getsubAllergensforPanel($rpvalue['id'],$raptorData->result_id);
-									if(!empty($subpVluArr)){
-										$rowCount = $rowCount+1;
-										foreach ($subpVluArr as $srow){
-											if(floor($srow->result_value) >= $cutoffs){
-												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
-												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
-												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-											}else{
-												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
-												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
-												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
-												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-											}
-											$rowCount++;
-										}
-									}
-								}
-								$rowCount++;
-								$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-							}
-						}
-					}
-
-					$rowCount = $rowCount+2;
-					$getFAllergenParent = $this->AllergensModel->getFoodAllergenParentbyName($data['allergens']);
-					foreach($getFAllergenParent as $apkey => $afvalue){
-						$subAllergndArr = $this->AllergensModel->get_pax_subAllergens_dropdown($afvalue['pax_parent_id'], $data['allergens']);
-						if(!empty($subAllergndArr)){
-							foreach ($subAllergndArr as $rpvalue){
-								if($rpvalue['name'] != "N/A"){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['name'].' ('.$rpvalue['pax_latin_name'].')');
-								}else{
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['pax_name'].' ('.$rpvalue['pax_latin_name'].')');
-								}
-								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-								$subpVluArr = $this->OrdersModel->getsubAllergensforPanel($rpvalue['id'],$raptorData->result_id);
-								if(!empty($subpVluArr)){
-									$rowCount = $rowCount+1;
-									foreach ($subpVluArr as $srow){
-										if(floor($srow->result_value) >= $cutoffs){
-											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
-											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
+					$subAllergnArr = $this->AllergensModel->getEnvAllergensByID($data['allergens']);
+					if(!empty($subAllergnArr)){
+						foreach ($subAllergnArr as $svalue){
+							if($svalue['name'] != "N/A"){
+								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+								if(!empty($subVlu->raptor_code)){
+									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+									if(!empty($raptrVlu)){
+										if($raptrVlu->result_value >= 30){
+											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $svalue['name']);
+											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $raptrVlu->result_value);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
 										}else{
-											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
-											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
+											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $svalue['name']);
+											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $raptrVlu->result_value);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
 											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
 										}
-										$rowCount++;
 									}
 								}
 								$rowCount++;
-								$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
-								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
+							}
+						}
+					}
+					
+					$rowCount = $rowCount+2;
+					$subAllergnFArr = $this->AllergensModel->getFoodAllergensByID($data['allergens']);
+					if(!empty($subAllergnFArr)){
+						$foodCount = $rowCount;
+						foreach ($subAllergnFArr as $svalue){
+							if($svalue['name'] != "N/A"){
+								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+								if(!empty($subVlu->raptor_code)){
+									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+									if(!empty($raptrVlu)){
+										if($raptrVlu->result_value >= 30){
+											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$foodCount, $svalue['name']);
+											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$foodCount, $raptrVlu->result_value);
+											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$foodCount, 'POSITIVE');
+											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$foodCount, '');
+										}else{
+											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$foodCount, $svalue['name']);
+											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$foodCount, $raptrVlu->result_value);
+											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$foodCount, 'NEGATIVE');
+											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$foodCount, '');
+										}
+									}
+								}
+								$foodCount++;
 							}
 						}
 					}
@@ -16020,12 +15238,13 @@ class Orders extends CI_Controller{
 					$objPHPExcel->getActiveSheet()->SetCellValue('A8', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B8', '');
 
-					$objPHPExcel->getActiveSheet()->SetCellValue('A9', 'Screening Environmental');
 					$getEAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($data['allergens']);
 					if(!empty($getEAllergenParent)){
-						$ispositive = 0;
+						$envCount = 9;
 						foreach ($getEAllergenParent as $apkey => $apvalue) {
+							$objPHPExcel->getActiveSheet()->SetCellValue('A'.$envCount, $apvalue['pax_name']);
 							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
+							$ispositive = 0;
 							if(!empty($subAllergens)){
 								foreach ($subAllergens as $skey => $svalue) {
 									if($svalue['name'] != "N/A"){
@@ -16033,7 +15252,7 @@ class Orders extends CI_Controller{
 										if(!empty($subVlu->raptor_code)){
 											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 											if(!empty($raptrVlu)){
-												if(round($raptrVlu->result_value) >= $cutoffs){
+												if($raptrVlu->result_value >= 30){
 													$ispositive++;
 												}
 											}
@@ -16041,61 +15260,13 @@ class Orders extends CI_Controller{
 									}
 								}
 							}
-						}
-						if($ispositive > 0){
-							$objPHPExcel->getActiveSheet()->SetCellValue('B9', 'POSITIVE');
-						}else{
-							$objPHPExcel->getActiveSheet()->SetCellValue('B9', 'NEGATIVE');
-						}
-					}else{
-						$objPHPExcel->getActiveSheet()->SetCellValue('B9', 'NEGATIVE');
-					}
-
-					$objPHPExcel->getActiveSheet()->SetCellValue('A10', $this->lang->line('flea_Cte_f_1'));
-					$this->db->select('result_value');
-					$this->db->from('ci_raptor_result_allergens');
-					$this->db->where('result_id',$raptorData->result_id);
-					$this->db->where('name LIKE','Cte f 1');
-					$this->db->order_by('result_value', 'DESC');
-					$fleaResults = $this->db->get()->row();
-					if(!empty($fleaResults)){
-						if(floor($fleaResults->result_value) >= $cutoffs){
-							$objPHPExcel->getActiveSheet()->SetCellValue('B10', 'POSITIVE');
-						}else{
-							$objPHPExcel->getActiveSheet()->SetCellValue('B10', 'NEGATIVE');
-						}
-					}else{
-						$objPHPExcel->getActiveSheet()->SetCellValue('B10', 'NEGATIVE');
-					}
-
-					$objPHPExcel->getActiveSheet()->SetCellValue('A11', 'Malassezia');
-					$this->db->select('result_value');
-					$this->db->from('ci_raptor_result_allergens');
-					$this->db->where('result_id',$raptorData->result_id);
-					$this->db->group_start();
-					$this->db->where('name LIKE', 'Mala p');
-					$this->db->or_where('name LIKE', 'Mala s 1');
-					$this->db->or_where('name LIKE', 'Mala s 5');
-					$this->db->or_where('name LIKE', 'Mala s 6');
-					$this->db->or_where('name LIKE', 'Mala s 9');
-					$this->db->or_where('name LIKE', 'Mala s 11');
-					$this->db->group_end();
-					$this->db->order_by('result_value', 'DESC');
-					$malazResults = $this->db->get()->result_array();
-					if(!empty($malazResults)){
-						$ismpositive = 0;
-						foreach($malazResults as $mrow){
-							if(floor($mrow['result_value']) >= $cutoffs){
-								$ismpositive++;
+							if($ispositive > 0){
+								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$envCount, 'POSITIVE');
+							}else{
+								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$envCount, 'NEGATIVE');
 							}
+							$envCount++;
 						}
-						if($ismpositive > 0){
-							$objPHPExcel->getActiveSheet()->SetCellValue('B11', 'POSITIVE');
-						}else{
-							$objPHPExcel->getActiveSheet()->SetCellValue('B11', 'NEGATIVE');
-						}
-					}else{
-						$objPHPExcel->getActiveSheet()->SetCellValue('B11', 'NEGATIVE');
 					}
 				}elseif($respnedn->name == 'PAX Food Screening'){
 					$fileName = 'PAX_Screening_Food_Result_'.$NextmuneRef;
@@ -16116,12 +15287,14 @@ class Orders extends CI_Controller{
 					$objPHPExcel->getActiveSheet()->SetCellValue('A8', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B8', '');
 
-					$objPHPExcel->getActiveSheet()->SetCellValue('A10', 'Screening Food');
+					$foodCount = 9;
 					$getFAllergenParent = $this->AllergensModel->getFoodAllergenParentbyName($data['allergens']);
 					if(!empty($getFAllergenParent)){
-						$isfpositive = 0;
+						$foodCount = 9;
 						foreach ($getFAllergenParent as $apkey => $apvalue) {
+							$objPHPExcel->getActiveSheet()->SetCellValue('A'.$foodCount, $apvalue['pax_name']);
 							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
+							$isfpositive = 0;
 							if(!empty($subAllergens)){
 								foreach ($subAllergens as $skey => $svalue) {
 									if($svalue['name'] != "N/A"){
@@ -16129,7 +15302,7 @@ class Orders extends CI_Controller{
 										if(!empty($subVlu->raptor_code)){
 											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 											if(!empty($raptrVlu)){
-												if(round($raptrVlu->result_value) >= $cutoffs){
+												if($raptrVlu->result_value >= 30){
 													$isfpositive++;
 												}
 											}
@@ -16137,14 +15310,13 @@ class Orders extends CI_Controller{
 									}
 								}
 							}
+							if($isfpositive > 0){
+								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$foodCount, 'POSITIVE');
+							}else{
+								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$foodCount, 'NEGATIVE');
+							}
+							$foodCount++;
 						}
-						if($isfpositive > 0){
-							$objPHPExcel->getActiveSheet()->SetCellValue('B10', 'POSITIVE');
-						}else{
-							$objPHPExcel->getActiveSheet()->SetCellValue('B10', 'NEGATIVE');
-						}
-					}else{
-						$objPHPExcel->getActiveSheet()->SetCellValue('B10', 'NEGATIVE');
 					}
 				}elseif($respnedn->name == 'PAX Environmental + Food Screening'){
 					$fileName = 'PAX_Screening_Environmental_+_Food_Result_'.$NextmuneRef;
@@ -16165,12 +15337,14 @@ class Orders extends CI_Controller{
 					$objPHPExcel->getActiveSheet()->SetCellValue('A8', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B8', '');
 
-					$objPHPExcel->getActiveSheet()->SetCellValue('A9', 'Screening Environmental');
+					$envCount = 9;
 					$getEAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($data['allergens']);
 					if(!empty($getEAllergenParent)){
-						$ispositive = 0;
+						$envCount = 9;
 						foreach ($getEAllergenParent as $apkey => $apvalue) {
+							$objPHPExcel->getActiveSheet()->SetCellValue('A'.$envCount, $apvalue['pax_name']);
 							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
+							$ispositive = 0;
 							if(!empty($subAllergens)){
 								foreach ($subAllergens as $skey => $svalue) {
 									if($svalue['name'] != "N/A"){
@@ -16178,7 +15352,7 @@ class Orders extends CI_Controller{
 										if(!empty($subVlu->raptor_code)){
 											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 											if(!empty($raptrVlu)){
-												if(round($raptrVlu->result_value) >= $cutoffs){
+												if($raptrVlu->result_value >= 30){
 													$ispositive++;
 												}
 											}
@@ -16186,69 +15360,23 @@ class Orders extends CI_Controller{
 									}
 								}
 							}
-						}
-						if($ispositive > 0){
-							$objPHPExcel->getActiveSheet()->SetCellValue('B9', 'POSITIVE');
-						}else{
-							$objPHPExcel->getActiveSheet()->SetCellValue('B9', 'NEGATIVE');
-						}
-					}else{
-						$objPHPExcel->getActiveSheet()->SetCellValue('B9', 'NEGATIVE');
-					}
-
-					$objPHPExcel->getActiveSheet()->SetCellValue('A10', $this->lang->line('flea_Cte_f_1'));
-					$this->db->select('result_value');
-					$this->db->from('ci_raptor_result_allergens');
-					$this->db->where('result_id',$raptorData->result_id);
-					$this->db->where('name LIKE','Cte f 1');
-					$this->db->order_by('result_value', 'DESC');
-					$fleaResults = $this->db->get()->row();
-					if(!empty($fleaResults)){
-						if(floor($fleaResults->result_value) >= $cutoffs){
-							$objPHPExcel->getActiveSheet()->SetCellValue('B10', 'POSITIVE');
-						}else{
-							$objPHPExcel->getActiveSheet()->SetCellValue('B10', 'NEGATIVE');
-						}
-					}else{
-						$objPHPExcel->getActiveSheet()->SetCellValue('B10', 'NEGATIVE');
-					}
-
-					$objPHPExcel->getActiveSheet()->SetCellValue('A11', 'Malassezia');
-					$this->db->select('result_value');
-					$this->db->from('ci_raptor_result_allergens');
-					$this->db->where('result_id',$raptorData->result_id);
-					$this->db->group_start();
-					$this->db->where('name LIKE', 'Mala p');
-					$this->db->or_where('name LIKE', 'Mala s 1');
-					$this->db->or_where('name LIKE', 'Mala s 5');
-					$this->db->or_where('name LIKE', 'Mala s 6');
-					$this->db->or_where('name LIKE', 'Mala s 9');
-					$this->db->or_where('name LIKE', 'Mala s 11');
-					$this->db->group_end();
-					$this->db->order_by('result_value', 'DESC');
-					$malazResults = $this->db->get()->result_array();
-					if(!empty($malazResults)){
-						$ismpositive = 0;
-						foreach($malazResults as $mrow){
-							if(floor($mrow['result_value']) >= $cutoffs){
-								$ismpositive++;
+							if($ispositive > 0){
+								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$envCount, 'POSITIVE');
+							}else{
+								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$envCount, 'NEGATIVE');
 							}
+							$envCount++;
 						}
-						if($ismpositive > 0){
-							$objPHPExcel->getActiveSheet()->SetCellValue('B11', 'POSITIVE');
-						}else{
-							$objPHPExcel->getActiveSheet()->SetCellValue('B11', 'NEGATIVE');
-						}
-					}else{
-						$objPHPExcel->getActiveSheet()->SetCellValue('B11', 'NEGATIVE');
 					}
 
-					$objPHPExcel->getActiveSheet()->SetCellValue('A12', 'Screening Food');
+					$foodCount = $envCount+2;
 					$getFAllergenParent = $this->AllergensModel->getFoodAllergenParentbyName($data['allergens']);
 					if(!empty($getFAllergenParent)){
-						$isfpositive = 0;
+						$foodCount = $envCount+2;
 						foreach ($getFAllergenParent as $apkey => $apvalue) {
+							$objPHPExcel->getActiveSheet()->SetCellValue('A'.$foodCount, $apvalue['pax_name']);
 							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
+							$isfpositive = 0;
 							if(!empty($subAllergens)){
 								foreach ($subAllergens as $skey => $svalue) {
 									if($svalue['name'] != "N/A"){
@@ -16256,7 +15384,7 @@ class Orders extends CI_Controller{
 										if(!empty($subVlu->raptor_code)){
 											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 											if(!empty($raptrVlu)){
-												if(round($raptrVlu->result_value) >= $cutoffs){
+												if($raptrVlu->result_value >= 30){
 													$isfpositive++;
 												}
 											}
@@ -16264,34 +15392,16 @@ class Orders extends CI_Controller{
 									}
 								}
 							}
+							if($isfpositive > 0){
+								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$foodCount, 'POSITIVE');
+							}else{
+								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$foodCount, 'NEGATIVE');
+							}
+							$foodCount++;
 						}
-						if($isfpositive > 0){
-							$objPHPExcel->getActiveSheet()->SetCellValue('B12', 'POSITIVE');
-						}else{
-							$objPHPExcel->getActiveSheet()->SetCellValue('B12', 'NEGATIVE');
-						}
-					}else{
-						$objPHPExcel->getActiveSheet()->SetCellValue('B12', 'NEGATIVE');
 					}
 				}
 			}else{
-				if($data['cutoff_version'] == 1){
-					$cutaoff = '5';
-					$cutboff = '10';
-					$cutcoff = '60';
-					$cutdoff = '75';
-				}elseif($data['cutoff_version'] == 2){
-					$cutaoff = '100';
-					$cutboff = '200';
-					$cutcoff = '1200';
-					$cutdoff = '1500';
-				}else{
-					$cutaoff = '200';
-					$cutboff = '250';
-					$cutcoff = '1200';
-					$cutdoff = '1500';
-				}
-
 				$serumType = $this->OrdersModel->getSerumTestType($order_number);
 				if(!empty($serumType)){
 					$stypeIDArr = array(); $sresultIDArr = array(); 
@@ -16333,9 +15443,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 10){
 									$countergP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 									$countergB++;
 								}else{
 									$countergN++;
@@ -16364,9 +15474,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 10){
 									$counterwP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 									$counterwB++;
 								}else{
 									$counterwN++;
@@ -16395,9 +15505,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 10){
 									$countertP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 									$countertB++;
 								}else{
 									$countertN++;
@@ -16426,9 +15536,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumcResults = $this->db->get()->row();
 							if(!empty($serumcResults)){
-								if($serumcResults->result > $cutboff){
+								if($serumcResults->result >= 10){
 									$countercP++;
-								}elseif($serumcResults->result <= $cutboff && $serumcResults->result >= $cutaoff){
+								}elseif($serumcResults->result >= 5 && $serumcResults->result < 10){
 									$countercB++;
 								}else{
 									$countercN++;
@@ -16458,17 +15568,17 @@ class Orders extends CI_Controller{
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
 								if($ivalue['parent_id'] == '6'){
-									if($serumResults->result > $cutdoff){
+									if($serumResults->result >= 76){
 										$counteriP++;
-									}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+									}elseif($serumResults->result <= 75 && $serumResults->result >= 60){
 										$counteriB++;
 									}else{
 										$counteriN++;
 									}
 								}else{
-									if($serumResults->result > $cutboff){
+									if($serumResults->result >= 10){
 										$counteriP++;
-									}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+									}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 										$counteriB++;
 									}else{
 										$counteriN++;
@@ -16499,9 +15609,9 @@ class Orders extends CI_Controller{
 								$this->db->order_by('id', 'ASC');
 								$serumiResults = $this->db->get()->row();
 								if(!empty($serumiResults)){
-									if($serumiResults->result > $cutboff){
+									if($serumiResults->result >= 10){
 										$counteritP++;
-									}elseif($serumiResults->result <= $cutboff && $serumiResults->result >= $cutaoff){
+									}elseif($serumiResults->result >= 5 && $serumiResults->result < 10){
 										$counteritB++;
 									}else{
 										$counteritN++;
@@ -16532,9 +15642,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$fleaResults = $this->db->get()->row();
 						if(!empty($fleaResults)){
-							if($fleaResults->result > $cutboff){
+							if($fleaResults->result >= 10){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B15', 'POSITIVE');
-							}elseif($fleaResults->result <= $cutboff && $fleaResults->result >= $cutaoff){
+							}elseif($fleaResults->result >= 5 && $fleaResults->result < 10){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B15', 'BORDER LINE');
 							}else{
 								$objPHPExcel->getActiveSheet()->SetCellValue('B15', 'NEGATIVE');
@@ -16554,9 +15664,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$malasseziaResults = $this->db->get()->row();
 						if(!empty($malasseziaResults)){
-							if($malasseziaResults->result > $cutdoff){
+							if($malasseziaResults->result >= 76){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B16', 'POSITIVE');
-							}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
+							}elseif($malasseziaResults->result <= 75 && $malasseziaResults->result >= 60){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B16', 'BORDER LINE');
 							}else{
 								$objPHPExcel->getActiveSheet()->SetCellValue('B16', 'NEGATIVE');
@@ -16588,11 +15698,11 @@ class Orders extends CI_Controller{
 								$this->db->order_by('id', 'ASC');
 								$serumfResults = $this->db->get()->row();
 								if(!empty($serumfResults)){
-									if($serumfResults->result > $cutboff){
+									if($serumfResults->result >= 10){
 										$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, ''.$sfvalue['name'].' IgE');
 										$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumfResults->result);
 										$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-									}elseif($serumfResults->result <= $cutboff && $serumfResults->result >= $cutaoff){
+									}elseif($serumfResults->result >= 5 && $serumfResults->result < 10){
 										$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, ''.$sfvalue['name'].' IgE');
 										$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumfResults->result);
 										$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
@@ -16615,11 +15725,11 @@ class Orders extends CI_Controller{
 								$this->db->order_by('id', 'ASC');
 								$serumfiggResults = $this->db->get()->row();
 								if(!empty($serumfiggResults)){
-									if($serumfiggResults->result > $cutboff){
+									if($serumfiggResults->result >= 10){
 										$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, ''.$sfvalue['name'].' IgG');
 										$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumfiggResults->result);
 										$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-									}elseif($serumfiggResults->result <= $cutboff && $serumfiggResults->result >= $cutaoff){
+									}elseif($serumfiggResults->result >= 5 && $serumfiggResults->result < 10){
 										$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, ''.$sfvalue['name'].' IgG');
 										$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumfiggResults->result);
 										$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
@@ -16667,9 +15777,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 10){
 									$countergP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 									$countergB++;
 								}else{
 									$countergN++;
@@ -16698,9 +15808,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 10){
 									$counterwP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 									$counterwB++;
 								}else{
 									$counterwN++;
@@ -16729,9 +15839,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 10){
 									$countertP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 									$countertB++;
 								}else{
 									$countertN++;
@@ -16760,9 +15870,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumcResults = $this->db->get()->row();
 							if(!empty($serumcResults)){
-								if($serumcResults->result > $cutboff){
+								if($serumcResults->result >= 10){
 									$countercP++;
-								}elseif($serumcResults->result <= $cutboff && $serumcResults->result >= $cutaoff){
+								}elseif($serumcResults->result >= 5 && $serumcResults->result < 10){
 									$countercB++;
 								}else{
 									$countercN++;
@@ -16792,17 +15902,17 @@ class Orders extends CI_Controller{
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
 								if($ivalue['parent_id'] == '6'){
-									if($serumResults->result > $cutdoff){
+									if($serumResults->result >= 76){
 										$counteriP++;
-									}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+									}elseif($serumResults->result <= 75 && $serumResults->result >= 60){
 										$counteriB++;
 									}else{
 										$counteriN++;
 									}
 								}else{
-									if($serumResults->result > $cutboff){
+									if($serumResults->result >= 10){
 										$counteriP++;
-									}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+									}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 										$counteriB++;
 									}else{
 										$counteriN++;
@@ -16833,9 +15943,9 @@ class Orders extends CI_Controller{
 								$this->db->order_by('id', 'ASC');
 								$serumiResults = $this->db->get()->row();
 								if(!empty($serumiResults)){
-									if($serumiResults->result > $cutboff){
+									if($serumiResults->result >= 10){
 										$counteritP++;
-									}elseif($serumiResults->result <= $cutboff && $serumiResults->result >= $cutaoff){
+									}elseif($serumiResults->result >= 5 && $serumiResults->result < 10){
 										$counteritB++;
 									}else{
 										$counteritN++;
@@ -16866,9 +15976,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$fleaResults = $this->db->get()->row();
 						if(!empty($fleaResults)){
-							if($fleaResults->result > $cutboff){
+							if($fleaResults->result >= 10){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B15', 'POSITIVE');
-							}elseif($fleaResults->result <= $cutboff && $fleaResults->result >= $cutaoff){
+							}elseif($fleaResults->result >= 5 && $fleaResults->result < 10){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B15', 'BORDER LINE');
 							}else{
 								$objPHPExcel->getActiveSheet()->SetCellValue('B15', 'NEGATIVE');
@@ -16888,9 +15998,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$malasseziaResults = $this->db->get()->row();
 						if(!empty($malasseziaResults)){
-							if($malasseziaResults->result > $cutdoff){
+							if($malasseziaResults->result >= 76){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B16', 'POSITIVE');
-							}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
+							}elseif($malasseziaResults->result <= 75 && $malasseziaResults->result >= 60){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B16', 'BORDER LINE');
 							}else{
 								$objPHPExcel->getActiveSheet()->SetCellValue('B16', 'NEGATIVE');
@@ -16930,9 +16040,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('result', 'DESC');
 							$fpResults = $this->db->get()->row();
 							if(!empty($fpResults)){
-								if($fpResults->result > $cutboff){
+								if($fpResults->result >= 10){
 									$counterFPP++;
-								}elseif($fpResults->result <= $cutboff && $fpResults->result >= $cutaoff){
+								}elseif($fpResults->result >= 5 && $fpResults->result < 10){
 									$counterFPB++;
 								}else{
 									$counterFPN++;
@@ -16961,9 +16071,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('result', 'DESC');
 							$fcResults = $this->db->get()->row();
 							if(!empty($fcResults)){
-								if($fcResults->result > $cutboff){
+								if($fcResults->result >= 10){
 									$counterFCP++;
-								}elseif($fcResults->result <= $cutboff && $fcResults->result >= $cutaoff){
+								}elseif($fcResults->result >= 5 && $fcResults->result < 10){
 									$counterFCB++;
 								}else{
 									$counterFCN++;
@@ -17028,12 +16138,12 @@ class Orders extends CI_Controller{
 								$serumResults = $this->db->get()->row();
 								if(!empty($serumResults)){
 									if($row1['parent_id'] == '6'){
-										if($serumResults->result > $cutdoff){
+										if($serumResults->result >= 76){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $serumResults->name);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-										}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+										}elseif($serumResults->result <= 75 && $serumResults->result >= 60){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $serumResults->name);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
@@ -17045,12 +16155,12 @@ class Orders extends CI_Controller{
 											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
 										}
 									}else{
-										if($serumResults->result > $cutboff){
+										if($serumResults->result >= 10){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $serumResults->name);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-										}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+										}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $serumResults->name);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
@@ -17077,11 +16187,11 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$malasseziaResults = $this->db->get()->row();
 						if(!empty($malasseziaResults)){
-							if($malasseziaResults->result > $cutdoff){
+							if($malasseziaResults->result >= 76){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $malasseziaResults->result);
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-							}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
+							}elseif($malasseziaResults->result <= 75 && $malasseziaResults->result >= 60){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $malasseziaResults->result);
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
@@ -17096,7 +16206,7 @@ class Orders extends CI_Controller{
 							$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
 						}
 						/* End Malassezia */
-					}elseif(preg_match('/\bComplete Food Panel\b/', $respnedn->name) || preg_match('/\bNEXTLAB Complete Food\b/', $respnedn->name)){
+					}elseif(preg_match('/\bComplete Food Panel\b/', $respnedn->name)){
 						$fileName = 'NextLab_Complete_Food_Serum_Result_'.$NextmuneRef;
 						$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
 						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
@@ -17136,11 +16246,11 @@ class Orders extends CI_Controller{
 								$this->db->order_by('id', 'ASC');
 								$serumfResults = $this->db->get()->row();
 								if(!empty($serumfResults)){
-									if($serumfResults->result > $cutboff){
+									if($serumfResults->result >= 10){
 										$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, ''.$sfvalue['name'].' IgE');
 										$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumfResults->result);
 										$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-									}elseif($serumfResults->result <= $cutboff && $serumfResults->result >= $cutaoff){
+									}elseif($serumfResults->result >= 5 && $serumfResults->result < 10){
 										$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, ''.$sfvalue['name'].' IgE');
 										$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumfResults->result);
 										$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
@@ -17163,11 +16273,11 @@ class Orders extends CI_Controller{
 								$this->db->order_by('id', 'ASC');
 								$serumfiggResults = $this->db->get()->row();
 								if(!empty($serumfiggResults)){
-									if($serumfiggResults->result > $cutboff){
+									if($serumfiggResults->result >= 10){
 										$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, ''.$sfvalue['name'].' IgG');
 										$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumfiggResults->result);
 										$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-									}elseif($serumfiggResults->result <= $cutboff && $serumfiggResults->result >= $cutaoff){
+									}elseif($serumfiggResults->result >= 5 && $serumfiggResults->result < 10){
 										$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, ''.$sfvalue['name'].' IgG');
 										$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumfiggResults->result);
 										$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
@@ -17233,12 +16343,12 @@ class Orders extends CI_Controller{
 								$serumResults = $this->db->get()->row();
 								if(!empty($serumResults)){
 									if($row1['parent_id'] == '6'){
-										if($serumResults->result > $cutdoff){
+										if($serumResults->result >= 76){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $serumResults->name);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-										}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+										}elseif($serumResults->result <= 75 && $serumResults->result >= 60){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $serumResults->name);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
@@ -17250,12 +16360,12 @@ class Orders extends CI_Controller{
 											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
 										}
 									}else{
-										if($serumResults->result > $cutboff){
+										if($serumResults->result >= 10){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $serumResults->name);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-										}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+										}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $serumResults->name);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
@@ -17282,11 +16392,11 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$malasseziaResults = $this->db->get()->row();
 						if(!empty($malasseziaResults)){
-							if($malasseziaResults->result > $cutdoff){
+							if($malasseziaResults->result >= 76){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $malasseziaResults->result);
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-							}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
+							}elseif($malasseziaResults->result <= 75 && $malasseziaResults->result >= 60){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $malasseziaResults->result);
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
@@ -17315,11 +16425,11 @@ class Orders extends CI_Controller{
 								$this->db->order_by('id', 'ASC');
 								$serumfResults = $this->db->get()->row();
 								if(!empty($serumfResults)){
-									if($serumfResults->result > $cutboff){
+									if($serumfResults->result >= 10){
 										$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, ''.$sfvalue['name'].' IgE');
 										$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumfResults->result);
 										$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-									}elseif($serumfResults->result <= $cutboff && $serumfResults->result >= $cutaoff){
+									}elseif($serumfResults->result >= 5 && $serumfResults->result < 10){
 										$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, ''.$sfvalue['name'].' IgE');
 										$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumfResults->result);
 										$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
@@ -17342,11 +16452,11 @@ class Orders extends CI_Controller{
 								$this->db->order_by('id', 'ASC');
 								$serumfiggResults = $this->db->get()->row();
 								if(!empty($serumfiggResults)){
-									if($serumfiggResults->result > $cutboff){
+									if($serumfiggResults->result >= 10){
 										$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, ''.$sfvalue['name'].' IgG');
 										$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumfiggResults->result);
 										$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-									}elseif($serumfiggResults->result <= $cutboff && $serumfiggResults->result >= $cutaoff){
+									}elseif($serumfiggResults->result >= 5 && $serumfiggResults->result < 10){
 										$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, ''.$sfvalue['name'].' IgG');
 										$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumfiggResults->result);
 										$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
@@ -17412,12 +16522,12 @@ class Orders extends CI_Controller{
 								$serumResults = $this->db->get()->row();
 								if(!empty($serumResults)){
 									if($row1['parent_id'] == '6'){
-										if($serumResults->result > $cutdoff){
+										if($serumResults->result >= 76){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $serumResults->name);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-										}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+										}elseif($serumResults->result <= 75 && $serumResults->result >= 60){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $serumResults->name);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
@@ -17429,12 +16539,12 @@ class Orders extends CI_Controller{
 											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
 										}
 									}else{
-										if($serumResults->result > $cutboff){
+										if($serumResults->result >= 10){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $serumResults->name);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-										}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+										}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $serumResults->name);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
@@ -17461,11 +16571,11 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$malasseziaResults = $this->db->get()->row();
 						if(!empty($malasseziaResults)){
-							if($malasseziaResults->result > $cutdoff){
+							if($malasseziaResults->result >= 76){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $malasseziaResults->result);
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-							}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
+							}elseif($malasseziaResults->result <= 75 && $malasseziaResults->result >= 60){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $malasseziaResults->result);
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
@@ -17495,9 +16605,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('result', 'DESC');
 							$fpResults = $this->db->get()->row();
 							if(!empty($fpResults)){
-								if($fpResults->result > $cutboff){
+								if($fpResults->result >= 10){
 									$counterFPP++;
-								}elseif($fpResults->result <= $cutboff && $fpResults->result >= $cutaoff){
+								}elseif($fpResults->result >= 5 && $fpResults->result < 10){
 									$counterFPB++;
 								}else{
 									$counterFPN++;
@@ -17529,9 +16639,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('result', 'DESC');
 							$fcResults = $this->db->get()->row();
 							if(!empty($fcResults)){
-								if($fcResults->result > $cutboff){
+								if($fcResults->result >= 10){
 									$counterFCP++;
-								}elseif($fcResults->result <= $cutboff && $fcResults->result >= $cutaoff){
+								}elseif($fcResults->result >= 5 && $fcResults->result < 10){
 									$counterFCB++;
 								}else{
 									$counterFCN++;
@@ -17580,9 +16690,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 10){
 									$countergP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 									$countergB++;
 								}else{
 									$countergN++;
@@ -17611,9 +16721,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 10){
 									$counterwP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 									$counterwB++;
 								}else{
 									$counterwN++;
@@ -17642,9 +16752,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 10){
 									$countertP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 									$countertB++;
 								}else{
 									$countertN++;
@@ -17673,9 +16783,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumcResults = $this->db->get()->row();
 							if(!empty($serumcResults)){
-								if($serumcResults->result > $cutboff){
+								if($serumcResults->result >= 10){
 									$countercP++;
-								}elseif($serumcResults->result <= $cutboff && $serumcResults->result >= $cutaoff){
+								}elseif($serumcResults->result >= 5 && $serumcResults->result < 10){
 									$countercB++;
 								}else{
 									$countercN++;
@@ -17705,17 +16815,17 @@ class Orders extends CI_Controller{
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
 								if($ivalue['parent_id'] == '6'){
-									if($serumResults->result > $cutdoff){
+									if($serumResults->result >= 76){
 										$counteriP++;
-									}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+									}elseif($serumResults->result <= 75 && $serumResults->result >= 60){
 										$counteriB++;
 									}else{
 										$counteriN++;
 									}
 								}else{
-									if($serumResults->result > $cutboff){
+									if($serumResults->result >= 10){
 										$counteriP++;
-									}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+									}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 										$counteriB++;
 									}else{
 										$counteriN++;
@@ -17746,9 +16856,9 @@ class Orders extends CI_Controller{
 								$this->db->order_by('id', 'ASC');
 								$serumiResults = $this->db->get()->row();
 								if(!empty($serumiResults)){
-									if($serumiResults->result > $cutboff){
+									if($serumiResults->result >= 10){
 										$counteritP++;
-									}elseif($serumiResults->result <= $cutboff && $serumiResults->result >= $cutaoff){
+									}elseif($serumiResults->result >= 5 && $serumiResults->result < 10){
 										$counteritB++;
 									}else{
 										$counteritN++;
@@ -17779,9 +16889,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$fleaResults = $this->db->get()->row();
 						if(!empty($fleaResults)){
-							if($fleaResults->result > $cutboff){
+							if($fleaResults->result >= 10){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B15', 'POSITIVE');
-							}elseif($fleaResults->result <= $cutboff && $fleaResults->result >= $cutaoff){
+							}elseif($fleaResults->result >= 5 && $fleaResults->result < 10){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B15', 'BORDER LINE');
 							}else{
 								$objPHPExcel->getActiveSheet()->SetCellValue('B15', 'NEGATIVE');
@@ -17801,9 +16911,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$malasseziaResults = $this->db->get()->row();
 						if(!empty($malasseziaResults)){
-							if($malasseziaResults->result > $cutdoff){
+							if($malasseziaResults->result >= 76){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B16', 'POSITIVE');
-							}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
+							}elseif($malasseziaResults->result <= 75 && $malasseziaResults->result >= 60){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B16', 'BORDER LINE');
 							}else{
 								$objPHPExcel->getActiveSheet()->SetCellValue('B16', 'NEGATIVE');
@@ -17831,9 +16941,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('result', 'DESC');
 							$fpResults = $this->db->get()->row();
 							if(!empty($fpResults)){
-								if($fpResults->result > $cutboff){
+								if($fpResults->result >= 10){
 									$counterFPP++;
-								}elseif($fpResults->result <= $cutboff && $fpResults->result >= $cutaoff){
+								}elseif($fpResults->result >= 5 && $fpResults->result < 10){
 									$counterFPB++;
 								}else{
 									$counterFPN++;
@@ -17862,9 +16972,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('result', 'DESC');
 							$fcResults = $this->db->get()->row();
 							if(!empty($fcResults)){
-								if($fcResults->result > $cutboff){
+								if($fcResults->result >= 10){
 									$counterFCP++;
-								}elseif($fcResults->result <= $cutboff && $fcResults->result >= $cutaoff){
+								}elseif($fcResults->result >= 5 && $fcResults->result < 10){
 									$counterFCB++;
 								}else{
 									$counterFCN++;
@@ -17928,12 +17038,12 @@ class Orders extends CI_Controller{
 								$serumResults = $this->db->get()->row();
 								if(!empty($serumResults)){
 									if($row1['parent_id'] == '6'){
-										if($serumResults->result > $cutdoff){
+										if($serumResults->result >= 76){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $serumResults->name);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-										}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+										}elseif($serumResults->result <= 75 && $serumResults->result >= 60){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $serumResults->name);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
@@ -17945,12 +17055,12 @@ class Orders extends CI_Controller{
 											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
 										}
 									}else{
-										if($serumResults->result > $cutboff){
+										if($serumResults->result >= 10){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $serumResults->name);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-										}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+										}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $serumResults->name);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
@@ -17977,11 +17087,11 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$malasseziaResults = $this->db->get()->row();
 						if(!empty($malasseziaResults)){
-							if($malasseziaResults->result > $cutdoff){
+							if($malasseziaResults->result >= 76){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $malasseziaResults->result);
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-							}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
+							}elseif($malasseziaResults->result <= 75 && $malasseziaResults->result >= 60){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $malasseziaResults->result);
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
@@ -18012,11 +17122,11 @@ class Orders extends CI_Controller{
 									$this->db->order_by('id', 'ASC');
 									$serumfResults = $this->db->get()->row();
 									if(!empty($serumfResults)){
-										if($serumfResults->result > $cutboff){
+										if($serumfResults->result >= 10){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$foodCount, ''.$sfvalue['name'].' IgE');
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$foodCount, $serumfResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$foodCount, 'POSITIVE');
-										}elseif($serumfResults->result <= $cutboff && $serumfResults->result >= $cutaoff){
+										}elseif($serumfResults->result >= 5 && $serumfResults->result < 10){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$foodCount, ''.$sfvalue['name'].' IgE');
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$foodCount, $serumfResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$foodCount, 'BORDER LINE');
@@ -18039,11 +17149,11 @@ class Orders extends CI_Controller{
 									$this->db->order_by('id', 'ASC');
 									$serumfiggResults = $this->db->get()->row();
 									if(!empty($serumfiggResults)){
-										if($serumfiggResults->result > $cutboff){
+										if($serumfiggResults->result >= 10){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$foodCount, ''.$sfvalue['name'].' IgG');
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$foodCount, $serumfiggResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$foodCount, 'POSITIVE');
-										}elseif($serumfiggResults->result <= $cutboff && $serumfiggResults->result >= $cutaoff){
+										}elseif($serumfiggResults->result >= 5 && $serumfiggResults->result < 10){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$foodCount, ''.$sfvalue['name'].' IgG');
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$foodCount, $serumfiggResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$foodCount, 'BORDER LINE');
@@ -18093,9 +17203,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 10){
 									$countergP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 									$countergB++;
 								}else{
 									$countergN++;
@@ -18124,9 +17234,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 10){
 									$counterwP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 									$counterwB++;
 								}else{
 									$counterwN++;
@@ -18155,9 +17265,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
-								if($serumResults->result > $cutboff){
+								if($serumResults->result >= 10){
 									$countertP++;
-								}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+								}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 									$countertB++;
 								}else{
 									$countertN++;
@@ -18186,9 +17296,9 @@ class Orders extends CI_Controller{
 							$this->db->order_by('id', 'ASC');
 							$serumcResults = $this->db->get()->row();
 							if(!empty($serumcResults)){
-								if($serumcResults->result > $cutboff){
+								if($serumcResults->result >= 10){
 									$countercP++;
-								}elseif($serumcResults->result <= $cutboff && $serumcResults->result >= $cutaoff){
+								}elseif($serumcResults->result >= 5 && $serumcResults->result < 10){
 									$countercB++;
 								}else{
 									$countercN++;
@@ -18218,17 +17328,17 @@ class Orders extends CI_Controller{
 							$serumResults = $this->db->get()->row();
 							if(!empty($serumResults)){
 								if($ivalue['parent_id'] == '6'){
-									if($serumResults->result > $cutdoff){
+									if($serumResults->result >= 76){
 										$counteriP++;
-									}elseif($serumResults->result <= $cutdoff && $serumResults->result >= $cutcoff){
+									}elseif($serumResults->result <= 75 && $serumResults->result >= 60){
 										$counteriB++;
 									}else{
 										$counteriN++;
 									}
 								}else{
-									if($serumResults->result > $cutboff){
+									if($serumResults->result >= 10){
 										$counteriP++;
-									}elseif($serumResults->result <= $cutboff && $serumResults->result >= $cutaoff){
+									}elseif($serumResults->result >= 5 && $serumResults->result < 10){
 										$counteriB++;
 									}else{
 										$counteriN++;
@@ -18259,9 +17369,9 @@ class Orders extends CI_Controller{
 								$this->db->order_by('id', 'ASC');
 								$serumiResults = $this->db->get()->row();
 								if(!empty($serumiResults)){
-									if($serumiResults->result > $cutboff){
+									if($serumiResults->result >= 10){
 										$counteritP++;
-									}elseif($serumiResults->result <= $cutboff && $serumiResults->result >= $cutaoff){
+									}elseif($serumiResults->result >= 5 && $serumiResults->result < 10){
 										$counteritB++;
 									}else{
 										$counteritN++;
@@ -18292,9 +17402,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$fleaResults = $this->db->get()->row();
 						if(!empty($fleaResults)){
-							if($fleaResults->result > $cutboff){
+							if($fleaResults->result >= 10){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B15', 'POSITIVE');
-							}elseif($fleaResults->result <= $cutboff && $fleaResults->result >= $cutaoff){
+							}elseif($fleaResults->result >= 5 && $fleaResults->result < 10){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B15', 'BORDER LINE');
 							}else{
 								$objPHPExcel->getActiveSheet()->SetCellValue('B15', 'NEGATIVE');
@@ -18314,9 +17424,9 @@ class Orders extends CI_Controller{
 						$this->db->order_by('id', 'ASC');
 						$malasseziaResults = $this->db->get()->row();
 						if(!empty($malasseziaResults)){
-							if($malasseziaResults->result > $cutdoff){
+							if($malasseziaResults->result >= 76){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B16', 'POSITIVE');
-							}elseif($malasseziaResults->result <= $cutdoff && $malasseziaResults->result >= $cutcoff){
+							}elseif($malasseziaResults->result <= 75 && $malasseziaResults->result >= 60){
 								$objPHPExcel->getActiveSheet()->SetCellValue('B16', 'BORDER LINE');
 							}else{
 								$objPHPExcel->getActiveSheet()->SetCellValue('B16', 'NEGATIVE');
@@ -18341,11 +17451,11 @@ class Orders extends CI_Controller{
 									$this->db->order_by('id', 'ASC');
 									$serumfResults = $this->db->get()->row();
 									if(!empty($serumfResults)){
-										if($serumfResults->result > $cutboff){
+										if($serumfResults->result >= 10){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, ''.$sfvalue['name'].' IgE');
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumfResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-										}elseif($serumfResults->result <= $cutboff && $serumfResults->result >= $cutaoff){
+										}elseif($serumfResults->result >= 5 && $serumfResults->result < 10){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, ''.$sfvalue['name'].' IgE');
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumfResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
@@ -18368,11 +17478,11 @@ class Orders extends CI_Controller{
 									$this->db->order_by('id', 'ASC');
 									$serumfiggResults = $this->db->get()->row();
 									if(!empty($serumfiggResults)){
-										if($serumfiggResults->result > $cutboff){
+										if($serumfiggResults->result >= 10){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, ''.$sfvalue['name'].' IgG');
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumfiggResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-										}elseif($serumfiggResults->result <= $cutboff && $serumfiggResults->result >= $cutaoff){
+										}elseif($serumfiggResults->result >= 5 && $serumfiggResults->result < 10){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, ''.$sfvalue['name'].' IgG');
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $serumfiggResults->result);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'BORDER LINE');
@@ -19062,1134 +18172,6 @@ class Orders extends CI_Controller{
 			$this->db->update('ci_orders', $updtData, array('id'=>$row['order_id']));
 		} */
 		exit;
-	}
-
-	function sendPaxResultNotificationZone($orderId){
-		ini_set('memory_limit', '256M');
-		if($orderId > 0){
-			$data = $this->OrdersModel->allData($orderId, "");
-			$order_details = $data;
-			$this->_data['order_details'] = $data;
-			$interpData = $this->OrdersModel->getOrderInterpretation($orderId);
-			$this->_data['order_details']['interpretation'] = $interpData->interpretation;
-			$this->_data['order_details']['interpretation_food'] = $interpData->interpretation_food;
-			$this->_data['order_details']['vet_interpretation'] = $interpData->vet_interpretation;
-			$raptorData = $this->OrdersModel->getRaptorData($data['order_number']);
-			$this->_data['raptorData'] = $raptorData;
-
-			if($data['serum_type'] == 1){
-				$this->_data['serumTypes'] = 'PAX';
-			}else{
-				$this->_data['serumTypes'] = 'NextLab';
-			}
-			if($data['pax_cutoff_version'] == 1){
-				$cutoffs = '30';
-				$this->_data['cutoffs'] = '30';
-			}else{
-				$cutoffs = '28';
-				$this->_data['cutoffs'] = '28';
-			}
-			$petOWFName = !empty($data['pet_owner_name'])?$data['pet_owner_name']:'';
-			$petOWLName = !empty($data['po_last'])?$data['po_last']:'';
-			$petownerName = $petOWFName.' '.$petOWLName;
-			$respnedn = $this->OrdersModel->getProductInfo($data['product_code_selection']);
-			if(preg_match('/\bScreening\b/', $respnedn->name)){
-				$pdfNameEnv = seo_friendly_url('PAX_Environmental_Screening_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
-				$pdfNameFood = seo_friendly_url('PAX_Food_Screening_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
-				$file_name = FCPATH . SERUM_REQUEST_PDF_PATH . $pdfNameEnv .".pdf";
-				$atcfileName = SERUM_REQUEST_PDF_PATH . $pdfNameEnv .".pdf";
-				$file_name_food = FCPATH . SERUM_REQUEST_PDF_PATH . $pdfNameFood .".pdf";
-				$atcfileFoodName = SERUM_REQUEST_PDF_PATH . $pdfNameFood .".pdf";
-				if((preg_match('/\bPAX Environmental\b/', $respnedn->name)) && (preg_match('/\bFood Screening\b/', $respnedn->name))){
-					ob_end_flush();
-					require_once(FCPATH.'vendor_pdf/autoload.php');
-					$mpdf = new Mpdf\Mpdf(['mode' => 'utf-8', 'format' => 'A4',]);
-					$raptor_footer_pdf = $this->load->view('orders/pax_pdf/raptor_footer', $this->_data, true);
-					$mpdf->use_kwt = true; 
-					$mpdf->SetDisplayMode('fullpage');
-					$mpdf->SetTitle('PAX Serum Request Notification');
-					$mpdf->AddPage('','', '', '', '', 0, 0, 0, 5, 0, 5);
-					$screening_header = $this->load->view('orders/raptor_screening_pdf', $this->_data, true);
-					$mpdf->SetHTMLFooter($raptor_footer_pdf);
-					$mpdf->WriteHTML($screening_header);
-					$mpdf->Output($file_name,'F');
-
-					ob_end_flush();
-					require_once(FCPATH.'vendor_pdf/autoload.php');
-					$mpdf = new Mpdf\Mpdf(['mode' => 'utf-8', 'format' => 'A4',]);
-					$raptor_footer_pdf_food = $this->load->view('orders/pax_pdf/raptor_footer', $this->_data, true);
-					$mpdf->use_kwt = true; 
-					$mpdf->SetDisplayMode('fullpage');
-					$mpdf->SetTitle('PAX Serum Request Notification');
-					$mpdf->AddPage('','', '', '', '', 0, 0, 0, 5, 0, 5);
-					$screening_header_food = $this->load->view('orders/raptor_screening_pdf_food', $this->_data, true);
-					$mpdf->SetHTMLFooter($raptor_footer_pdf_food);
-					$mpdf->WriteHTML($screening_header_food);
-					$mpdf->Output($file_name_food,'F');
-				}else{
-					ob_end_flush();
-					require_once(FCPATH.'vendor_pdf/autoload.php');
-					$mpdf = new Mpdf\Mpdf(['mode' => 'utf-8', 'format' => 'A4',]);
-					$raptor_footer_pdf = $this->load->view('orders/pax_pdf/raptor_footer', $this->_data, true);
-					$mpdf->use_kwt = true; 
-					$mpdf->SetDisplayMode('fullpage');
-					$mpdf->SetTitle('PAX Serum Request Notification');
-					$mpdf->AddPage('','', '', '', '', 0, 0, 0, 5, 0, 5);
-					if(preg_match('/\bPAX Environmental Screening\b/', $respnedn->name)){
-						$screening_header = $this->load->view('orders/raptor_screening_pdf', $this->_data, true);
-					}elseif(preg_match('/\bPAX Food Screening\b/', $respnedn->name)){
-						$screening_header = $this->load->view('orders/raptor_screening_pdf_food', $this->_data, true);
-					}
-					$mpdf->SetHTMLFooter($raptor_footer_pdf);
-					$mpdf->WriteHTML($screening_header);
-					$mpdf->Output($file_name,'F');
-				}
-			}else{
-				$pdfNameEnv = seo_friendly_url('PAX_Environmental_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
-				$pdfNameFood = seo_friendly_url('PAX_Food_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
-				$file_name = FCPATH . SERUM_REQUEST_PDF_PATH . $pdfNameEnv .".pdf";
-				$atcfileName = SERUM_REQUEST_PDF_PATH . $pdfNameEnv .".pdf";
-				$file_name_food = FCPATH . SERUM_REQUEST_PDF_PATH . $pdfNameFood .".pdf";
-				$atcfileFoodName = SERUM_REQUEST_PDF_PATH . $pdfNameFood .".pdf";
-
-				$this->_data['fulladdress'] = '';
-				if($data['vet_user_id']>0){
-					$refDatas = $this->UsersDetailsModel->getColumnAllArray($data['vet_user_id']);
-					$refDatas = array_column($refDatas, 'column_field', 'column_name');
-					$add_1 = !empty($refDatas['add_1']) ? $refDatas['add_1'].', ' : '';
-					$add_2 = !empty($refDatas['add_2']) ? $refDatas['add_2'].', ' : '';
-					$add_3 = !empty($refDatas['add_3']) ? $refDatas['add_3'] : '';
-					$city = !empty($refDatas['add_4']) ? $refDatas['add_4'] : '';
-					$postcode = !empty($refDatas['address_3']) ? $refDatas['address_3'] : '';
-					$this->_data['fulladdress'] = $add_1.$add_2.$add_3.$city.$postcode;
-					$this->_data['account_ref'] = !empty($refDatas['account_ref']) ? $refDatas['account_ref'] : '';
-				}
-				$this->_data['serumdata'] = $this->OrdersModel->getSerumTestRecord($orderId);
-				$this->_data['respnedn'] = $respnedn;
-				$this->_data['ordeType'] = $respnedn->name;
-				$this->_data['ordeTypeID'] = $respnedn->id;
-
-				/* get removed treatment 1 */
-				$removed_treatment_1 = array();
-				$removed_treatment_1 = $order_details['removed_treatment_1'];
-				if(!empty($removed_treatment_1)){
-					$removed_treatment_1 = json_decode($removed_treatment_1);
-				}
-
-				/* get removed treatment 2 */
-				$removed_treatment_2 = array();
-				$removed_treatment_2 = $order_details['removed_treatment_2'];
-				if(!empty($removed_treatment_2)){
-					$removed_treatment_2 = json_decode($removed_treatment_2);
-				}
-
-				if($respnedn->name == 'PAX Environmental'){
-					$getAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($order_details['allergens']);
-					$totalGroup0 = count($getAllergenParent);
-					$totalGroup2 = $totalGroup0/2;
-					$partA = ((round)($totalGroup2));
-					$partB = $partA-1;
-					$this->_data['getAllergenParent'] = $getAllergenParent;
-					$this->_data['partB'] = $partB;
-
-					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = []; $block1 = []; $blocks1 = []; $allengesIDsArr = array();
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
-							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-							if(!empty($subVlu->raptor_code)){
-								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID3Arr[] = $svalue['id'];
-											}
-											$block1[$svalue['id']] = $svalue['name'];
-										}else{
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID4Arr[] = $svalue['id'];
-											}
-											$blocks1[$svalue['id']] = $svalue['name'];
-										}
-										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-											$allengesIDArr[] = $svalue['id'];
-										}
-										$allengesIDsArr[] = $svalue['id'];
-										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
-							}
-						}
-					}
-					if(array_key_exists("45994",$block1) && array_key_exists("73",$block1)){
-						unset($block1['45994']);
-					}elseif(array_key_exists("45994",$block1)){
-						unset($block1['45994']);
-						$block1['73'] = $this->AllergensModel->getAllergennameById(73);
-					}
-					if($data['treatment_1'] != "" && $data['treatment_1'] != "[]"){
-						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_1']);
-						if(!empty($subAllergnArr)){
-							foreach ($subAllergnArr as $svalue){
-								$block1[$svalue['id']] = $svalue['name'];
-								if($svalue['name'] != "N/A"){
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID3Arr))){
-										$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}else{
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID4Arr))){
-										$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
-							}
-						}
-					}
-					//asort($block1);
-					$this->_data['block1'] = $block1;
-					$this->_data['blocks1'] = $blocks1;
-
-					$block2 = []; $chk_alg_cunt = 0;
-					foreach($getAllergenParent as $apvalue){
-						$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
-						if(!empty($getGroupMixtures)){
-							$parentIdArr = [];
-							foreach($getGroupMixtures as $mvalue){
-								if($mvalue['mixture_allergens'] != "" && $mvalue['mixture_allergens'] != "null"){
-									$parentIdArr[] = $mvalue['id'];
-								}
-							}
-
-							if(!empty($parentIdArr)){
-								if(count($parentIdArr) > 1){
-									foreach($parentIdArr as $makey=>$mavalue){
-										$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
-										$testingArr = [];
-										foreach($allergenArr as $amid){
-											$rmcodes = $this->OrdersModel->getsubAllergensCode($amid);
-											if(!empty($rmcodes->raptor_code)){
-												$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
-												if(!empty($raptrmVlu)){
-													if(floor($raptrmVlu->result_value) >= $cutoffs){
-														$testingArr[$mavalue] += 1;
-													}
-												}
-											}
-										}
-
-										if(count($allergenArr) >= 3){
-											$chk_alg_cunt = (count($allergenArr)-1);
-											if($testingArr[$mavalue] >= $chk_alg_cunt){
-												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-												}
-											}
-										}else{
-											if($testingArr[$mavalue] >= 2){
-												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-												}
-											}
-										}
-									}
-								}else{
-									$allergensArr = json_decode($getGroupMixtures[0]['mixture_allergens']);
-									$tested = 0;
-									foreach($allergensArr as $aid){
-										$rcodes = $this->OrdersModel->getsubAllergensCode($aid);
-										if(!empty($rcodes->raptor_code)){
-											$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
-											if(!empty($raptrVlu)){
-												if(floor($raptrVlu->result_value) >= $cutoffs){
-													$tested++;
-												}
-											}
-										}
-									}
-									
-									if($apvalue['parent_id'] == 1){
-										if($tested >= 3){
-											if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-												$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-											}
-										}
-									}else{
-										if(count($allergensArr) >= 3){
-											$chk_alg_cunt = (count($allergensArr)-1);
-											if($tested >= $chk_alg_cunt){
-												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-												}
-											}
-										}else{
-											if($tested >= 2){
-												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-												}
-											}
-										}
-									}
-								}
-							}else{
-								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
-								foreach($sub2Allergens as $s2value){
-									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-									if(!empty($sub2Vlu->raptor_code)){
-										$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-										if(!empty($raptr2Vlu)){
-											if($raptr2Vlu->result_value >= 30){
-												if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-													$block2[$s2value['id']] = $s2value['name'];
-												}
-											}
-										}
-									}
-								}
-							}
-						}else{
-							$sub3Allergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							foreach($sub3Allergens as $s3value){
-								$sub3Vlu = $this->OrdersModel->getsubAllergensCode($s3value['id']);
-								if(!empty($sub3Vlu->raptor_code)){
-									$raptr3Vlu = $this->OrdersModel->getRaptorValue($sub3Vlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptr3Vlu)){
-										if($raptr3Vlu->result_value >= 30){
-											if($s3value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s3value['id']) > 0){
-												$block2[$s3value['id']] = $s3value['name'];
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-					if(array_key_exists("45994",$block2) && array_key_exists("73",$block2)){
-						unset($block2['45994']);
-					}elseif(array_key_exists("45994",$block2)){
-						unset($block2['45994']);
-						$block2['73'] = $this->AllergensModel->getAllergennameById(73);
-					}
-					if($data['treatment_2'] != "" && $data['treatment_2'] != "[]"){
-						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_2']);
-						if(!empty($subAllergnArr)){
-							foreach ($subAllergnArr as $svalue){
-								if($svalue['name'] != "N/A"){
-									$block2[$svalue['id']] = $svalue['name'];
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID3Arr))){
-										$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}else{
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID4Arr))){
-										$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
-							}
-						}
-					}
-					//asort($block2);
-					$this->_data['block2'] = $block2;
-
-					if(count($allengesArr) > 1){
-						asort($allengesArr);
-						$lastchnk = end($allengesArr);
-						$lastchnkName = ', '.$lastchnk;
-						$lastchnkCng = ' '.$this->lang->line('recommendation_text_and').' '.$lastchnk;
-						$allengesStr = implode(", ",$allengesArr);
-						$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
-					}else{
-						$allengeStr = implode(", ",$allengesArr);
-					}
-
-					if(count($allenges3Arr) > 1){
-						asort($allenges3Arr);
-						$last3chnk = end($allenges3Arr);
-						$lastchnk3Name = ', '.$last3chnk;
-						$lastchnk3Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last3chnk;
-						$allenges3Str = implode(", ",$allenges3Arr);
-						$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
-					}else{
-						$allenge3Str = implode(", ",$allenges3Arr);
-					}
-
-					if(count($allenges4Arr) > 1){
-						asort($allenges4Arr);
-						$last4chnk = end($allenges4Arr);
-						$lastchnk4Name = ', '.$last4chnk;
-						$lastchnk4Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last4chnk;
-						$allenges4Str = implode(", ",$allenges4Arr);
-						$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
-					}else{
-						$allenge4Str = implode(", ",$allenges4Arr);
-					}
-
-					$dummytext = $this->lang->line('summery_text_1') . $allengeStr .".";
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					if(!empty($allenges3Arr)){
-					$dummytext .= $this->lang->line('summery_text_2') . $allenge3Str .".";
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					}
-					if(!empty($allenges4Arr)){
-					$dummytext .= $this->lang->line('summery_text_3') . $allenge4Str . $this->lang->line('summery_text_3a');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					}
-					$dummytext .= $this->lang->line('summery_text_4');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					$dummytext .= $this->lang->line('summery_text_5');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-
-					$sql = "SELECT result_value, name FROM `ci_raptor_result_allergens` WHERE result_id = '". $raptorData->result_id ."' AND (name LIKE 'CCD-HSA' OR name LIKE 'Hom s LF')";
-					$responce = $this->db->query($sql);
-					$ccd1Results = $responce->result();
-					$ccdresult1 = 0; $ccdresult2 = 0;
-					if(!empty($ccd1Results)){
-						foreach($ccd1Results as $cvalue){
-							if($cvalue->name == 'CCD-HSA'){
-								$ccdresult1 = $cvalue->result_value;
-							}
-							if($cvalue->name == 'Hom s LF'){
-								$ccdresult2 = $cvalue->result_value;
-							}
-						}
-					}
-					if(floor($ccdresult1) >= $cutoffs || floor($ccdresult2) >= $cutoffs){
-						$dummytext .= $this->lang->line('pax_ccd_text_'.$cutoffs.'');
-						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					}
-
-					$this->_data['allengesIDsArr'] = $allengesIDsArr;
-					$this->_data['allengesArr'] = $allengesArr;
-					$this->_data['dummytext'] = $dummytext;
-
-					ob_end_flush();
-					require_once(FCPATH.'vendor_pdf/autoload.php');
-					$mpdf = new Mpdf\Mpdf(['mode' => 'utf-8', 'format' => 'A4',]);
-					$main_footer_pdf = $this->load->view('pax_pdf/main_footer', $this->_data, true);
-					$mpdf->use_kwt = true; 
-					$mpdf->SetDisplayMode('fullpage');
-					$mpdf->SetTitle('PAX Serum Request Notification');
-					$mpdf->SetHTMLFooter($main_footer_pdf);
-					$mpdf->AddPage('','', '', '', '', 0, 0, 0, 5, 0, 5);
-					$main_header_pdf = $this->load->view('pax_pdf/main_header', $this->_data, true);
-					$allergen_header_pdf = $this->load->view('pax_pdf/raptor_allergen_header_pdf', $this->_data, true);
-					$html_header = $this->load->view('pax_pdf/raptor_header_pdf', $this->_data, true);
-					$mpdf->WriteHTML($main_header_pdf);
-					$pageno_footer_pdf = $this->load->view('pax_pdf/raptor_footer', $this->_data, true);
-					if(empty($block1) && empty($blocks1)){
-						$negative_faq_pdf = $this->load->view('pax_pdf/raptor_negative_faq', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,22,22,5,5);
-						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($pageno_footer_pdf);
-						$mpdf->WriteHTML($negative_faq_pdf);
-					}
-					if(!empty($block1) || !empty($blocks1)){
-						$summary_footer_pdf = $this->load->view('pax_pdf/raptor_summary_footer', $this->_data, true);
-						$summary_recommendation_pdf = $this->load->view('pax_pdf/raptor_summary_recommendation', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,20,35,5,5);
-						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($summary_footer_pdf);
-						$mpdf->WriteHTML($summary_recommendation_pdf);
-					}
-					$allergens_footer_pdf = $this->load->view('pax_pdf/raptor_allergens_footer_pdf', $this->_data, true);
-					$result_panel_pdf = $this->load->view('pax_pdf/raptor_result_panel', $this->_data, true);
-					$mpdf->SetHTMLHeader($allergen_header_pdf);
-					$mpdf->AddPage('','','','','',0,0,35,25,5,5);
-					$mpdf->SetDisplayMode('fullpage');
-					$mpdf->SetHTMLFooter($allergens_footer_pdf);
-					$mpdf->WriteHTML($result_panel_pdf);
-					if(!empty($block1) || !empty($blocks1)){
-						$interpretation_footer_pdf = $this->load->view('pax_pdf/raptor_footer_interpretation', $this->_data, true);
-						$interpretation_support_pdf = $this->load->view('pax_pdf/raptor_interpretation_support', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,20,30,5,5);
-						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($interpretation_footer_pdf);
-						$mpdf->WriteHTML($interpretation_support_pdf);
-
-						$positive_faq_pdf = $this->load->view('pax_pdf/raptor_positive_faq', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,20,20,5,5);
-						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($pageno_footer_pdf);
-						$mpdf->WriteHTML($positive_faq_pdf);
-					}
-					$mpdf->Output($file_name,'F');
-				}elseif($respnedn->name == 'PAX Food'){
-					$getAllergenParent = $this->AllergensModel->getFoodAllergenParentbyName($order_details['allergens']);
-					$totalGroup0 = count($getAllergenParent);
-					$totalGroup2 = $totalGroup0/2;
-					$partA = ((round)($totalGroup2));
-					$partB = $partA-1;
-					$this->_data['getAllergenParent'] = $getAllergenParent;
-					$this->_data['partB'] = $partB;
-
-					$allengesFArr = []; $allengesF3Arr = []; $allengesF4Arr = []; $dummyFtext = ""; $allengesIDFArr = array(); $foodtotal = 0;
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
-							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-							if(!empty($subVlu->raptor_code)){
-								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['name'] != "N/A"){
-											$allengesF3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-										}else{
-											$allengesF4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-										}
-										$allengesFArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-										$allengesIDFArr[] = $svalue['id'];
-										$foodtotal++;
-									}
-								}
-							}
-						}
-					}
-
-					if(count($allengesFArr) > 1){
-						asort($allengesFArr);
-						$lastchnk = end($allengesFArr);
-						$lastchnkName = ', '.$lastchnk;
-						$lastchnkCng = ' '.$this->lang->line('recommendation_text_and').' '.$lastchnk;
-						$allengesStr = implode(", ",$allengesFArr);
-						$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
-					}else{
-						$allengeStr = implode(", ",$allengesFArr);
-					}
-
-					if(count($allengesF3Arr) > 1){
-						asort($allengesF3Arr);
-						$last3chnk = end($allengesF3Arr);
-						$lastchnk3Name = ', '.$last3chnk;
-						$lastchnk3Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last3chnk;
-						$allenges3Str = implode(", ",$allengesF3Arr);
-						$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
-					}else{
-						$allenge3Str = implode(", ",$allengesF3Arr);
-					}
-
-					if(count($allengesF4Arr) > 1){
-						asort($allengesF4Arr);
-						$last4chnk = end($allengesF4Arr);
-						$lastchnk4Name = ', '.$last4chnk;
-						$lastchnk4Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last4chnk;
-						$allenges4Str = implode(", ",$allengesF4Arr);
-						$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
-					}else{
-						$allenge4Str = implode(", ",$allengesF4Arr);
-					}
-
-					$dummyFtext .= "<p>". $this->lang->line('summery_text_1') . $allengeStr .".</p>";
-					$dummyFtext .= "<p>". $this->lang->line('summery_food_text_2') . $allengeStr . $this->lang->line('summery_food_text_2a') ."</p>";
-					$dummyFtext .= "<p>".$this->lang->line('summery_food_text_3')."</p>";
-					$this->_data['foodtotal'] = $foodtotal;
-					$this->_data['allengesIDsArr'] = $allengesIDFArr;
-					$this->_data['allengesArr'] = $allengesFArr;
-					$this->_data['dummytext'] = $dummyFtext;
-
-					ob_end_flush();
-					require_once(FCPATH.'vendor_pdf/autoload.php');
-					$mpdf = new Mpdf\Mpdf(['mode' => 'utf-8', 'format' => 'A4',]);
-					$main_footer_pdf = $this->load->view('pax_pdf/main_footer_food', $this->_data, true);
-					$mpdf->use_kwt = true; 
-					$mpdf->SetDisplayMode('fullpage');
-					$mpdf->SetTitle('PAX Serum Request Notification');
-					$mpdf->SetHTMLFooter($main_footer_pdf);
-					$mpdf->AddPage('','', '', '', '', 0, 0, 0, 5, 0, 5);
-					$main_header_pdf = $this->load->view('pax_pdf/main_header_food', $this->_data, true);
-					$allergen_header_pdf = $this->load->view('pax_pdf/raptor_allergen_header_pdf', $this->_data, true);
-					$html_header = $this->load->view('pax_pdf/raptor_header_pdf', $this->_data, true);
-					$diet_chart_header = $this->load->view('pax_pdf/raptor_diet_chart_header', $this->_data, true);
-					$mpdf->WriteHTML($main_header_pdf);
-					$pageno_footer_pdf = $this->load->view('pax_pdf/raptor_footer', $this->_data, true);
-
-					if($foodtotal == 0){
-						$negative_faq_pdf = $this->load->view('pax_pdf/raptor_negative_faq_food', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,22,22,5,5);
-						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($pageno_footer_pdf);
-						$mpdf->WriteHTML($negative_faq_pdf);
-					}
-					if($foodtotal > 0){
-						$summary_footer_pdf = $this->load->view('pax_pdf/raptor_summary_footer', $this->_data, true);
-						$summary_recommendation_pdf = $this->load->view('pax_pdf/raptor_summary_recommendation_food', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,20,35,5,5);
-						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($summary_footer_pdf);
-						$mpdf->WriteHTML($summary_recommendation_pdf);
-					}
-					$allergens_footer_pdf = $this->load->view('pax_pdf/raptor_allergens_footer_pdf', $this->_data, true);
-					$result_panel_pdf = $this->load->view('pax_pdf/raptor_result_panel_food', $this->_data, true);
-					$mpdf->SetHTMLHeader($allergen_header_pdf);
-					$mpdf->AddPage('','','','','',0,0,35,27,5,5);
-					$mpdf->SetDisplayMode('fullpage');
-					$mpdf->SetHTMLFooter($allergens_footer_pdf);
-					$mpdf->WriteHTML($result_panel_pdf);
-					if($foodtotal > 0){
-						$interpretation_footer_pdf = $this->load->view('pax_pdf/raptor_footer_interpretation', $this->_data, true);
-						$interpretation_support_pdf = $this->load->view('pax_pdf/raptor_interpretation_support', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,22,35,5,5);
-						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($interpretation_footer_pdf);
-						$mpdf->WriteHTML($interpretation_support_pdf);
-
-						$diet_chart_footer_pdf = $this->load->view('pax_pdf/raptor_diet_chart_footer', $this->_data, true);
-						if($this->session->userdata('export_site_lang') == 'export_spanish'){ 
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_spanish', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							$mpdf->AddPage('','','','','',0,0,40,20,5,5);
-						}elseif($this->session->userdata('export_site_lang') == 'export_dutch'){
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_dutch', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							$mpdf->AddPage('','','','','',0,0,33,20,5,5);
-						}else{ 
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_'.$this->session->userdata('site_lang').'', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							if($this->session->userdata('site_lang') == 'spanish'){
-								$mpdf->AddPage('','','','','',0,0,37,20,5,5);
-							}else{
-								$mpdf->AddPage('','','','','',0,0,33,20,5,5);
-							}
-						}
-						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($diet_chart_footer_pdf);
-						$mpdf->WriteHTML($diet_chart_pdf);
-					}
-					$mpdf->Output($file_name_food,'F');
-				}elseif($respnedn->name == 'PAX Environmental + Food'){
-					$getAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($order_details['allergens']);
-					$totalGroup0 = count($getAllergenParent);
-					$totalGroup2 = $totalGroup0/2;
-					$partA = ((round)($totalGroup2));
-					$partB = $partA-1;
-					$this->_data['getAllergenParent'] = $getAllergenParent;
-					$this->_data['partB'] = $partB;
-
-					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = []; $block1 = []; $blocks1 = []; $allengesIDsArr = array();
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
-							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-							if(!empty($subVlu->raptor_code)){
-								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID3Arr[] = $svalue['id'];
-											}
-											$block1[$svalue['id']] = $svalue['name'];
-										}else{
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID4Arr[] = $svalue['id'];
-											}
-											$blocks1[$svalue['id']] = $svalue['name'];
-										}
-										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-											$allengesIDArr[] = $svalue['id'];
-										}
-										$allengesIDsArr[] = $svalue['id'];
-										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
-							}
-						}
-					}
-					if(array_key_exists("45994",$block1) && array_key_exists("73",$block1)){
-						unset($block1['45994']);
-					}elseif(array_key_exists("45994",$block1)){
-						unset($block1['45994']);
-						$block1['73'] = $this->AllergensModel->getAllergennameById(73);
-					}
-					if($data['treatment_1'] != "" && $data['treatment_1'] != "[]"){
-						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_1']);
-						if(!empty($subAllergnArr)){
-							foreach ($subAllergnArr as $svalue){
-								$block1[$svalue['id']] = $svalue['name'];
-								if($svalue['name'] != "N/A"){
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID3Arr))){
-										$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}else{
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID4Arr))){
-										$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
-							}
-						}
-					}
-					//asort($block1);
-					$this->_data['block1'] = $block1;
-					$this->_data['blocks1'] = $blocks1;
-
-					$block2 = []; $chk_alg_cunt = 0;
-					foreach($getAllergenParent as $apvalue){
-						$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
-						if(!empty($getGroupMixtures)){
-							$parentIdArr = [];
-							foreach($getGroupMixtures as $mvalue){
-								if($mvalue['mixture_allergens'] != "" && $mvalue['mixture_allergens'] != "null"){
-									$parentIdArr[] = $mvalue['id'];
-								}
-							}
-
-							if(!empty($parentIdArr)){
-								if(count($parentIdArr) > 1){
-									foreach($parentIdArr as $makey=>$mavalue){
-										$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
-										$testingArr = [];
-										foreach($allergenArr as $amid){
-											$rmcodes = $this->OrdersModel->getsubAllergensCode($amid);
-											if(!empty($rmcodes->raptor_code)){
-												$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
-												if(!empty($raptrmVlu)){
-													if(floor($raptrmVlu->result_value) >= $cutoffs){
-														$testingArr[$mavalue] += 1;
-													}
-												}
-											}
-										}
-
-										if(count($allergenArr) >= 3){
-											$chk_alg_cunt = (count($allergenArr)-1);
-											if($testingArr[$mavalue] >= $chk_alg_cunt){
-												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-												}
-											}
-										}else{
-											if($testingArr[$mavalue] >= 2){
-												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-												}
-											}
-										}
-									}
-								}else{
-									$allergensArr = json_decode($getGroupMixtures[0]['mixture_allergens']);
-									$tested = 0;
-									foreach($allergensArr as $aid){
-										$rcodes = $this->OrdersModel->getsubAllergensCode($aid);
-										if(!empty($rcodes->raptor_code)){
-											$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
-											if(!empty($raptrVlu)){
-												if(floor($raptrVlu->result_value) >= $cutoffs){
-													$tested++;
-												}
-											}
-										}
-									}
-									
-									if($apvalue['parent_id'] == 1){
-										if($tested >= 3){
-											if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-												$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-											}
-										}
-									}else{
-										if(count($allergensArr) >= 3){
-											$chk_alg_cunt = (count($allergensArr)-1);
-											if($tested >= $chk_alg_cunt){
-												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-												}
-											}
-										}else{
-											if($tested >= 2){
-												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
-													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-												}
-											}
-										}
-									}
-								}
-							}else{
-								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
-								foreach($sub2Allergens as $s2value){
-									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-									if(!empty($sub2Vlu->raptor_code)){
-										$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-										if(!empty($raptr2Vlu)){
-											if($raptr2Vlu->result_value >= 30){
-												if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-													$block2[$s2value['id']] = $s2value['name'];
-												}
-											}
-										}
-									}
-								}
-							}
-						}else{
-							$sub3Allergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							foreach($sub3Allergens as $s3value){
-								$sub3Vlu = $this->OrdersModel->getsubAllergensCode($s3value['id']);
-								if(!empty($sub3Vlu->raptor_code)){
-									$raptr3Vlu = $this->OrdersModel->getRaptorValue($sub3Vlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptr3Vlu)){
-										if($raptr3Vlu->result_value >= 30){
-											if($s3value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s3value['id']) > 0){
-												$block2[$s3value['id']] = $s3value['name'];
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-					if(array_key_exists("45994",$block2) && array_key_exists("73",$block2)){
-						unset($block2['45994']);
-					}elseif(array_key_exists("45994",$block2)){
-						unset($block2['45994']);
-						$block2['73'] = $this->AllergensModel->getAllergennameById(73);
-					}
-					if($data['treatment_2'] != "" && $data['treatment_2'] != "[]"){
-						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_2']);
-						if(!empty($subAllergnArr)){
-							foreach ($subAllergnArr as $svalue){
-								if($svalue['name'] != "N/A"){
-									$block2[$svalue['id']] = $svalue['name'];
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID3Arr))){
-										$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}else{
-									if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2)) && (!in_array($svalue['id'],$allengesID4Arr))){
-										$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
-							}
-						}
-					}
-					//asort($block2);
-					$this->_data['block2'] = $block2;
-
-					if(count($allengesArr) > 1){
-						asort($allengesArr);
-						$lastchnk = end($allengesArr);
-						$lastchnkName = ', '.$lastchnk;
-						$lastchnkCng = ' '.$this->lang->line('recommendation_text_and').' '.$lastchnk;
-						$allengesStr = implode(", ",$allengesArr);
-						$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
-					}else{
-						$allengeStr = implode(", ",$allengesArr);
-					}
-
-					if(count($allenges3Arr) > 1){
-						asort($allenges3Arr);
-						$last3chnk = end($allenges3Arr);
-						$lastchnk3Name = ', '.$last3chnk;
-						$lastchnk3Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last3chnk;
-						$allenges3Str = implode(", ",$allenges3Arr);
-						$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
-					}else{
-						$allenge3Str = implode(", ",$allenges3Arr);
-					}
-
-					if(count($allenges4Arr) > 1){
-						asort($allenges4Arr);
-						$last4chnk = end($allenges4Arr);
-						$lastchnk4Name = ', '.$last4chnk;
-						$lastchnk4Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last4chnk;
-						$allenges4Str = implode(", ",$allenges4Arr);
-						$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
-					}else{
-						$allenge4Str = implode(", ",$allenges4Arr);
-					}
-
-					$dummytext = $this->lang->line('summery_text_1') . $allengeStr .".";
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					if(!empty($allenges3Arr)){
-					$dummytext .= $this->lang->line('summery_text_2') . $allenge3Str .".";
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					}
-					if(!empty($allenges4Arr)){
-					$dummytext .= $this->lang->line('summery_text_3') . $allenge4Str . $this->lang->line('summery_text_3a');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					}
-					$dummytext .= $this->lang->line('summery_text_4');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					$dummytext .= $this->lang->line('summery_text_5');
-					$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-
-					$sql = "SELECT result_value, name FROM `ci_raptor_result_allergens` WHERE result_id = '". $raptorData->result_id ."' AND (name LIKE 'CCD-HSA' OR name LIKE 'Hom s LF')";
-					$responce = $this->db->query($sql);
-					$ccd1Results = $responce->result();
-					$ccdresult1 = 0; $ccdresult2 = 0;
-					if(!empty($ccd1Results)){
-						foreach($ccd1Results as $cvalue){
-							if($cvalue->name == 'CCD-HSA'){
-								$ccdresult1 = $cvalue->result_value;
-							}
-							if($cvalue->name == 'Hom s LF'){
-								$ccdresult2 = $cvalue->result_value;
-							}
-						}
-					}
-					if(floor($ccdresult1) >= $cutoffs || floor($ccdresult2) >= $cutoffs){
-						$dummytext .= $this->lang->line('pax_ccd_text_'.$cutoffs.'');
-						$dummytext .= "<p style='padding:0px;margin:0px;'>&nbsp;</p>";
-					}
-
-					$this->_data['allengesIDsArr'] = $allengesIDsArr;
-					$this->_data['allengesArr'] = $allengesArr;
-					$this->_data['dummytext'] = $dummytext;
-					
-					ob_end_flush();
-					require_once(FCPATH.'vendor_pdf/autoload.php');
-					$mpdf = new Mpdf\Mpdf(['mode' => 'utf-8', 'format' => 'A4',]);
-					$env_main_footer_pdf = $this->load->view('pax_pdf/main_footer', $this->_data, true);
-					$mpdf->use_kwt = true; 
-					$mpdf->SetDisplayMode('fullpage');
-					$mpdf->SetTitle('PAX Serum Request Notification');
-					$mpdf->SetHTMLFooter($env_main_footer_pdf);
-					$mpdf->AddPage('','', '', '', '', 0, 0, 0, 5, 0, 5);
-					$env_main_header_pdf = $this->load->view('pax_pdf/main_header', $this->_data, true);
-					$env_allergen_header_pdf = $this->load->view('pax_pdf/raptor_allergen_header_pdf', $this->_data, true);
-					$env_html_header = $this->load->view('pax_pdf/raptor_header_pdf', $this->_data, true);
-					$mpdf->WriteHTML($env_main_header_pdf);
-					$env_pageno_footer_pdf = $this->load->view('pax_pdf/raptor_footer', $this->_data, true);
-					if(empty($block1) && empty($blocks1)){
-						$env_negative_faq_pdf = $this->load->view('pax_pdf/raptor_negative_faq', $this->_data, true);
-						$mpdf->SetHTMLHeader($env_html_header);
-						$mpdf->AddPage('','','','','',0,0,22,22,5,5);
-						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($env_pageno_footer_pdf);
-						$mpdf->WriteHTML($env_negative_faq_pdf);
-					}
-					if(!empty($block1) || !empty($blocks1)){
-						$env_summary_footer_pdf = $this->load->view('pax_pdf/raptor_summary_footer', $this->_data, true);
-						$env_summary_recommendation_pdf = $this->load->view('pax_pdf/raptor_summary_recommendation', $this->_data, true);
-						$mpdf->SetHTMLHeader($env_html_header);
-						$mpdf->AddPage('','','','','',0,0,20,35,5,5);
-						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($env_summary_footer_pdf);
-						$mpdf->WriteHTML($env_summary_recommendation_pdf);
-					}
-					$env_allergens_footer_pdf = $this->load->view('pax_pdf/raptor_allergens_footer_pdf', $this->_data, true);
-					$env_result_panel_pdf = $this->load->view('pax_pdf/raptor_result_panel', $this->_data, true);
-					$mpdf->SetHTMLHeader($env_allergen_header_pdf);
-					$mpdf->AddPage('','','','','',0,0,35,25,5,5);
-					$mpdf->SetDisplayMode('fullpage');
-					$mpdf->SetHTMLFooter($env_allergens_footer_pdf);
-					$mpdf->WriteHTML($env_result_panel_pdf);
-					if(!empty($block1) || !empty($blocks1)){
-						$env_interpretation_footer_pdf = $this->load->view('pax_pdf/raptor_footer_interpretation', $this->_data, true);
-						$env_interpretation_support_pdf = $this->load->view('pax_pdf/raptor_interpretation_support', $this->_data, true);
-						$mpdf->SetHTMLHeader($env_html_header);
-						$mpdf->AddPage('','','','','',0,0,20,30,5,5);
-						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($env_interpretation_footer_pdf);
-						$mpdf->WriteHTML($env_interpretation_support_pdf);
-
-						$env_positive_faq_pdf = $this->load->view('pax_pdf/raptor_positive_faq', $this->_data, true);
-						$mpdf->SetHTMLHeader($env_html_header);
-						$mpdf->AddPage('','','','','',0,0,20,20,5,5);
-						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($env_pageno_footer_pdf);
-						$mpdf->WriteHTML($env_positive_faq_pdf);
-					}
-					$mpdf->Output($file_name,'F');
-
-					$getAllergenParent = [];
-					$getAllergenParent = $this->AllergensModel->getFoodAllergenParentbyName($order_details['allergens']);
-					$totalGroup0 = count($getAllergenParent);
-					$totalGroup2 = $totalGroup0/2;
-					$partA = ((round)($totalGroup2));
-					$partB = $partA-1;
-					$this->_data['getAllergenParent'] = $getAllergenParent;
-					$this->_data['partB'] = $partB;
-
-					$allengesFArr = []; $allengesF3Arr = []; $allengesF4Arr = []; $dummyFtext = ""; $allengesIDFArr = array(); $foodtotal = 0;
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
-							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-							if(!empty($subVlu->raptor_code)){
-								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['name'] != "N/A"){
-											$allengesF3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-										}else{
-											$allengesF4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-										}
-										$allengesFArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-										$allengesIDFArr[] = $svalue['id'];
-										$foodtotal++;
-									}
-								}
-							}
-						}
-					}
-
-					if(count($allengesFArr) > 1){
-						asort($allengesFArr);
-						$lastchnk = end($allengesFArr);
-						$lastchnkName = ', '.$lastchnk;
-						$lastchnkCng = ' '.$this->lang->line('recommendation_text_and').' '.$lastchnk;
-						$allengesStr = implode(", ",$allengesFArr);
-						$allengeStr = str_replace($lastchnkName,$lastchnkCng,$allengesStr);
-					}else{
-						$allengeStr = implode(", ",$allengesFArr);
-					}
-
-					if(count($allengesF3Arr) > 1){
-						asort($allengesF3Arr);
-						$last3chnk = end($allengesF3Arr);
-						$lastchnk3Name = ', '.$last3chnk;
-						$lastchnk3Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last3chnk;
-						$allenges3Str = implode(", ",$allengesF3Arr);
-						$allenge3Str = str_replace($lastchnk3Name,$lastchnk3Cng,$allenges3Str);
-					}else{
-						$allenge3Str = implode(", ",$allengesF3Arr);
-					}
-
-					if(count($allengesF4Arr) > 1){
-						asort($allengesF4Arr);
-						$last4chnk = end($allengesF4Arr);
-						$lastchnk4Name = ', '.$last4chnk;
-						$lastchnk4Cng = ' '.$this->lang->line('recommendation_text_and').' '.$last4chnk;
-						$allenges4Str = implode(", ",$allengesF4Arr);
-						$allenge4Str = str_replace($lastchnk4Name,$lastchnk4Cng,$allenges4Str);
-					}else{
-						$allenge4Str = implode(", ",$allengesF4Arr);
-					}
-
-					$dummyFtext .= "<p>". $this->lang->line('summery_text_1') . $allengeStr .".</p>";
-					$dummyFtext .= "<p>". $this->lang->line('summery_food_text_2') . $allengeStr . $this->lang->line('summery_food_text_2a') ."</p>";
-					$dummyFtext .= "<p>".$this->lang->line('summery_food_text_3')."</p>";
-					$this->_data['foodtotal'] = $foodtotal;
-					$this->_data['allengesIDsArr'] = $allengesIDFArr;
-					$this->_data['allengesArr'] = $allengesFArr;
-					$this->_data['dummytext'] = $dummyFtext;
-
-					ob_end_flush();
-					require_once(FCPATH.'vendor_pdf/autoload.php');
-					$mpdf = new Mpdf\Mpdf(['mode' => 'utf-8', 'format' => 'A4',]);
-					$main_footer_pdf = $this->load->view('pax_pdf/main_footer_food', $this->_data, true);
-					$mpdf->use_kwt = true; 
-					$mpdf->SetDisplayMode('fullpage');
-					$mpdf->SetTitle('PAX Serum Request Notification');
-					$mpdf->SetHTMLFooter($main_footer_pdf);
-					$mpdf->AddPage('','', '', '', '', 0, 0, 0, 5, 0, 5);
-					$main_header_pdf = $this->load->view('pax_pdf/main_header_food', $this->_data, true);
-					$allergen_header_pdf = $this->load->view('pax_pdf/raptor_allergen_header_pdf', $this->_data, true);
-					$html_header = $this->load->view('pax_pdf/raptor_header_pdf', $this->_data, true);
-					$diet_chart_header = $this->load->view('pax_pdf/raptor_diet_chart_header', $this->_data, true);
-					$mpdf->WriteHTML($main_header_pdf);
-					$pageno_footer_pdf = $this->load->view('pax_pdf/raptor_footer', $this->_data, true);
-
-					if($foodtotal == 0){
-						$negative_faq_pdf = $this->load->view('pax_pdf/raptor_negative_faq_food', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,22,22,5,5);
-						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($pageno_footer_pdf);
-						$mpdf->WriteHTML($negative_faq_pdf);
-					}
-					if($foodtotal > 0){
-						$summary_footer_pdf = $this->load->view('pax_pdf/raptor_summary_footer', $this->_data, true);
-						$summary_recommendation_pdf = $this->load->view('pax_pdf/raptor_summary_recommendation_food', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,20,35,5,5);
-						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($summary_footer_pdf);
-						$mpdf->WriteHTML($summary_recommendation_pdf);
-					}
-					$allergens_footer_pdf = $this->load->view('pax_pdf/raptor_allergens_footer_pdf', $this->_data, true);
-					$result_panel_pdf = $this->load->view('pax_pdf/raptor_result_panel_food', $this->_data, true);
-					$mpdf->SetHTMLHeader($allergen_header_pdf);
-					$mpdf->AddPage('','','','','',0,0,35,27,5,5);
-					$mpdf->SetDisplayMode('fullpage');
-					$mpdf->SetHTMLFooter($allergens_footer_pdf);
-					$mpdf->WriteHTML($result_panel_pdf);
-					if($foodtotal > 0){
-						$interpretation_footer_pdf = $this->load->view('pax_pdf/raptor_footer_interpretation', $this->_data, true);
-						$interpretation_support_pdf = $this->load->view('pax_pdf/raptor_interpretation_support', $this->_data, true);
-						$mpdf->SetHTMLHeader($html_header);
-						$mpdf->AddPage('','','','','',0,0,22,35,5,5);
-						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($interpretation_footer_pdf);
-						$mpdf->WriteHTML($interpretation_support_pdf);
-
-						$diet_chart_footer_pdf = $this->load->view('pax_pdf/raptor_diet_chart_footer', $this->_data, true);
-						if($this->session->userdata('export_site_lang') == 'export_spanish'){ 
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_spanish', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							$mpdf->AddPage('','','','','',0,0,40,20,5,5);
-						}elseif($this->session->userdata('export_site_lang') == 'export_dutch'){
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_dutch', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							$mpdf->AddPage('','','','','',0,0,33,20,5,5);
-						}else{ 
-							$diet_chart_pdf = $this->load->view('pax_pdf/raptor_diet_chart_'.$this->session->userdata('site_lang').'', $this->_data, true);
-							$mpdf->SetHTMLHeader($diet_chart_header);
-							if($this->session->userdata('site_lang') == 'spanish'){
-								$mpdf->AddPage('','','','','',0,0,37,20,5,5);
-							}else{
-								$mpdf->AddPage('','','','','',0,0,33,20,5,5);
-							}
-						}
-						$mpdf->SetDisplayMode('fullpage');
-						$mpdf->SetHTMLFooter($diet_chart_footer_pdf);
-						$mpdf->WriteHTML($diet_chart_pdf);
-					}
-					$mpdf->Output($file_name_food,'F');
-				}
-			}
-
-			$emailBody = $this->load->view('orders/send_pax_serum_mail_template', $this->_data, true);
-			$emailBody = trim($emailBody);
-
-			$zonesIds = $this->checkZones($orderId);
-			/* if(!empty($zonesIds) && !in_array("1", $zonesIds)){
-				$zoneFEmail = $this->getZoneFromEmail($zonesIds);
-				if(!empty($zoneFEmail)){
-					$from_email = $zoneFEmail;
-				}
-			}else{
-				$from_email = "vetorders.uk@nextmune.com";
-			} */
-			$from_email = "noreply@nextmunelaboratories.com";
-
-			$zoneEmail = $this->getZoneEmail($zonesIds);
-			if(!empty($zoneEmail)){
-				$to_email = $zoneEmail;
-			}
-			$config = array(
-				'mailtype'  => 'html',
-				'charset'   => 'iso-8859-1'
-			);
-			$this->load->library('email', $config);
-			$this->email->from($from_email, "Nextmune");
-			$this->email->to($to_email);
-			$this->email->subject(''.$this->lang->line('pax_result_subject1').' '.$data['pet_name'].' '.$petownerName.' '.$this->lang->line('pax_result_subject2').'');
-			$this->email->message($emailBody);
-			$this->email->set_mailtype("html");
-			if(preg_match('/\bPAX Environmental\b/', $respnedn->name)){
-				$this->email->attach($atcfileName);
-			}
-			if((preg_match('/\bFood Screening\b/', $respnedn->name)) || (preg_match('/\bFood\b/', $respnedn->name))){
-				$this->email->attach($atcfileFoodName);
-			}
-
-			$is_send = $this->email->send();
-			if ($is_send) {
-				$this->session->set_flashdata("success", "Email sent successfully.");
-			} else {
-				$this->session->set_flashdata("error", $this->email->print_debugger());
-			}
-			redirect('orders');
-		}else{
-			redirect('orders');
-		}
 	}
 
 }

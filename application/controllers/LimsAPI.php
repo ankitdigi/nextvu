@@ -146,8 +146,17 @@ class LimsAPI extends CI_Controller {
 											$insrtData['limsTestCode'] = $rowt['limsTestCode'];
 											$insrtData['lims_allergens_id'] = (isset($rowc['id']) && !empty($rowc['id']))?$rowc['id']:'';
 											$insrtData['name'] = (isset($rowc['name']) && !empty($rowc['name']))?$rowc['name']:'';
-											$insrtData['category'] = (isset($rowc['category']) && !empty($rowc['category']))?$rowc['category']:'';
+											if($insrtData['limsTestCode'] == 'EQU_ALLGY_IGE' && $insrtData['lims_allergens_id'] == '2227' && $insrtData['name'] == 'Yeast'){
+												$insrtData['category'] = (isset($rowc['category']) && !empty($rowc['category']))?$rowc['category']:'FOOD';
+											}else{
+												$insrtData['category'] = (isset($rowc['category']) && !empty($rowc['category']))?$rowc['category']:'';
+											}
 											$insrtData['result'] = (isset($rowc['result']) && !empty($rowc['result']))?$rowc['result']:'';
+											if($insrtData['limsTestCode'] == 'FEL_AGP' || $insrtData['name'] == 'fAGP'){
+												$insrtData['result_agp'] = (isset($rowc['result']) && !empty($rowc['result']))?$rowc['result']:'';
+											}else{
+												$insrtData['result_agp'] = '';
+											}
 											$insrtData['isMould'] = (isset($rowc['isMould']) && !empty($rowc['isMould']))?$rowc['name']:'';
 											$insrtData['cutoff'] = (isset($rowc['cutoff']) && !empty($rowc['cutoff']))?$rowc['cutoff']:'';
 											$insrtData['outcome'] = (isset($rowc['outcome']) && !empty($rowc['outcome']))?$rowc['outcome']:'';
@@ -200,8 +209,17 @@ class LimsAPI extends CI_Controller {
 											$insrtData['limsTestCode'] = $rowt['limsTestCode'];
 											$insrtData['lims_allergens_id'] = (isset($rowc['id']) && !empty($rowc['id']))?$rowc['id']:'';
 											$insrtData['name'] = (isset($rowc['name']) && !empty($rowc['name']))?$rowc['name']:'';
-											$insrtData['category'] = (isset($rowc['category']) && !empty($rowc['category']))?$rowc['category']:'';
+											if($insrtData['limsTestCode'] == 'EQU_ALLGY_IGE' && $insrtData['lims_allergens_id'] == '2227' && $insrtData['name'] == 'Yeast'){
+												$insrtData['category'] = (isset($rowc['category']) && !empty($rowc['category']))?$rowc['category']:'FOOD';
+											}else{
+												$insrtData['category'] = (isset($rowc['category']) && !empty($rowc['category']))?$rowc['category']:'';
+											}
 											$insrtData['result'] = (isset($rowc['result']) && !empty($rowc['result']))?$rowc['result']:'';
+											if($insrtData['limsTestCode'] == 'FEL_AGP' || $insrtData['name'] == 'fAGP'){
+												$insrtData['result_agp'] = (isset($rowc['result']) && !empty($rowc['result']))?$rowc['result']:'';
+											}else{
+												$insrtData['result_agp'] = '';
+											}
 											$insrtData['isMould'] = (isset($rowc['isMould']) && !empty($rowc['isMould']))?$rowc['name']:'';
 											$insrtData['cutoff'] = (isset($rowc['cutoff']) && !empty($rowc['cutoff']))?$rowc['cutoff']:'';
 											$insrtData['outcome'] = (isset($rowc['outcome']) && !empty($rowc['outcome']))?$rowc['outcome']:'';

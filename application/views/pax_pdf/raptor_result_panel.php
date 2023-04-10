@@ -72,7 +72,7 @@ if(!empty($pages1Arr)){
 											<tr><td align="left" style="font-size:11px;">'.$srow->raptor_function.'</td></tr>
 										</table>
 									</td>';
-									if(round($srow->result_value) < $cutoffs){
+									if(floor($srow->result_value) < $cutoffs){
 										echo '<td align="left" style="text-align:left;width:110px">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -84,7 +84,7 @@ if(!empty($pages1Arr)){
 												</tr>
 											</table>
 										</td>';
-									}elseif(round($srow->result_value) >= $cutoffs && $srow->result_value < 100){
+									}elseif(floor($srow->result_value) >= $cutoffs && $srow->result_value < 100){
 										echo '<td align="left" style="text-align:left;width:110px">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -135,7 +135,7 @@ if(!empty($pages1Arr)){
 									}
 									echo '<td align="left" style="text-align:left;width:50px">
 										<table style="width:50px">
-											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.round($srow->result_value).'</td></tr>
+											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.floor($srow->result_value).'</td></tr>
 										</table>
 									</td>
 								</tr>
@@ -167,7 +167,7 @@ if(!empty($pages1Arr)){
 											<tr><td align="left" style="font-size:11px;">'.$srow->raptor_function.'</td></tr>
 										</table>
 									</td>';
-									if(round($srow->result_value) < $cutoffs){
+									if(floor($srow->result_value) < $cutoffs){
 										echo '<td align="left" style="text-align:left;width:110px;border-top: 1px solid #3a6a86;">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -179,7 +179,7 @@ if(!empty($pages1Arr)){
 												</tr>
 											</table>
 										</td>';
-									}elseif(round($srow->result_value) >= $cutoffs && $srow->result_value < 100){
+									}elseif(floor($srow->result_value) >= $cutoffs && $srow->result_value < 100){
 										echo '<td align="left" style="text-align:left;width:110px;border-top: 1px solid #3a6a86;">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -230,7 +230,7 @@ if(!empty($pages1Arr)){
 									}
 									echo '<td align="left" style="text-align:left;width:50px;border-top: 1px solid #3a6a86">
 										<table style="width:50px;">
-											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.round($srow->result_value).'</td></tr>
+											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.floor($srow->result_value).'</td></tr>
 										</table>
 									</td>
 								</tr>
@@ -288,7 +288,7 @@ if(!empty($pages2Arr)){
 											<tr><td align="left" style="font-size:11px;">'.$srow->raptor_function.'</td></tr>
 										</table>
 									</td>';
-									if(round($srow->result_value) < $cutoffs){
+									if(floor($srow->result_value) < $cutoffs){
 										echo '<td align="left" style="text-align:left;width:110px">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -300,7 +300,7 @@ if(!empty($pages2Arr)){
 												</tr>
 											</table>
 										</td>';
-									}elseif(round($srow->result_value) >= $cutoffs && $srow->result_value < 100){
+									}elseif(floor($srow->result_value) >= $cutoffs && $srow->result_value < 100){
 										echo '<td align="left" style="text-align:left;width:110px">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -351,7 +351,7 @@ if(!empty($pages2Arr)){
 									}
 									echo '<td align="left" style="text-align:left;width:50px">
 										<table style="width:50px">
-											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.round($srow->result_value).'</td></tr>
+											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.floor($srow->result_value).'</td></tr>
 										</table>
 									</td>
 								</tr>
@@ -383,7 +383,7 @@ if(!empty($pages2Arr)){
 											<tr><td align="left" style="font-size:11px;">'.$srow->raptor_function.'</td></tr>
 										</table>
 									</td>';
-									if(round($srow->result_value) < $cutoffs){
+									if(floor($srow->result_value) < $cutoffs){
 										echo '<td align="left" style="text-align:left;width:110px;border-top: 1px solid #3a6a86;">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -395,7 +395,7 @@ if(!empty($pages2Arr)){
 												</tr>
 											</table>
 										</td>';
-									}elseif(round($srow->result_value) >= $cutoffs && $srow->result_value < 100){
+									}elseif(floor($srow->result_value) >= $cutoffs && $srow->result_value < 100){
 										echo '<td align="left" style="text-align:left;width:110px;border-top: 1px solid #3a6a86;">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -446,7 +446,7 @@ if(!empty($pages2Arr)){
 									}
 									echo '<td align="left" style="text-align:left;width:50px;border-top: 1px solid #3a6a86">
 										<table style="width:50px;">
-											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.round($srow->result_value).'</td></tr>
+											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.floor($srow->result_value).'</td></tr>
 										</table>
 									</td>
 								</tr>
@@ -504,7 +504,7 @@ if(!empty($pages3Arr)){
 											<tr><td align="left" style="font-size:11px;">'.$srow->raptor_function.'</td></tr>
 										</table>
 									</td>';
-									if(round($srow->result_value) < $cutoffs){
+									if(floor($srow->result_value) < $cutoffs){
 										echo '<td align="left" style="text-align:left;width:110px">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -516,7 +516,7 @@ if(!empty($pages3Arr)){
 												</tr>
 											</table>
 										</td>';
-									}elseif(round($srow->result_value) >= $cutoffs && $srow->result_value < 100){
+									}elseif(floor($srow->result_value) >= $cutoffs && $srow->result_value < 100){
 										echo '<td align="left" style="text-align:left;width:110px">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -567,7 +567,7 @@ if(!empty($pages3Arr)){
 									}
 									echo '<td align="left" style="text-align:left;width:50px">
 										<table style="width:50px">
-											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.round($srow->result_value).'</td></tr>
+											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.floor($srow->result_value).'</td></tr>
 										</table>
 									</td>
 								</tr>
@@ -599,7 +599,7 @@ if(!empty($pages3Arr)){
 											<tr><td align="left" style="font-size:11px;">'.$srow->raptor_function.'</td></tr>
 										</table>
 									</td>';
-									if(round($srow->result_value) < $cutoffs){
+									if(floor($srow->result_value) < $cutoffs){
 										echo '<td align="left" style="text-align:left;width:110px;border-top: 1px solid #3a6a86;">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -611,7 +611,7 @@ if(!empty($pages3Arr)){
 												</tr>
 											</table>
 										</td>';
-									}elseif(round($srow->result_value) >= $cutoffs && $srow->result_value < 100){
+									}elseif(floor($srow->result_value) >= $cutoffs && $srow->result_value < 100){
 										echo '<td align="left" style="text-align:left;width:110px;border-top: 1px solid #3a6a86;">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -662,7 +662,7 @@ if(!empty($pages3Arr)){
 									}
 									echo '<td align="left" style="text-align:left;width:50px;border-top: 1px solid #3a6a86">
 										<table style="width:50px;">
-											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.round($srow->result_value).'</td></tr>
+											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.floor($srow->result_value).'</td></tr>
 										</table>
 									</td>
 								</tr>
@@ -719,7 +719,7 @@ if(!empty($pages4Arr)){
 											<tr><td align="left" style="font-size:11px;">'.$srow->raptor_function.'</td></tr>
 										</table>
 									</td>';
-									if(round($srow->result_value) < $cutoffs){
+									if(floor($srow->result_value) < $cutoffs){
 										echo '<td align="left" style="text-align:left;width:110px">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -731,7 +731,7 @@ if(!empty($pages4Arr)){
 												</tr>
 											</table>
 										</td>';
-									}elseif(round($srow->result_value) >= $cutoffs && $srow->result_value < 100){
+									}elseif(floor($srow->result_value) >= $cutoffs && $srow->result_value < 100){
 										echo '<td align="left" style="text-align:left;width:110px">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -782,7 +782,7 @@ if(!empty($pages4Arr)){
 									}
 									echo '<td align="left" style="text-align:left;width:50px">
 										<table style="width:50px">
-											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.round($srow->result_value).'</td></tr>
+											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.floor($srow->result_value).'</td></tr>
 										</table>
 									</td>
 								</tr>
@@ -828,7 +828,7 @@ if(!empty($pages4Arr)){
 											<tr><td align="left" style="font-size:11px;">'.$srow->raptor_function.'</td></tr>
 										</table>
 									</td>';
-									if(round($srow->result_value) < $cutoffs){
+									if(floor($srow->result_value) < $cutoffs){
 										echo '<td align="left" style="text-align:left;width:110px;border-top: 1px solid #3a6a86;">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -840,7 +840,7 @@ if(!empty($pages4Arr)){
 												</tr>
 											</table>
 										</td>';
-									}elseif(round($srow->result_value) >= $cutoffs && $srow->result_value < 100){
+									}elseif(floor($srow->result_value) >= $cutoffs && $srow->result_value < 100){
 										echo '<td align="left" style="text-align:left;width:110px;border-top: 1px solid #3a6a86;">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -891,7 +891,7 @@ if(!empty($pages4Arr)){
 									}
 									echo '<td align="left" style="text-align:left;width:50px;border-top: 1px solid #3a6a86">
 										<table style="width:50px;">
-											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.round($srow->result_value).'</td></tr>
+											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.floor($srow->result_value).'</td></tr>
 										</table>
 									</td>
 								</tr>
@@ -932,7 +932,7 @@ if(!empty($pages4Arr)){
 												<tr><td align="left" style="font-size:11px;">'.$srow->raptor_function.'</td></tr>
 											</table>
 										</td>';
-										if(round($srow->result_value) < $cutoffs){
+										if(floor($srow->result_value) < $cutoffs){
 											echo '<td align="left" style="text-align:left;width:110px">
 												<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 													<tr>
@@ -944,7 +944,7 @@ if(!empty($pages4Arr)){
 													</tr>
 												</table>
 											</td>';
-										}elseif(round($srow->result_value) >= $cutoffs && $srow->result_value < 100){
+										}elseif(floor($srow->result_value) >= $cutoffs && $srow->result_value < 100){
 											echo '<td align="left" style="text-align:left;width:110px">
 												<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 													<tr>
@@ -995,7 +995,7 @@ if(!empty($pages4Arr)){
 										}
 										echo '<td align="left" style="text-align:left;width:50px">
 											<table style="width:50px">
-												<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.round($srow->result_value).'</td></tr>
+												<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.floor($srow->result_value).'</td></tr>
 											</table>
 										</td>
 									</tr>
@@ -1027,7 +1027,7 @@ if(!empty($pages4Arr)){
 												<tr><td align="left" style="font-size:11px;">'.$srow->raptor_function.'</td></tr>
 											</table>
 										</td>';
-										if(round($srow->result_value) < $cutoffs){
+										if(floor($srow->result_value) < $cutoffs){
 											echo '<td align="left" style="text-align:left;width:110px;border-top: 1px solid #3a6a86;">
 												<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 													<tr>
@@ -1039,7 +1039,7 @@ if(!empty($pages4Arr)){
 													</tr>
 												</table>
 											</td>';
-										}elseif(round($srow->result_value) >= $cutoffs && $srow->result_value < 100){
+										}elseif(floor($srow->result_value) >= $cutoffs && $srow->result_value < 100){
 											echo '<td align="left" style="text-align:left;width:110px;border-top: 1px solid #3a6a86;">
 												<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 													<tr>
@@ -1090,7 +1090,7 @@ if(!empty($pages4Arr)){
 										}
 										echo '<td align="left" style="text-align:left;width:50px;border-top: 1px solid #3a6a86">
 											<table style="width:50px;">
-												<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.round($srow->result_value).'</td></tr>
+												<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.floor($srow->result_value).'</td></tr>
 											</table>
 										</td>
 									</tr>
@@ -1149,7 +1149,7 @@ if(!empty($pages5Arr)){
 											<tr><td align="left" style="font-size:11px;">'.$srow->raptor_function.'</td></tr>
 										</table>
 									</td>';
-									if(round($srow->result_value) < $cutoffs){
+									if(floor($srow->result_value) < $cutoffs){
 										echo '<td align="left" style="text-align:left;width:110px">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -1161,7 +1161,7 @@ if(!empty($pages5Arr)){
 												</tr>
 											</table>
 										</td>';
-									}elseif(round($srow->result_value) >= $cutoffs && $srow->result_value < 100){
+									}elseif(floor($srow->result_value) >= $cutoffs && $srow->result_value < 100){
 										echo '<td align="left" style="text-align:left;width:110px">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -1212,7 +1212,7 @@ if(!empty($pages5Arr)){
 									}
 									echo '<td align="left" style="text-align:left;width:50px">
 										<table style="width:50px">
-											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.round($srow->result_value).'</td></tr>
+											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.floor($srow->result_value).'</td></tr>
 										</table>
 									</td>
 								</tr>
@@ -1244,7 +1244,7 @@ if(!empty($pages5Arr)){
 											<tr><td align="left" style="font-size:11px;">'.$srow->raptor_function.'</td></tr>
 										</table>
 									</td>';
-									if(round($srow->result_value) < $cutoffs){
+									if(floor($srow->result_value) < $cutoffs){
 										echo '<td align="left" style="text-align:left;width:110px;border-top: 1px solid #3a6a86;">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -1256,7 +1256,7 @@ if(!empty($pages5Arr)){
 												</tr>
 											</table>
 										</td>';
-									}elseif(round($srow->result_value) >= $cutoffs && $srow->result_value < 100){
+									}elseif(floor($srow->result_value) >= $cutoffs && $srow->result_value < 100){
 										echo '<td align="left" style="text-align:left;width:110px;border-top: 1px solid #3a6a86;">
 											<table cellspacing="0" cellpadding="0" style="width:110px" class="panelmeter">
 												<tr>
@@ -1307,7 +1307,7 @@ if(!empty($pages5Arr)){
 									}
 									echo '<td align="left" style="text-align:left;width:50px;border-top: 1px solid #3a6a86">
 										<table style="width:50px;">
-											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.round($srow->result_value).'</td></tr>
+											<tr><td align="left" style="padding:0 0 5px 0;font-size:11px;">'.floor($srow->result_value).'</td></tr>
 										</table>
 									</td>
 								</tr>

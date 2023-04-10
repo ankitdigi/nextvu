@@ -2144,5 +2144,120 @@ class ImportExportExcel extends CI_Controller {
 		exit;
 	}
 
+	function exportDuplicatePracticesReport(){
+		ini_set('memory_limit', '256M');
+		$objPHPExcel = new PHPExcel();
+        $objPHPExcel->setActiveSheetIndex(0);
+
+		$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'Practice ID');
+		$objPHPExcel->getActiveSheet()->SetCellValue('B1', 'Account Ref');
+        $objPHPExcel->getActiveSheet()->SetCellValue('C1', 'Practice Name');
+        $objPHPExcel->getActiveSheet()->SetCellValue('D1', 'Email');
+        $objPHPExcel->getActiveSheet()->SetCellValue('E1', 'Phone Number');
+		$objPHPExcel->getActiveSheet()->SetCellValue('F1', 'Address 1');
+		$objPHPExcel->getActiveSheet()->SetCellValue('G1', 'Address 2');
+		$objPHPExcel->getActiveSheet()->SetCellValue('H1', 'Address 3');
+		$objPHPExcel->getActiveSheet()->SetCellValue('I1', 'Town/City');
+		$objPHPExcel->getActiveSheet()->SetCellValue('J1', 'County');
+		$objPHPExcel->getActiveSheet()->SetCellValue('K1', 'Country');
+		$objPHPExcel->getActiveSheet()->SetCellValue('L1', 'Postcode');
+		$objPHPExcel->getActiveSheet()->SetCellValue('M1', 'VAT Applicable?');
+		$objPHPExcel->getActiveSheet()->SetCellValue('N1', 'RCVS Number');
+		$objPHPExcel->getActiveSheet()->SetCellValue('O1', 'Preferred Language');
+		$objPHPExcel->getActiveSheet()->SetCellValue('P1', 'Managed By');
+		$objPHPExcel->getActiveSheet()->SetCellValue('Q1', 'Invoiced By');
+
+        $this->db->select('COUNT(id) as Total, name');
+		$this->db->from('ci_users');
+		$this->db->where('role', '2');
+		$this->db->where('CONCAT(",", managed_by_id, ",") REGEXP ",(8),"');
+		$this->db->group_by('name');
+		$this->db->order_by('Total', 'ASC');
+		$dupData = $this->db->get()->result_array();
+		$rowCount = 2;
+		foreach($dupData as $drow){
+			if($drow['Total'] > 1){
+				$this->db->select('u.id, u.name, u.email, u.country, u.phone_number, u.managed_by_id, u.invoiced_by, u.preferred_language');
+				$this->db->from('ci_users as u');
+				$this->db->where('u.name LIKE', $drow['name']);
+				$this->db->where('u.role', '2');
+				$this->db->order_by('u.id', 'ASC');
+				$datas = $this->db->get()->result_array();
+				foreach($datas as $row){
+					$first_name	= !empty($row['name']) ? $row['name'] : '';
+					$email		= !empty($row['email']) ? $row['email'] : '';
+					$country	= !empty($row['country']) ? $row['country'] : '';
+					$preferredLanguage	= !empty($row['preferred_language']) ? ucfirst($row['preferred_language']) : '';
+					$countryName	= $this->getCountryName($country);
+					if(!empty($row['managed_by_id']) && $row['managed_by_id'] != 0){
+						$managed_by = $this->getManagedbyName($row['managed_by_id']);
+					}else{
+						$managed_by = '';
+					}
+					if(!empty($row['invoiced_by']) && $row['invoiced_by'] != 0){
+						$invoiced_by = $this->getManagedbyName($row['invoiced_by']);
+					}else{
+						$invoiced_by = '';
+					}
+					$phoneNumber= !empty($row['phone_number']) ? $row['phone_number'] : '';
+					$userData = array("user_id" => $row['id'], "column_name" => "'add_1', 'add_2', 'add_3', 'add_4', 'address_2', 'address_3', 'vat_applicable', 'account_ref', 'tax_code', 'vat_reg', 'country_code', 'rcds_number'");
+					$practDetails = $this->UsersDetailsModel->getColumnFieldArray($userData);
+					$practDetails = array_column($practDetails, 'column_field', 'column_name');
+					$address_1	= !empty($practDetails['add_1']) ? $practDetails['add_1'] : '';
+					$address_2	= !empty($practDetails['add_2']) ? $practDetails['add_2'] : '';
+					$address_3	= !empty($practDetails['add_3']) ? $practDetails['add_3'] : '';
+					$address_4	= !empty($practDetails['add_4']) ? $practDetails['add_4'] : '';
+					$town_city	= !empty($practDetails['address_2']) ? $practDetails['address_2'] : '';
+					$postcode	= !empty($practDetails['address_3']) ? $practDetails['address_3'] : '';
+					$vatApplicable	= !empty($practDetails['vat_applicable']) ? $practDetails['vat_applicable'] : '';
+					$account_ref= !empty($practDetails['account_ref']) ? $practDetails['account_ref'] : '';
+					$rcds_number= !empty($practDetails['rcds_number']) ? $practDetails['rcds_number'] : '';
+
+					$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $row['id']);
+					$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $account_ref);
+					$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, $first_name);
+					$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, $email);
+					$objPHPExcel->getActiveSheet()->SetCellValue('E'.$rowCount, $phoneNumber);
+					$objPHPExcel->getActiveSheet()->SetCellValue('F'.$rowCount, $address_1);
+					$objPHPExcel->getActiveSheet()->SetCellValue('G'.$rowCount, $address_2);
+					$objPHPExcel->getActiveSheet()->SetCellValue('H'.$rowCount, $address_3);
+					$objPHPExcel->getActiveSheet()->SetCellValue('I'.$rowCount, $address_4);
+					$objPHPExcel->getActiveSheet()->SetCellValue('J'.$rowCount, $town_city);
+					$objPHPExcel->getActiveSheet()->SetCellValue('K'.$rowCount, $countryName);
+					$objPHPExcel->getActiveSheet()->SetCellValue('L'.$rowCount, $postcode);
+					$objPHPExcel->getActiveSheet()->SetCellValue('M'.$rowCount, $vatApplicable);
+					$objPHPExcel->getActiveSheet()->SetCellValue('N'.$rowCount, $rcds_number);
+					$objPHPExcel->getActiveSheet()->SetCellValue('O'.$rowCount, $preferredLanguage);
+					$objPHPExcel->getActiveSheet()->SetCellValue('P'.$rowCount, $managed_by);
+					$objPHPExcel->getActiveSheet()->SetCellValue('Q'.$rowCount, $invoiced_by);
+					$rowCount++;
+				}
+			}
+		}
+		$fileName = 'Duplicate_Practices_Nextmune_'.time().'.csv';
+		header('Content-Type: application/vnd.ms-excel'); 
+        header('Content-Disposition: attachment;filename="'.$fileName.'"');
+        header('Cache-Control: max-age=0'); 
+        $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'CSV');
+        $objWriter->save('php://output');
+		exit;
+    }
+	
+	function getCountryName($id){
+		$this->db->select('name');
+		$this->db->from('ci_staff_countries');
+		$this->db->where('id', $id);
+		$datas = $this->db->get()->row_array();
+		return $datas['name'];
+	}
+
+	function getManagedbyName($ids){
+		$this->db->select('GROUP_CONCAT(managed_by_name) as managedby_name');
+		$this->db->from('ci_managed_by_members');
+		$this->db->where('id IN('.$ids.')');
+		$datas = $this->db->get()->row_array();
+		return $datas['managedby_name'];
+	}
+
 }
 ?>

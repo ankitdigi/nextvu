@@ -15,14 +15,7 @@ class AllergensModel extends CI_model{
     }
 
     public function get_allergens_dropdown($orderTypeData = []) {
-		if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-			$name = "name_".$this->session->userdata('site_lang')." as name";
-			$paxname = "pax_name_".$this->session->userdata('site_lang')." as pax_name";
-		}else{
-			$name = "name";
-			$paxname = "pax_name";
-		}
-        $this->db->select('id,'.$name.','.$paxname.',pax_latin_name');
+        $this->db->select('id,name,pax_name,pax_latin_name');
         $this->db->from($this->_table);
         $this->db->where('parent_id', '0'); 
         if(!empty($orderTypeData)){
@@ -41,14 +34,7 @@ class AllergensModel extends CI_model{
     }
 
 	public function get_pax_allergens_dropdown($orderTypeData = []) {
-		if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-			$name = "name_".$this->session->userdata('site_lang')." as name";
-			$paxname = "pax_name_".$this->session->userdata('site_lang')." as pax_name";
-		}else{
-			$name = "name";
-			$paxname = "pax_name";
-		}
-        $this->db->select('id,'.$name.','.$paxname.',pax_latin_name');
+        $this->db->select('id,name,pax_name,pax_latin_name');
         $this->db->from($this->_table);
         $this->db->where('pax_parent_id', '0'); 
         if(!empty($orderTypeData)){
@@ -117,14 +103,7 @@ class AllergensModel extends CI_model{
             $allergensArr = json_decode($allergensData);
             $allergens = implode(",",$allergensArr);
 			if($allergens != ""){
-				if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-					$name = "b.name_".$this->session->userdata('site_lang')." as name";
-					$paxname = "b.pax_name_".$this->session->userdata('site_lang')." as pax_name";
-				}else{
-					$name = "b.name";
-					$paxname = "b.pax_name";
-				}
-				$this->db->select('a.parent_id,a.pax_parent_id,'.$name.','.$paxname.',b.pax_latin_name');
+				$this->db->select('a.parent_id,a.pax_parent_id,b.name,b.pax_name,b.pax_latin_name');
 				$this->db->from($this->_table.' AS a');
 				$this->db->join($this->_table.' AS b', 'a.parent_id = b.id', 'left');
 				$this->db->where('a.id IN('.$allergens.')'); 
@@ -144,20 +123,12 @@ class AllergensModel extends CI_model{
             $allergensArr = json_decode($allergensData);
             $allergens = implode(",",$allergensArr);
 			if($allergens != ""){
-				if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-					$name = "b.name_".$this->session->userdata('site_lang')." as name";
-					$paxname = "b.pax_name_".$this->session->userdata('site_lang')." as pax_name";
-				}else{
-					$name = "b.name as name";
-					$paxname = "b.pax_name as pax_name";
-				}
-				$this->db->select('a.parent_id,a.pax_parent_id,'.$name.',b.is_mixtures,'.$paxname.',b.pax_latin_name');
+				$this->db->select('a.parent_id,a.pax_parent_id,b.name,b.is_mixtures,b.pax_name,b.pax_latin_name');
 				$this->db->from($this->_table.' AS a');
 				$this->db->join($this->_table.' AS b', 'a.pax_parent_id = b.id', 'left');
 				$this->db->where('a.id IN('.$allergens.')'); 
 				$this->db->group_by('a.pax_parent_id'); 
-				/* $this->db->order_by("b.pax_name", "asc"); */
-				$this->db->order_by("a.id", "asc");
+				$this->db->order_by("b.pax_name", "asc");
 				return $this->db->get()->result_array();
 			}else{
 				return array();
@@ -185,39 +156,25 @@ class AllergensModel extends CI_model{
     }
 
 	public function get_subAllergens_Indoor($parent_id,$allergensData = '',$sub_order_type='') {
-		if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-			$name = "name_".$this->session->userdata('site_lang')." as name";
-			$paxname = "pax_name_".$this->session->userdata('site_lang')." as pax_name";
-		}else{
-			$name = "name";
-			$paxname = "pax_name";
-		}
-        $this->db->select('id,parent_id,'.$name.',is_unavailable,'.$paxname.',pax_latin_name,can_allgy_env,fel_allgy_env,equ_allgy_env');
+        $this->db->select('id,name,is_unavailable,pax_name,pax_latin_name,can_allgy_env,fel_allgy_env,equ_allgy_env');
         $this->db->from($this->_table);
         $this->db->where('parent_id IN('.$parent_id.')'); 
         if($allergensData!=''){
             $allergensArr = json_decode($allergensData);
             $allergens = implode(",",$allergensArr);
             $this->db->where('id IN('.$allergens.')'); 
-			$this->db->order_by("".$name."", "asc");
+			$this->db->order_by("name", "asc");
         }
         if($sub_order_type!=''){
             $order_type = '["'.$sub_order_type.'"]';
             $this->db->where("JSON_CONTAINS(order_type, '".$order_type."')");
-			$this->db->order_by("".$name."", "asc");
+			$this->db->order_by("name", "asc");
         }
         return $this->db->get()->result_array(); 
     }
 
     public function get_subAllergens_dropdown($parent_id,$allergensData = '',$sub_order_type='') {
-		if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-			$name = "name_".$this->session->userdata('site_lang')." as name";
-			$paxname = "pax_name_".$this->session->userdata('site_lang')." as pax_name";
-		}else{
-			$name = "name";
-			$paxname = "pax_name";
-		}
-        $this->db->select('id,'.$name.',is_unavailable,'.$paxname.',pax_latin_name,can_allgy_env,fel_allgy_env,equ_allgy_env');
+        $this->db->select('id,name,is_unavailable,pax_name,pax_latin_name,can_allgy_env,fel_allgy_env,equ_allgy_env');
         $this->db->from($this->_table);
         $this->db->where('parent_id', $parent_id); 
         if($allergensData!=''){
@@ -235,14 +192,7 @@ class AllergensModel extends CI_model{
     }
 
 	public function getSubAllergensdropdown($parent_id,$allergensData = '',$sub_order_type='') {
-		if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-			$name = "name_".$this->session->userdata('site_lang')." as name";
-			$paxname = "pax_name_".$this->session->userdata('site_lang')." as pax_name";
-		}else{
-			$name = "name";
-			$paxname = "pax_name";
-		}
-		$sql = "SELECT id, ".$name.", ".$paxname.", pax_latin_name FROM ". $this->_table ." WHERE ";
+		$sql = "SELECT id, name, pax_name, pax_latin_name FROM ". $this->_table ." WHERE ";
 		$sql .= "parent_id = ".$parent_id."";
 		if($allergensData != ''){
             $allergensArr = json_decode($allergensData);
@@ -272,14 +222,7 @@ class AllergensModel extends CI_model{
         if($allergensData!=''){
             $allergensArr = json_decode($allergensData);
             $allergens = implode(",",$allergensArr);
-			if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-				$name = "b.name_".$this->session->userdata('site_lang')." as name";
-				$paxname = "b.pax_name_".$this->session->userdata('site_lang')." as pax_name";
-			}else{
-				$name = "b.name";
-				$paxname = "b.pax_name";
-			}
-            $this->db->select('a.pax_parent_id,'.$name.','.$paxname.',b.pax_latin_name');
+            $this->db->select('a.pax_parent_id,b.name,b.pax_name,b.pax_latin_name');
             $this->db->from($this->_table.' AS a');
             $this->db->join($this->_table.' AS b', 'a.pax_parent_id = b.id', 'left');
             $this->db->where('a.id IN('.$allergens.')'); 
@@ -292,14 +235,7 @@ class AllergensModel extends CI_model{
     }
 
 	public function getPAXSubAllergensdropdown($parent_id,$allergensData = '',$sub_order_type='') {
-		if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-			$name = "name_".$this->session->userdata('site_lang')." as name";
-			$paxname = "pax_name_".$this->session->userdata('site_lang')." as pax_name";
-		}else{
-			$name = "name";
-			$paxname = "pax_name";
-		}
-		$sql = "SELECT id, ".$name.", ".$paxname.", pax_latin_name FROM ". $this->_table ." WHERE ";
+		$sql = "SELECT id, name, pax_name, pax_latin_name FROM ". $this->_table ." WHERE ";
 		$sql .= "pax_parent_id = ".$parent_id."";
 		if($allergensData != ''){
             $allergensArr = json_decode($allergensData);
@@ -326,14 +262,7 @@ class AllergensModel extends CI_model{
     }
 
 	public function get_pax_subAllergens_dropdown($parent_id,$allergensData = '',$sub_order_type='') {
-		if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-			$name = "name_".$this->session->userdata('site_lang')." as name";
-			$paxname = "pax_name_".$this->session->userdata('site_lang')." as pax_name";
-		}else{
-			$name = "name as name";
-			$paxname = "pax_name as pax_name";
-		}
-        $this->db->select('id,pax_parent_id,'.$name.',is_unavailable,'.$paxname.',pax_latin_name');
+        $this->db->select('id,pax_parent_id,name,is_unavailable,pax_name,pax_latin_name');
         $this->db->from($this->_table);
         $this->db->where('pax_parent_id', $parent_id); 
         if($allergensData!=''){
@@ -341,41 +270,16 @@ class AllergensModel extends CI_model{
             $allergens = implode(",",$allergensArr);
             $this->db->where('id IN('.$allergens.')'); 
         }
-		$this->db->where('id !=', '459674');
         if($sub_order_type!=''){
             $order_type = '["'.$sub_order_type.'"]';
             $this->db->where("JSON_CONTAINS(order_type, '".$order_type."')");
         }
-		if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-			$this->db->order_by("".$this->_table.".pax_name_".$this->session->userdata('site_lang')."", "asc");
-		}else{
-			$this->db->order_by("".$this->_table.".pax_name", "asc");
-		}
+		$this->db->order_by("pax_name", "asc");
         return $this->db->get()->result_array(); 
     }
 
-	function getMCPaxnameById($id){
-		if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-			$this->db->select('pax_name_'.$this->session->userdata('site_lang').' AS pax_name');
-		}else{
-			$this->db->select('pax_name AS pax_name');
-		}
-		$this->db->from('ci_allergens');
-		$this->db->where('id',$id);
-		$query = $this->db->get()->row();
-
-		return $query;
-	}
-
 	public function get_subAllergens_serum($parent_id,$allergensData = '',$sub_order_type='',$stype) {
-		if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-			$name = "name_".$this->session->userdata('site_lang')." as name";
-			$paxname = "pax_name_".$this->session->userdata('site_lang')." as pax_name";
-		}else{
-			$name = "name";
-			$paxname = "pax_name";
-		}
-        $this->db->select('id,'.$name.',is_unavailable,'.$paxname.',pax_latin_name');
+        $this->db->select('id,name,is_unavailable,pax_name,pax_latin_name');
         $this->db->from($this->_table);
         $this->db->where('parent_id', $parent_id);
 		if($stype > 0){
@@ -594,15 +498,6 @@ class AllergensModel extends CI_model{
 		return $query;
 	}
 
-	function getAllergennameById($id){
-		$this->db->select('name');
-		$this->db->from('ci_allergens');
-		$this->db->where('id',$id);
-		$query = $this->db->get()->row()->name;
-
-		return $query;
-	}
-
 	public function Totalvials($id) {
 		$sql = "SELECT COUNT(vial_id) as totalVials FROM ci_allergens_vials WHERE order_id = '". $id ."'";
         $responce = $this->db->query($sql);
@@ -639,14 +534,7 @@ class AllergensModel extends CI_model{
 		if($allergensId != '' && $allergensId != '[]'){
             $allergensArr = json_decode($allergensId);
             $allergens = implode(",",$allergensArr);
-			if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-				$name = "name_".$this->session->userdata('site_lang')." as name";
-				$paxname = "pax_name_".$this->session->userdata('site_lang')." as pax_name";
-			}else{
-				$name = "name";
-				$paxname = "pax_name";
-			}
-			$this->db->select('id,'.$name.',code,'.$paxname.',pax_latin_name');
+			$this->db->select('id,name,code,pax_name,pax_latin_name');
 			$this->db->from($this->_table);
             $this->db->where("id IN(".$allergens.")");
 			$this->db->order_by("name", "asc");
@@ -661,14 +549,7 @@ class AllergensModel extends CI_model{
 		if($allergensId != '' && $allergensId != '[]'){
             $allergensArr = json_decode($allergensId);
             $allergens = implode(",",$allergensArr);
-			if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-				$name = "name_".$this->session->userdata('site_lang')." as name";
-				$paxname = "pax_name_".$this->session->userdata('site_lang')." as pax_name";
-			}else{
-				$name = "name";
-				$paxname = "pax_name";
-			}
-			$this->db->select('id,'.$name.',code,'.$paxname.',pax_latin_name');
+			$this->db->select('id,name,code,pax_name,pax_latin_name');
 			$this->db->from($this->_table);
             $this->db->where("id IN(".$allergens.")");
 			if($allergensData2 !='' && $allergensData2 != '[]'){
@@ -684,14 +565,7 @@ class AllergensModel extends CI_model{
     }
 
 	public function getGroupMixturesbyParent($pID) {
-		if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-			$name = "name_".$this->session->userdata('site_lang')." as name";
-			$paxname = "pax_name_".$this->session->userdata('site_lang')." as pax_name";
-		}else{
-			$name = "name";
-			$paxname = "pax_name";
-		}
-		$this->db->select('id, parent_id, pax_parent_id, '.$name.', mixture_allergens, '.$paxname.', pax_latin_name');
+		$this->db->select('id, parent_id, pax_parent_id, name, mixture_allergens, pax_name, pax_latin_name');
         $this->db->from($this->_table);
         $this->db->where('parent_id',$pID);
 		$this->db->where('is_mixtures',1);
@@ -712,14 +586,7 @@ class AllergensModel extends CI_model{
 	}
 
 	public function get_subAllergens_dropdown2($parent_id,$allergensData = '',$allergensData2='') {
-		if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-			$name = "name_".$this->session->userdata('site_lang')." as name";
-			$paxname = "pax_name_".$this->session->userdata('site_lang')." as pax_name";
-		}else{
-			$name = "name";
-			$paxname = "pax_name";
-		}
-        $this->db->select('id,'.$name.',is_unavailable,'.$paxname.',pax_latin_name');
+        $this->db->select('id,name,is_unavailable,pax_name,pax_latin_name');
         $this->db->from($this->_table);
         $this->db->where('parent_id', $parent_id); 
         if($allergensData!=''){
@@ -737,14 +604,7 @@ class AllergensModel extends CI_model{
     }
 
 	public function get_subAllergens_dropdown_empty($parent_id,$allergensData = '',$allergensData2='') {
-		if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-			$name = "name_".$this->session->userdata('site_lang')." as name";
-			$paxname = "pax_name_".$this->session->userdata('site_lang')." as pax_name";
-		}else{
-			$name = "name";
-			$paxname = "pax_name";
-		}
-        $this->db->select('id,'.$name.',is_unavailable,'.$paxname.',pax_latin_name');
+        $this->db->select('id,name,is_unavailable,pax_name,pax_latin_name');
         $this->db->from($this->_table);
         $this->db->where('parent_id', $parent_id); 
         if($allergensData!=''){
@@ -761,14 +621,7 @@ class AllergensModel extends CI_model{
     }
 	
 	public function get_subAllergens_recommendation($parent_id,$allergensData = '',$sub_order_type='') {
-		if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-			$name = "name_".$this->session->userdata('site_lang')." as name";
-			$paxname = "pax_name_".$this->session->userdata('site_lang')." as pax_name";
-		}else{
-			$name = "name";
-			$paxname = "pax_name";
-		}
-		$sql = "SELECT id, ".$name.", ".$paxname.", pax_latin_name FROM ". $this->_table ." WHERE ";
+		$sql = "SELECT id, name,pax_name,pax_latin_name FROM ". $this->_table ." WHERE ";
 		$sql .= "parent_id = ".$parent_id."";
 		if($allergensData != ''){
             $allergensArr = json_decode($allergensData);
@@ -776,9 +629,9 @@ class AllergensModel extends CI_model{
 			$sql .= " AND id IN(".$allergens.")";
         }
 		if($sub_order_type != ''){
-			$sql .= " AND (JSON_CONTAINS(order_type, '".$sub_order_type."') OR JSON_CONTAINS(order_type, '[\"1\"]'))";
+			$sql .= " AND (JSON_CONTAINS(order_type, '".$order_type."') OR JSON_CONTAINS(order_type, '[\"1\"]'))";
         }
-		$sql .= " ORDER BY name ASC";
+		$sql .= " ORDER BY `name` ASC";
         $responce = $this->db->query($sql);
 		$result = $responce->result_array();
         return $result;
@@ -862,112 +715,6 @@ class AllergensModel extends CI_model{
 			$this->db->order_by("name", "asc");
         }
         return $this->db->get()->result_array(); 
-    }
-
-	public function getEnvAllergenParentbyName($allergensData = []) {
-        if($allergensData!=''){
-            $allergensArr = json_decode($allergensData);
-            $allergens = implode(",",$allergensArr);
-			if($allergens != ""){
-				if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-					$name = "b.name_".$this->session->userdata('site_lang')." as name";
-					$paxname = "b.pax_name_".$this->session->userdata('site_lang')." as pax_name";
-				}else{
-					$name = "b.name as name";
-					$paxname = "b.pax_name as pax_name";
-				}
-				$this->db->select('a.parent_id,a.pax_parent_id,'.$name.',b.is_mixtures,'.$paxname.',b.pax_latin_name');
-				$this->db->from($this->_table.' AS a');
-				$this->db->join($this->_table.' AS b', 'a.pax_parent_id = b.id', 'left');
-				$this->db->where('a.id IN('.$allergens.')');
-				$this->db->where('a.id !=', '459674');
-				$this->db->where('JSON_CONTAINS(b.order_type, \'["8"]\')');
-				$this->db->group_by('a.pax_parent_id');
-				/* $this->db->order_by("b.pax_name", "asc"); */
-				$this->db->order_by("a.id", "asc");
-				return $this->db->get()->result_array();
-			}else{
-				return array();
-			}
-        }else{
-            return array();
-        }
-    }
-
-	public function getFoodAllergenParentbyName($allergensData = []) {
-        if($allergensData!=''){
-            $allergensArr = json_decode($allergensData);
-            $allergens = implode(",",$allergensArr);
-			if($allergens != ""){
-				if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-					$name = "b.name_".$this->session->userdata('site_lang')." as name";
-					$paxname = "b.pax_name_".$this->session->userdata('site_lang')." as pax_name";
-				}else{
-					$name = "b.name as name";
-					$paxname = "b.pax_name as pax_name";
-				}
-				$this->db->select('a.parent_id,a.pax_parent_id,'.$name.',b.is_mixtures,'.$paxname.',b.pax_latin_name');
-				$this->db->from($this->_table.' AS a');
-				$this->db->join($this->_table.' AS b', 'a.pax_parent_id = b.id', 'left');
-				$this->db->where('a.id IN('.$allergens.')');
-				$this->db->where('JSON_CONTAINS(b.order_type, \'["9"]\')');
-				$this->db->group_by('a.pax_parent_id');
-				/* $this->db->order_by("b.pax_name", "asc"); */
-				$this->db->order_by("a.id", "asc");
-				return $this->db->get()->result_array();
-			}else{
-				return array();
-			}
-        }else{
-            return array();
-        }
-    }
-
-	public function getEnvAllergensByID($allergensId){
-		$result = array();
-		if($allergensId != '' && $allergensId != '[]'){
-            $allergensArr = json_decode($allergensId);
-            $allergens = implode(",",$allergensArr);
-			if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-				$name = "name_".$this->session->userdata('site_lang')." as name";
-				$paxname = "pax_name_".$this->session->userdata('site_lang')." as pax_name";
-			}else{
-				$name = "name";
-				$paxname = "pax_name";
-			}
-			$this->db->select('id,'.$name.',code,'.$paxname.',pax_latin_name');
-			$this->db->from($this->_table);
-            $this->db->where("id IN(".$allergens.")");
-			$this->db->where('id !=', '459674');
-			$this->db->where('JSON_CONTAINS(order_type, \'["8"]\')');
-			$this->db->order_by("name", "asc");
-			$responce = $this->db->get();
-			$result = $responce->result_array();
-        }
-		return $result;
-    }
-
-	public function getFoodAllergensByID($allergensId){
-		$result = array();
-		if($allergensId != '' && $allergensId != '[]'){
-            $allergensArr = json_decode($allergensId);
-            $allergens = implode(",",$allergensArr);
-			if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
-				$name = "name_".$this->session->userdata('site_lang')." as name";
-				$paxname = "pax_name_".$this->session->userdata('site_lang')." as pax_name";
-			}else{
-				$name = "name";
-				$paxname = "pax_name";
-			}
-			$this->db->select('id,'.$name.',code,'.$paxname.',pax_latin_name');
-			$this->db->from($this->_table);
-            $this->db->where("id IN(".$allergens.")");
-			$this->db->where('JSON_CONTAINS(order_type, \'["9"]\')');
-			$this->db->order_by("name", "asc");
-			$responce = $this->db->get();
-			$result = $responce->result_array();
-        }
-		return $result;
     }
 
 }

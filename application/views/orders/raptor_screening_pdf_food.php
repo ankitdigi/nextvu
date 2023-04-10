@@ -87,7 +87,7 @@
 				if(!empty($subVlu->raptor_code)){
 					$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 					if(!empty($raptrVlu)){
-						if(round($raptrVlu->result_value) >= $cutoffs){
+						if(floor($raptrVlu->result_value) >= $cutoffs){
 							if($svalue['name'] != "N/A"){
 								$allengesF3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 							}else{

@@ -52,7 +52,7 @@ $fleaResults = $this->db->get()->row();
 								<?php echo $this->lang->line('flea_results'); ?>:</td>
 								<?php
 								if(!empty($fleaResults)){
-									if(round($fleaResults->result_value) >= $cutoffs){
+									if(floor($fleaResults->result_value) >= $cutoffs){
 										echo '<td style="color:#1b3542; font-weight:700; text-transform:uppercase; font-size:15px;" align="right">'.$this->lang->line('positive_2').'</td>';
 									}else{
 										echo '<td style="color:#1b3542; font-weight:700; text-transform:uppercase; font-size:15px;" align="right">'.$this->lang->line('negative').'</td>';
@@ -65,7 +65,7 @@ $fleaResults = $this->db->get()->row();
 							<tr>
 								<?php
 								if(!empty($fleaResults)){
-									if(round($fleaResults->result_value) >= $cutoffs){
+									if(floor($fleaResults->result_value) >= $cutoffs){
 										echo '<td colspan="2" style="color:#1b3542; font-weight:400; font-size:14px; padding:12px 0 0 0;">'.$this->lang->line('patient_result_positive').'</td>';
 									}else{
 										echo '<td colspan="2" style="color:#1b3542; font-weight:400; font-size:14px; padding:12px 0 0 0;">'.$this->lang->line('patient_result_negative').'</td>';
@@ -85,7 +85,7 @@ $fleaResults = $this->db->get()->row();
 				<div class="roundedborder_div">
 				<?php
 				if(!empty($fleaResults)){
-					if(round($fleaResults->result_value) >= $cutoffs){
+					if(floor($fleaResults->result_value) >= $cutoffs){
 						echo '<div>
 							<div style="padding: 0px 0px 5px 0px;">
 								<h6 style="color:#1e3743; font-size:16px; margin:0;color:#000;font-weight:600">'.$this->lang->line('negative_for_allergens_what_now').'</h6>

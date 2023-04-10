@@ -64,7 +64,7 @@ $pageName = 'Country Admin Users';
 												</div>
 												<div class="form-group">
 													<label><?php echo $this->lang->line("country");?></label>
-													<?php
+													<?php 
 													$options = array();
 													$options[''] = '-- Select --';
 													if(!empty($countries)){
@@ -111,7 +111,7 @@ $pageName = 'Country Admin Users';
 				</section><!-- /.content -->
 			</div>
 			<!-- /.content-wrapper -->
-			<?php $this->load->view("footer"); ?>
+			<?php $this->load->view("footer"); ?>  
 		</div><!-- ./wrapper -->
 		<?php $this->load->view("script"); ?>
 		<script>

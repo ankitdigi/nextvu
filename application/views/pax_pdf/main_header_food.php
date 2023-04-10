@@ -163,13 +163,13 @@
 								if(!empty($subVlu->raptor_code)){
 									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 									if(!empty($raptrVlu)){
-										if(round($raptrVlu->result_value) < $cutoffs){
+										if(floor($raptrVlu->result_value) < $cutoffs){
 											echo '<tr>
 												<td style="padding:0 15px 0 0;font-size:12px;">'.$svalue['pax_name'].'</td>
 												<td style="padding:0 0 0 15px;">
 													<table cellpadding="0" cellspacing="0" align="right" class="meter">
 							                            <tr>
-							                                <td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.round($raptrVlu->result_value).'</td>
+							                                <td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.floor($raptrVlu->result_value).'</td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;" class=""><img src="'.base_url().'assets/images/ss1.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_comman.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_comman.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
@@ -179,13 +179,13 @@
 													</table>
 												</td>
 											</tr>';
-										}elseif(round($raptrVlu->result_value) >= $cutoffs && $raptrVlu->result_value < 100){
+										}elseif(floor($raptrVlu->result_value) >= $cutoffs && $raptrVlu->result_value < 100){
 											echo '<tr>
 												<td style="padding:0 15px 0 0;font-size:12px;">'.$svalue['pax_name'].'</td>
 												<td style="padding:0 0 0 15px;">
 													<table cellpadding="0" cellspacing="0" align="right" class="meter">
 														<tr>
-															<td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.round($raptrVlu->result_value).'</td>
+															<td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.floor($raptrVlu->result_value).'</td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;" class=""><img src="'.base_url().'assets/images/ss1.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_1.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_comman.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
@@ -202,7 +202,7 @@
 													
 													<table cellpadding="0" cellspacing="0" align="right" class="meter">														
 														<tr>
-															<td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.round($raptrVlu->result_value).'</td>
+															<td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.floor($raptrVlu->result_value).'</td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;" class=""><img src="'.base_url().'assets/images/ss1.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_1.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_2.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
@@ -220,7 +220,7 @@
 
 													<table cellpadding="0" cellspacing="0" align="right" class="meter">														
 														<tr>
-															<td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.round($raptrVlu->result_value).'</td>
+															<td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.floor($raptrVlu->result_value).'</td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;" class=""><img src="'.base_url().'assets/images/ss1.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_1.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_2.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
@@ -238,7 +238,7 @@
 
 													<table cellpadding="0" cellspacing="0" align="right" class="meter">														
 														<tr>
-															<td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.round($raptrVlu->result_value).'</td>
+															<td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.floor($raptrVlu->result_value).'</td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;" class=""><img src="'.base_url().'assets/images/ss1.png" alt="" style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_1.png" alt="" style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_2.png" alt="" style="height: 10px;" height="15" width="23" /></td>
@@ -307,13 +307,13 @@
 									if(!empty($subVlu->raptor_code)){
 										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 										if(!empty($raptrVlu)){
-											if(round($raptrVlu->result_value) < $cutoffs){
+											if(floor($raptrVlu->result_value) < $cutoffs){
 												echo '<tr>
 													<td style="padding:0 15px 0 0;font-size:12px;">'.$svalue['pax_name'].'</td>
 													<td style="padding:0 0 0 15px;">
 														<table cellpadding="0" cellspacing="0" align="right" class="meter">
 														<tr>
-															<td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.round($raptrVlu->result_value).'</td>
+															<td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.floor($raptrVlu->result_value).'</td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;" class=""><img src="'.base_url().'assets/images/ss1.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_comman.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_comman.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
@@ -323,14 +323,14 @@
 													</table>
 													</td>
 												</tr>';
-											}elseif(round($raptrVlu->result_value) >= $cutoffs && $raptrVlu->result_value < 100){
+											}elseif(floor($raptrVlu->result_value) >= $cutoffs && $raptrVlu->result_value < 100){
 												echo '<tr>
 													<td style="padding:0 15px 0 0;font-size:12px;">'.$svalue['pax_name'].'</td>
 													<td style="padding:0 0 0 15px;">
 														<table cellpadding="0" cellspacing="0" align="right" class="meter">
 														
 														<tr>
-															<td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.round($raptrVlu->result_value).'</td>
+															<td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.floor($raptrVlu->result_value).'</td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;" class=""><img src="'.base_url().'assets/images/ss1.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_1.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_comman.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
@@ -346,7 +346,7 @@
 													<td style="padding:0 0 0 15px;">
 														<table cellpadding="0" cellspacing="0" align="right" class="meter">														
 														<tr>
-															<td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.round($raptrVlu->result_value).'</td>
+															<td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.floor($raptrVlu->result_value).'</td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;" class=""><img src="'.base_url().'assets/images/ss1.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_1.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_2.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
@@ -362,7 +362,7 @@
 													<td style="padding:0 0 0 15px;">
 														<table cellpadding="0" cellspacing="0" align="right" class="meter">														
 														<tr>
-															<td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.round($raptrVlu->result_value).'</td>
+															<td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.floor($raptrVlu->result_value).'</td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;" class=""><img src="'.base_url().'assets/images/ss1.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_1.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_2.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
@@ -378,7 +378,7 @@
 													<td style="padding:0 0 0 15px;">
 														<table cellpadding="0" cellspacing="0" align="right" class="meter">														
 														<tr>
-															<td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.round($raptrVlu->result_value).'</td>
+															<td style="width:25px;height:6px;line-height:8px;font-size:12px;">'.floor($raptrVlu->result_value).'</td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;" class=""><img src="'.base_url().'assets/images/ss1.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_1.png" alt=""  style="height: 10px;" height="15" width="23" /></td>
 															<td style="width:25px;height:6px;line-height:8px;font-size:12px;"><img src="'.base_url().'assets/images/ss_2.png" alt=""  style="height: 10px;" height="15" width="23" /></td>

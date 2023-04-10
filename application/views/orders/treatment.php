@@ -878,15 +878,14 @@ if(((preg_match('/\bComplete Food\b/', $respnedn->name)) || (preg_match('/\bNEXT
 												<tr>
 													<td>Alpha-1-Acid Glycoprotein (AGP)</td>
 													<?php
-													$this->db->select('result');
+													$this->db->select('result_agp');
 													$this->db->from('ci_serum_result_allergens');
 													$this->db->where('result_id IN('.$sresultID.')');
 													$this->db->where('type_id IN('.$stypeID.')');
 													$this->db->where('(lims_allergens_id = "1386")');
-													$this->db->order_by('result', 'DESC');
 													$agpResults = $this->db->get()->row();
 													if(!empty($agpResults)){
-														echo '<td style="text-align:center">'. $agpResults->result .' g/L</td>';
+														echo '<td style="text-align:center">'. $agpResults->result_agp .' g/L</td>';
 													}else{
 														echo '<td style="text-align:center">0 g/L</td>';
 													}

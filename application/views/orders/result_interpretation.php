@@ -60,7 +60,7 @@ if($ordeType == 'PAX Environmental' || $ordeType == 'PAX Environmental Screening
 			if(!empty($subVlu->raptor_code)){
 				$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 				if(!empty($raptrVlu)){
-					if(round($raptrVlu->result_value) >= $cutoffs){
+					if(floor($raptrVlu->result_value) >= $cutoffs){
 						if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
 							if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
 								$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
@@ -130,7 +130,7 @@ if($ordeType == 'PAX Environmental' || $ordeType == 'PAX Environmental Screening
 							if(!empty($rmcodes->raptor_code)){
 								$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
 								if(!empty($raptrmVlu)){
-									if(round($raptrmVlu->result_value) >= $cutoffs){
+									if(floor($raptrmVlu->result_value) >= $cutoffs){
 										$testingArr[$mavalue] += 1;
 									}
 								}
@@ -160,7 +160,7 @@ if($ordeType == 'PAX Environmental' || $ordeType == 'PAX Environmental Screening
 						if(!empty($rcodes->raptor_code)){
 							$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
 							if(!empty($raptrVlu)){
-								if(round($raptrVlu->result_value) >= $cutoffs){
+								if(floor($raptrVlu->result_value) >= $cutoffs){
 									$tested++;
 								}
 							}
@@ -310,7 +310,7 @@ if($ordeType == 'PAX Environmental' || $ordeType == 'PAX Environmental Screening
 		}
 	}
 
-	if(round($ccdresult1) >= $cutoffs || round($ccdresult2) >= $cutoffs){
+	if(floor($ccdresult1) >= $cutoffs || floor($ccdresult2) >= $cutoffs){
 		$dummytext .= $this->lang->line('pax_ccd_text_'.$cutoffs.'');
 		$dummytext .= "\n\r";
 	}
@@ -348,7 +348,7 @@ if($ordeType == 'PAX Food' || $ordeType == 'PAX Food Screening' || $ordeType == 
 			if(!empty($subVlu->raptor_code)){
 				$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 				if(!empty($raptrVlu)){
-					if(round($raptrVlu->result_value) >= $cutoffs){
+					if(floor($raptrVlu->result_value) >= $cutoffs){
 						if($svalue['name'] != "N/A"){
 							$allengesF3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 						}else{
@@ -415,7 +415,7 @@ if($ordeType == 'PAX Food' || $ordeType == 'PAX Food Screening' || $ordeType == 
 		}
 	}
 
-	if(round($ccdresult1) >= $cutoffs || round($ccdresult2) >= $cutoffs){
+	if(floor($ccdresult1) >= $cutoffs || floor($ccdresult2) >= $cutoffs){
 		$dummyFtext .= $this->lang->line('pax_ccd_text_'.$cutoffs.'');
 		$dummyFtext .= "\n\r";
 	}

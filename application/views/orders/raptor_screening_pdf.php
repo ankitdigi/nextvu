@@ -87,7 +87,7 @@
 				if(!empty($subVlu->raptor_code)){
 					$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 					if(!empty($raptrVlu)){
-						if(round($raptrVlu->result_value) >= $cutoffs){
+						if(floor($raptrVlu->result_value) >= $cutoffs){
 							if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
 								$block1[$svalue['id']] = $svalue['name'];
 								$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
@@ -180,7 +180,7 @@
 								if(!empty($rmcodes->raptor_code)){
 									$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
 									if(!empty($raptrmVlu)){
-										if(round($raptrmVlu->result_value) >= $cutoffs){
+										if(floor($raptrmVlu->result_value) >= $cutoffs){
 											$testingArr[$mavalue] += 1;
 										}
 									}
@@ -204,7 +204,7 @@
 								if(!empty($sub1Vlu->raptor_code)){
 									$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
 									if(!empty($raptr1Vlu)){
-										if(round($raptr1Vlu->result_value) >= $cutoffs){
+										if(floor($raptr1Vlu->result_value) >= $cutoffs){
 											if($s1value['name'] != "N/A"){
 												$block2[$s1value['id']] = $s1value['name'];
 											}
@@ -219,7 +219,7 @@
 								if(!empty($sub2Vlu->raptor_code)){
 									$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
 									if(!empty($raptr2Vlu)){
-										if(round($raptr2Vlu->result_value) >= $cutoffs){
+										if(floor($raptr2Vlu->result_value) >= $cutoffs){
 											if($s2value['name'] != "N/A"){
 											$block2[$s2value['id']] = $s2value['name'];
 											}
@@ -236,7 +236,7 @@
 							if(!empty($rcodes->raptor_code)){
 								$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
 								if(!empty($raptrVlu)){
-									if(round($raptrVlu->result_value) >= $cutoffs){
+									if(floor($raptrVlu->result_value) >= $cutoffs){
 										$tested++;
 									}
 								}
@@ -253,7 +253,7 @@
 								if(!empty($sub1Vlu->raptor_code)){
 									$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
 									if(!empty($raptr1Vlu)){
-										if(round($raptr1Vlu->result_value) >= $cutoffs){
+										if(floor($raptr1Vlu->result_value) >= $cutoffs){
 											if($s1value['name'] != "N/A"){
 											$block2[$s1value['id']] = $s1value['name'];
 											}
@@ -268,7 +268,7 @@
 								if(!empty($sub2Vlu->raptor_code)){
 									$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
 									if(!empty($raptr2Vlu)){
-										if(round($raptr2Vlu->result_value) >= $cutoffs){
+										if(floor($raptr2Vlu->result_value) >= $cutoffs){
 											if($s2value['name'] != "N/A"){
 											$block2[$s2value['id']] = $s2value['name'];
 											}
@@ -285,7 +285,7 @@
 						if(!empty($sub2Vlu->raptor_code)){
 							$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
 							if(!empty($raptr2Vlu)){
-								if(round($raptr2Vlu->result_value) >= $cutoffs){
+								if(floor($raptr2Vlu->result_value) >= $cutoffs){
 									if($s2value['name'] != "N/A"){
 									$block2[$s2value['id']] = $s2value['name'];
 									}
@@ -301,7 +301,7 @@
 					if(!empty($sub3Vlu->raptor_code)){
 						$raptr3Vlu = $this->OrdersModel->getRaptorValue($sub3Vlu->raptor_code,$raptorData->result_id);
 						if(!empty($raptr3Vlu)){
-							if(round($raptr3Vlu->result_value) >= $cutoffs){
+							if(floor($raptr3Vlu->result_value) >= $cutoffs){
 								if($s3value['name'] != "N/A"){
 								$block2[$s3value['id']] = $s3value['name'];
 								}
@@ -512,7 +512,7 @@
 																			<td valign="top" style="color:#1b3542; font-weight:400; font-size:11px;"><?php echo $this->lang->line('flea_results'); ?>:</td>
 																			<?php
 																				if(!empty($fleaResults)){
-																					if(round($fleaResults->result_value) >= $cutoffs){
+																					if(floor($fleaResults->result_value) >= $cutoffs){
 																						echo '<td style="color:#1b3542; text-transform:uppercase; font-size:11px;" align="right"><b>'.$this->lang->line('positive_2').'</b></td>';
 																					}else{
 																						echo '<td style="color:#1b3542; text-transform:uppercase; font-size:11px;" align="right"><b>'.$this->lang->line('negative').'</b></td>';
@@ -525,7 +525,7 @@
 																		<tr>
 																			<?php
 																				if(!empty($fleaResults)){
-																					if(round($fleaResults->result_value) >= $cutoffs){
+																					if(floor($fleaResults->result_value) >= $cutoffs){
 																						echo '<td colspan="2" style="color:#1b3542; font-weight:400; font-size:10px; line-height: 16px; padding:14px 0 0 0;">'.$this->lang->line('patient_result_positive').'</td>';
 																					}else{
 																						echo '<td colspan="2" style="color:#1b3542; font-weight:400; font-size:10px; line-height: 16px; padding:14px 0 0 0;">'.$this->lang->line('patient_result_negative').'</td>';
@@ -565,7 +565,7 @@
 										<tbody>
 											<?php
 												if(!empty($fleaResults)){
-													if(round($fleaResults->result_value) >= $cutoffs){
+													if(floor($fleaResults->result_value) >= $cutoffs){
 														echo'<tr>
 															<td style="padding: 52px 20px 10px 45px;">
 																<table width="100%" cellspacing="0" cellpadding="0" border="0">
@@ -902,7 +902,7 @@
 																	<td valign="top" style="color:#1b3542; font-weight:400; font-size:11px;"><?php echo $this->lang->line('flea_results'); ?>:</td>
 																	<?php
 																	if(!empty($fleaResults)){
-																		if(round($fleaResults->result_value) >= $cutoffs){
+																		if(floor($fleaResults->result_value) >= $cutoffs){
 																			echo '<td style="color:#1b3542; text-transform:uppercase; font-size:11px;" align="right"><b>'.$this->lang->line('positive_2').'</b></td>';
 																		}else{
 																			echo '<td style="color:#1b3542; text-transform:uppercase; font-size:11px;" align="right"><b>'.$this->lang->line('negative').'</b></td>';
@@ -915,7 +915,7 @@
 																<tr>
 																	<?php
 																	if(!empty($fleaResults)){
-																		if(round($fleaResults->result_value) >= $cutoffs){
+																		if(floor($fleaResults->result_value) >= $cutoffs){
 																			echo '<td colspan="2" style="color:#1b3542; font-weight:400; font-size:10px; line-height: 16px; padding:14px 0 0 0;">'.$this->lang->line('patient_result_positive').'</td>';
 																		}else{
 																			echo '<td colspan="2" style="color:#1b3542; font-weight:400; font-size:10px; line-height: 16px; padding:14px 0 0 0;">'.$this->lang->line('patient_result_negative').'</td>';

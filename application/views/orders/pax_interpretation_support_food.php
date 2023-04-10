@@ -35,7 +35,7 @@
 										$extVluArr = $this->OrdersModel->getRaptorInterpretationExtract($rsvalue['id'],$raptorData->result_id);
 										if(!empty($extVluArr)){
 											foreach ($extVluArr as $rowe){
-												if(round($rowe->result_value) >= $cutoffs){
+												if(floor($rowe->result_value) >= $cutoffs){
 													$extIDArr[] = $rowe->id;
 												}
 											}
@@ -45,7 +45,7 @@
 										$compVluArr = $this->OrdersModel->getRaptorInterpretationComponents($rsvalue['id'],$raptorData->result_id);
 										if(!empty($compVluArr)){
 											foreach ($compVluArr as $rowc){
-												if(round($rowc->result_value) >= $cutoffs){
+												if(floor($rowc->result_value) >= $cutoffs){
 													$compIDArr[] = $rowc->id;
 												}
 											}
@@ -55,7 +55,7 @@
 											$extVluArr = $this->OrdersModel->getRaptorInterpretationExtract($rsvalue['id'],$raptorData->result_id);
 											if(!empty($extVluArr)){
 												foreach ($extVluArr as $rowe){
-													if(round($rowe->result_value) >= $cutoffs){
+													if(floor($rowe->result_value) >= $cutoffs){
 														if($rowe->raptor_header != "" && $rowe->raptor_header != '[""]'){
 															$detaildArr = json_decode($rowe->raptor_header);
 															if(!empty($detaildArr)){
@@ -119,7 +119,7 @@
 											$compVluArr = $this->OrdersModel->getRaptorInterpretationComponents($rsvalue['id'],$raptorData->result_id);
 											if(!empty($compVluArr)){
 												foreach ($compVluArr as $rowc){
-													if(round($rowc->result_value) >= $cutoffs){
+													if(floor($rowc->result_value) >= $cutoffs){
 														if($rowc->raptor_header != "" && $rowc->raptor_header != '[""]'){
 															$detaildArr = json_decode($rowc->raptor_header);
 															if(!empty($detaildArr)){

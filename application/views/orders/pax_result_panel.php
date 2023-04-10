@@ -85,7 +85,7 @@
 													<tr><td align="center" style="padding:0 0 5px 0;">'.$srow->raptor_function.'</td></tr>
 												</table>
 											</td>';
-											if(round($srow->result_value) < $cutoffs){
+											if(floor($srow->result_value) < $cutoffs){
 												echo '<td style="padding:0px 5px;width:15%">
 													<table cellpadding="0" cellspacing="0" border="0" align="center" class="panelmeter">
 														<tr>
@@ -97,7 +97,7 @@
 														</tr>
 													</table>
 												</td>';
-											}elseif(round($srow->result_value) >= $cutoffs && $srow->result_value < 100){
+											}elseif(floor($srow->result_value) >= $cutoffs && $srow->result_value < 100){
 												echo '<td style="padding:0px 5px;width:15%">
 													<table cellpadding="0" cellspacing="0" border="0" align="center" class="panelmeter">
 														<tr>
@@ -148,7 +148,7 @@
 											}
 											echo '<td style="padding:0px 5px 0px 0px;width:5%">
 												<table cellpadding="0" cellspacing="0" border="0" align="center">
-													<tr><td align="center" style="padding:0 0 5px 0;">'.round($srow->result_value).'</td></tr>
+													<tr><td align="center" style="padding:0 0 5px 0;">'.floor($srow->result_value).'</td></tr>
 												</table>
 											</td>
 										</tr>
@@ -195,7 +195,7 @@
 													<tr><td align="center" style="padding:0 0 5px 0;">'.$srow->raptor_function.'</td></tr>
 												</table>
 											</td>';
-											if(round($srow->result_value) < $cutoffs){
+											if(floor($srow->result_value) < $cutoffs){
 												echo '<td style="padding:0px 5px;width:15%;border-top: 1px solid #3a6a86">
 													<table cellpadding="0" cellspacing="0" border="0" align="center" class="panelmeter">
 														<tr>
@@ -207,7 +207,7 @@
 														</tr>
 													</table>
 												</td>';
-											}elseif(round($srow->result_value) >= $cutoffs && $srow->result_value < 100){
+											}elseif(floor($srow->result_value) >= $cutoffs && $srow->result_value < 100){
 												echo '<td style="0px 5px;width:15%;border-top: 1px solid #3a6a86">
 													<table cellpadding="0" cellspacing="0" border="0" align="center" class="panelmeter">
 														<tr>
@@ -258,7 +258,7 @@
 											}
 											echo '<td style="padding:0px 5px 0px 0px;width:5%;border-top: 1px solid #3a6a86">
 												<table cellpadding="0" cellspacing="0" border="0" align="center">
-													<tr><td align="center" style="padding:0 0 5px 0;">'.round($srow->result_value).'</td></tr>
+													<tr><td align="center" style="padding:0 0 5px 0;">'.floor($srow->result_value).'</td></tr>
 												</table>
 											</td>
 										</tr>
@@ -299,7 +299,7 @@
 														<tr><td align="center" style="padding:0 0 5px 0;">'.$srow->raptor_function.'</td></tr>
 													</table>
 												</td>';
-												if(round($srow->result_value) < $cutoffs){
+												if(floor($srow->result_value) < $cutoffs){
 													echo '<td style="padding:0px 5px;width:15%">
 														<table cellpadding="0" cellspacing="0" border="0" align="center" class="panelmeter">
 															<tr>
@@ -311,7 +311,7 @@
 															</tr>
 														</table>
 													</td>';
-												}elseif(round($srow->result_value) >= $cutoffs && $srow->result_value < 100){
+												}elseif(floor($srow->result_value) >= $cutoffs && $srow->result_value < 100){
 													echo '<td style="padding:0px 5px;width:15%">
 														<table cellpadding="0" cellspacing="0" border="0" align="center" class="panelmeter">
 															<tr>
@@ -362,7 +362,7 @@
 												}
 												echo '<td style="padding:0px 5px 0px 0px;width:5%">
 													<table cellpadding="0" cellspacing="0" border="0" align="center">
-														<tr><td align="center" style="padding:0 0 5px 0;">'.round($srow->result_value).'</td></tr>
+														<tr><td align="center" style="padding:0 0 5px 0;">'.floor($srow->result_value).'</td></tr>
 													</table>
 												</td>
 											</tr>
@@ -394,7 +394,7 @@
 														<tr><td align="center" style="padding:0 0 5px 0;">'.$srow->raptor_function.'</td></tr>
 													</table>
 												</td>';
-												if(round($srow->result_value) < $cutoffs){
+												if(floor($srow->result_value) < $cutoffs){
 													echo '<td style="padding:0px 5px;width:15%;border-top: 1px solid #3a6a86">
 														<table cellpadding="0" cellspacing="0" border="0" align="center" class="panelmeter">
 															<tr>
@@ -406,7 +406,7 @@
 															</tr>
 														</table>
 													</td>';
-												}elseif(round($srow->result_value) >= $cutoffs && $srow->result_value < 100){
+												}elseif(floor($srow->result_value) >= $cutoffs && $srow->result_value < 100){
 													echo '<td style="0px 5px;width:15%;border-top: 1px solid #3a6a86">
 														<table cellpadding="0" cellspacing="0" border="0" align="center" class="panelmeter">
 															<tr>
@@ -457,7 +457,7 @@
 												}
 												echo '<td style="padding:0px 5px 0px 0px;width:5%;border-top: 1px solid #3a6a86">
 													<table cellpadding="0" cellspacing="0" border="0" align="center">
-														<tr><td align="center" style="padding:0 0 5px 0;">'.round($srow->result_value).'</td></tr>
+														<tr><td align="center" style="padding:0 0 5px 0;">'.floor($srow->result_value).'</td></tr>
 													</table>
 												</td>
 											</tr>

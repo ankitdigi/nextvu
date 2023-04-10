@@ -18,20 +18,103 @@
 						<tr>
 							<td colspan="2" style="padding:0 0 5px 0;"><h5 style="margin:0; padding:0; font-size:22px; text-transform:uppercase; color:#2a5b74;">'.$apvalue['pax_name'].'</h5></td>
 						</tr>';
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
-							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-							if(!empty($subVlu->raptor_code)){
-								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-								if(!empty($raptrVlu)){
-									if(round($raptrVlu->result_value) < $cutoffs){
+						if($apvalue['pax_parent_id'] == '45958'){
+							$subAllergensArr = array('60','46019','62','61','45904','63','64','45994','73','45895');
+							foreach($subAllergensArr as $arow){
+								$paxnames = $this->AllergensModel->getMCPaxnameById($arow);
+								$subVlu = $this->OrdersModel->getsubAllergensCode($arow);
+								if(!empty($subVlu->raptor_code)){
+									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+									if(!empty($raptrVlu)){
+										if(floor($raptrVlu->result_value) < $cutoffs){
+											echo '<tr>
+												<td style="padding:0 15px 0 0;" height="28">'.$paxnames->pax_name.'</td>
+												<td style="padding:0 0 0 15px;">
+													<table align="right" class="meter">
+														<tr>
+															<td style="width:25px;height:12px;line-height:12px;">'.floor($raptrVlu->result_value).'</td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+														</tr>
+													</table>
+												</td>
+											</tr>';
+										}elseif(floor($raptrVlu->result_value) >= $cutoffs && $raptrVlu->result_value < 100){
+											echo '<tr>
+												<td style="padding:0 15px 0 0;" height="28">'.$paxnames->pax_name.'</td>
+												<td style="padding:0 0 0 15px;">
+													<table align="right" class="meter">
+														<tr>
+															<td style="width:25px;height:12px;line-height:12px;">'.floor($raptrVlu->result_value).'</td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob2"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+														</tr>
+													</table>
+												</td>
+											</tr>';
+										}elseif($raptrVlu->result_value >= 100 && $raptrVlu->result_value < 400){
+											echo '<tr>
+												<td style="padding:0 15px 0 0;" height="28">'.$paxnames->pax_name.'</td>
+												<td style="padding:0 0 0 15px;">
+													<table align="right" class="meter">
+														<tr>
+															<td style="width:25px;height:12px;line-height:12px;">'.floor($raptrVlu->result_value).'</td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob2"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob3"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+														</tr>
+													</table>
+												</td>
+											</tr>';
+										}elseif($raptrVlu->result_value >= 400 && $raptrVlu->result_value < 800){
+											echo '<tr>
+												<td style="padding:0 15px 0 0;" height="28">'.$paxnames->pax_name.'</td>
+												<td style="padding:0 0 0 15px;">
+													<table align="right" class="meter">
+														<tr>
+															<td style="width:25px;height:12px;line-height:12px;">'.floor($raptrVlu->result_value).'</td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob2"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob3"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob4"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+														</tr>
+													</table>
+												</td>
+											</tr>';
+										}elseif($raptrVlu->result_value >= 800){
+											echo '<tr>
+												<td style="padding:0 15px 0 0;" height="28">'.$paxnames->pax_name.'</td>
+												<td style="padding:0 0 0 15px;">
+													<table align="right" class="meter">
+														<tr>
+															<td style="width:25px;height:12px;line-height:12px;">'.floor($raptrVlu->result_value).'</td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob2"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob3"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob4"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob5"></td>
+														</tr>
+													</table>
+												</td>
+											</tr>';
+										}
+									}else{
 										echo '<tr>
-											<td style="padding:0 15px 0 0;" height="28">'.$svalue['pax_name'].'</td>
+											<td style="padding:0 15px 0 0;" height="28">'.$paxnames->pax_name.'</td>
 											<td style="padding:0 0 0 15px;">
 												<table align="right" class="meter">
 													<tr>
-														<td style="width:25px;height:12px;line-height:12px;">'.round($raptrVlu->result_value).'</td>
-														<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
+														<td style="width:25px;height:12px;line-height:12px;"></td>
+														<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
 														<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
 														<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
 														<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
@@ -40,66 +123,125 @@
 												</table>
 											</td>
 										</tr>';
-									}elseif(round($raptrVlu->result_value) >= $cutoffs && $raptrVlu->result_value < 100){
+									}
+								}else{
+									echo '<tr>
+										<td style="padding:0 15px 0 0;" height="28">'.$paxnames->pax_name.'</td>
+										<td style="padding:0 0 0 15px;">
+											<table align="right" class="meter">
+												<tr>
+													<td style="width:25px;height:12px;line-height:12px;"></td>
+													<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+													<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+													<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+													<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+													<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+												</tr>
+											</table>
+										</td>
+									</tr>';
+								}
+							}
+						}else{
+							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
+							foreach ($subAllergens as $skey => $svalue) {
+								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+								if(!empty($subVlu->raptor_code)){
+									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+									if(!empty($raptrVlu)){
+										if(floor($raptrVlu->result_value) < $cutoffs){
+											echo '<tr>
+												<td style="padding:0 15px 0 0;" height="28">'.$svalue['pax_name'].'</td>
+												<td style="padding:0 0 0 15px;">
+													<table align="right" class="meter">
+														<tr>
+															<td style="width:25px;height:12px;line-height:12px;">'.floor($raptrVlu->result_value).'</td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+														</tr>
+													</table>
+												</td>
+											</tr>';
+										}elseif(floor($raptrVlu->result_value) >= $cutoffs && $raptrVlu->result_value < 100){
+											echo '<tr>
+												<td style="padding:0 15px 0 0;" height="28">'.$svalue['pax_name'].'</td>
+												<td style="padding:0 0 0 15px;">
+													<table align="right" class="meter">
+														<tr>
+															<td style="width:25px;height:12px;line-height:12px;">'.floor($raptrVlu->result_value).'</td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob2"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+														</tr>
+													</table>
+												</td>
+											</tr>';
+										}elseif($raptrVlu->result_value >= 100 && $raptrVlu->result_value < 400){
+											echo '<tr>
+												<td style="padding:0 15px 0 0;" height="28">'.$svalue['pax_name'].'</td>
+												<td style="padding:0 0 0 15px;">
+													<table align="right" class="meter">
+														<tr>
+															<td style="width:25px;height:12px;line-height:12px;">'.floor($raptrVlu->result_value).'</td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob2"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob3"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+														</tr>
+													</table>
+												</td>
+											</tr>';
+										}elseif($raptrVlu->result_value >= 400 && $raptrVlu->result_value < 800){
+											echo '<tr>
+												<td style="padding:0 15px 0 0;" height="28">'.$svalue['pax_name'].'</td>
+												<td style="padding:0 0 0 15px;">
+													<table align="right" class="meter">
+														<tr>
+															<td style="width:25px;height:12px;line-height:12px;">'.floor($raptrVlu->result_value).'</td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob2"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob3"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob4"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
+														</tr>
+													</table>
+												</td>
+											</tr>';
+										}elseif($raptrVlu->result_value >= 800){
+											echo '<tr>
+												<td style="padding:0 15px 0 0;" height="28">'.$svalue['pax_name'].'</td>
+												<td style="padding:0 0 0 15px;">
+													<table align="right" class="meter">
+														<tr>
+															<td style="width:25px;height:12px;line-height:12px;">'.floor($raptrVlu->result_value).'</td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob2"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob3"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob4"></td>
+															<td style="width:25px;height:12px;line-height:12px;" class="blob5"></td>
+														</tr>
+													</table>
+												</td>
+											</tr>';
+										}
+									}else{
 										echo '<tr>
 											<td style="padding:0 15px 0 0;" height="28">'.$svalue['pax_name'].'</td>
 											<td style="padding:0 0 0 15px;">
 												<table align="right" class="meter">
 													<tr>
-														<td style="width:25px;height:12px;line-height:12px;">'.round($raptrVlu->result_value).'</td>
-														<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
-														<td style="width:25px;height:12px;line-height:12px;" class="blob2"></td>
+														<td style="width:25px;height:12px;line-height:12px;"></td>
 														<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
 														<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
 														<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
-													</tr>
-												</table>
-											</td>
-										</tr>';
-									}elseif($raptrVlu->result_value >= 100 && $raptrVlu->result_value < 400){
-										echo '<tr>
-											<td style="padding:0 15px 0 0;" height="28">'.$svalue['pax_name'].'</td>
-											<td style="padding:0 0 0 15px;">
-												<table align="right" class="meter">
-													<tr>
-														<td style="width:25px;height:12px;line-height:12px;">'.round($raptrVlu->result_value).'</td>
-														<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
-														<td style="width:25px;height:12px;line-height:12px;" class="blob2"></td>
-														<td style="width:25px;height:12px;line-height:12px;" class="blob3"></td>
 														<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
 														<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
-													</tr>
-												</table>
-											</td>
-										</tr>';
-									}elseif($raptrVlu->result_value >= 400 && $raptrVlu->result_value < 800){
-										echo '<tr>
-											<td style="padding:0 15px 0 0;" height="28">'.$svalue['pax_name'].'</td>
-											<td style="padding:0 0 0 15px;">
-												<table align="right" class="meter">
-													<tr>
-														<td style="width:25px;height:12px;line-height:12px;">'.round($raptrVlu->result_value).'</td>
-														<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
-														<td style="width:25px;height:12px;line-height:12px;" class="blob2"></td>
-														<td style="width:25px;height:12px;line-height:12px;" class="blob3"></td>
-														<td style="width:25px;height:12px;line-height:12px;" class="blob4"></td>
-														<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
-													</tr>
-												</table>
-											</td>
-										</tr>';
-									}elseif($raptrVlu->result_value >= 800){
-										echo '<tr>
-											<td style="padding:0 15px 0 0;" height="28">'.$svalue['pax_name'].'</td>
-											<td style="padding:0 0 0 15px;">
-												<table align="right" class="meter">
-													<tr>
-														<td style="width:25px;height:12px;line-height:12px;">'.round($raptrVlu->result_value).'</td>
-														<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
-														<td style="width:25px;height:12px;line-height:12px;" class="blob2"></td>
-														<td style="width:25px;height:12px;line-height:12px;" class="blob3"></td>
-														<td style="width:25px;height:12px;line-height:12px;" class="blob4"></td>
-														<td style="width:25px;height:12px;line-height:12px;" class="blob5"></td>
 													</tr>
 												</table>
 											</td>
@@ -122,22 +264,6 @@
 										</td>
 									</tr>';
 								}
-							}else{
-								echo '<tr>
-									<td style="padding:0 15px 0 0;" height="28">'.$svalue['pax_name'].'</td>
-									<td style="padding:0 0 0 15px;">
-										<table align="right" class="meter">
-											<tr>
-												<td style="width:25px;height:12px;line-height:12px;"></td>
-												<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
-												<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
-												<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
-												<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
-												<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
-											</tr>
-										</table>
-									</td>
-								</tr>';
 							}
 						}
 					echo '</table>
@@ -163,13 +289,13 @@
 							if(!empty($subVlu->raptor_code)){
 								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
 								if(!empty($raptrVlu)){
-									if(round($raptrVlu->result_value) < $cutoffs){
+									if(floor($raptrVlu->result_value) < $cutoffs){
 										echo '<tr>
 											<td style="padding:0 15px 0 0;" height="28">'.$svalue['pax_name'].'</td>
 											<td style="padding:0 0 0 15px;">
 												<table align="right" class="meter">
 													<tr>
-														<td style="width:25px;height:12px;line-height:12px;">'.round($raptrVlu->result_value).'</td>
+														<td style="width:25px;height:12px;line-height:12px;">'.floor($raptrVlu->result_value).'</td>
 														<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
 														<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
 														<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
@@ -179,13 +305,13 @@
 												</table>
 											</td>
 										</tr>';
-									}elseif(round($raptrVlu->result_value) >= $cutoffs && $raptrVlu->result_value < 100){
+									}elseif(floor($raptrVlu->result_value) >= $cutoffs && $raptrVlu->result_value < 100){
 										echo '<tr>
 											<td style="padding:0 15px 0 0;" height="28">'.$svalue['pax_name'].'</td>
 											<td style="padding:0 0 0 15px;">
 												<table align="right" class="meter">
 													<tr>
-														<td style="width:25px;height:12px;line-height:12px;">'.round($raptrVlu->result_value).'</td>
+														<td style="width:25px;height:12px;line-height:12px;">'.floor($raptrVlu->result_value).'</td>
 														<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
 														<td style="width:25px;height:12px;line-height:12px;" class="blob2"></td>
 														<td style="width:25px;height:12px;line-height:12px;" class="light-grey-bg"></td>
@@ -201,7 +327,7 @@
 											<td style="padding:0 0 0 15px;">
 												<table align="right" class="meter">
 													<tr>
-														<td style="width:25px;height:12px;line-height:12px;">'.round($raptrVlu->result_value).'</td>
+														<td style="width:25px;height:12px;line-height:12px;">'.floor($raptrVlu->result_value).'</td>
 														<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
 														<td style="width:25px;height:12px;line-height:12px;" class="blob2"></td>
 														<td style="width:25px;height:12px;line-height:12px;" class="blob3"></td>
@@ -217,7 +343,7 @@
 											<td style="padding:0 0 0 15px;">
 												<table align="right" class="meter">
 													<tr>
-														<td style="width:25px;height:12px;line-height:12px;">'.round($raptrVlu->result_value).'</td>
+														<td style="width:25px;height:12px;line-height:12px;">'.floor($raptrVlu->result_value).'</td>
 														<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
 														<td style="width:25px;height:12px;line-height:12px;" class="blob2"></td>
 														<td style="width:25px;height:12px;line-height:12px;" class="blob3"></td>
@@ -233,7 +359,7 @@
 											<td style="padding:0 0 0 15px;">
 												<table align="right" class="meter">
 													<tr>
-														<td style="width:25px;height:12px;line-height:12px;">'.round($raptrVlu->result_value).'</td>
+														<td style="width:25px;height:12px;line-height:12px;">'.floor($raptrVlu->result_value).'</td>
 														<td style="width:25px;height:12px;line-height:12px;" class="blob1"></td>
 														<td style="width:25px;height:12px;line-height:12px;" class="blob2"></td>
 														<td style="width:25px;height:12px;line-height:12px;" class="blob3"></td>
