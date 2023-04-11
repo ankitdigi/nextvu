@@ -1,4 +1,4 @@
-<?php 
+<?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 $this->load->view("header");
 $userData = logged_in_user_data();
@@ -568,6 +568,8 @@ if($order_details['species_name'] == 'Horse'){
 												<?php if(!empty($block2) && $box2removed > 0 && $order_details['is_serum_result_sent'] != 1 && $order_details['remove_treatment_2'] == 0){ ?>
 													<input type="button" class="btn btn-primary mrgnbtm10 recommendations2" name="recommendations2" value="Order IM recommendation 2">
 												<?php } ?>
+												<input type="button" class="btn btn-primary mrgnbtm10 vetgoid" name="vetgoid" value="Vet-Goid">
+												<input type="button" class="btn btn-primary mrgnbtm10 petslit" name="petslit" value="PetSlit">
 											</div>
 										<?php } ?>
 									</div>
@@ -877,6 +879,7 @@ if($order_details['species_name'] == 'Horse'){
 									<?php } ?>
 									<?php if(!empty($block1) || !empty($blocks1)){ ?>
 									<?php echo form_open('orders/recommendation/'.$order_details['id'].'', array('name'=>'recommendationForm', 'id'=>'recommendation1Form')); ?>
+										<input type="hidden" id="OrderRecommendationsBtns" name="OrderRecommendationsBtns" value="" />
 										<input type="hidden" id="treatment" name="treatment" value="" />
 										<?php require_once(APPPATH."views/orders/pax_summary_recommendation.php"); ?>
 									<?php echo form_close(); ?>
@@ -1338,6 +1341,22 @@ if($order_details['species_name'] == 'Horse'){
 				$("#treatment").val(2);
 				$("form#recommendation1Form").submit();
 			});
+
+			/*   START vetgoid AND petslit   */
+			$(document).on('click', '.vetgoid', function(){
+				$("form#recommendation1Form").attr("action","<?php echo site_url('orders/serum_treatment/'.$order_details['id'].'');?>");
+				$("#treatment").val(1);
+				$("#OrderRecommendationsBtns").val(1);
+				$("form#recommendation1Form").submit();
+			});
+
+			$(document).on('click', '.petslit', function(){
+				$("form#recommendation1Form").attr("action","<?php echo site_url('orders/serum_treatment/'.$order_details['id'].'');?>");
+				$("#treatment").val(1);
+				$("#OrderRecommendationsBtns").val(2);
+				$("form#recommendation1Form").submit();
+			});
+			/*   END vetgoid AND petslit   */
 
 			$(document).on('click', '.recommendations1', function(){
 				$("form#recommendation1Form").attr("action","<?php echo site_url('orders/serum_treatment/'.$order_details['id'].'');?>");

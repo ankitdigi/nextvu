@@ -3763,7 +3763,7 @@ class Orders extends CI_Controller{
 					if($_quotients <= 0.50 && $_quotients != 0) {
 						$first_range_price = (1 * ($artuvetrin_test_price[0]['uk_price'])) - $order_first_discount;
 					}
-					$final_price = $first_range_price + $second_range_price; 
+					$final_price = $first_range_price + $second_range_price;
 					$this->_data['final_price'] = $final_price;
 					$this->_data['order_discount'] = round($order_first_discount + $order_second_discount, 2);
 					$this->_data['price_currency'] = $artuvetrin_test_price[0]['price_currency'];
@@ -10609,7 +10609,6 @@ class Orders extends CI_Controller{
 		$this->_data['data'] = [];
 		$data = $this->OrdersModel->getRecord($id);
 		$order_details = $this->OrdersModel->allData($data['id'], "");
-
 		/*****delivery address details */
 		$this->_data['delivery_address_details'] = '';
 		if ($order_details['order_can_send_to'] == '1') {
@@ -11018,6 +11017,33 @@ class Orders extends CI_Controller{
 			}
 		}
 
+		$type = $this->input->get('vp', TRUE);
+		if (!empty($type)) {
+			$vetgoidPetslit = $this->PriceCategoriesModel->vetgoid_petslit($type, $this->user_id);
+			if ($data['order_type'] == '2') {
+				if ($data['species_selection'] == '2') {
+					$shipUPrice = $this->OrdersModel->getShippingCostbyUser("3", $practice_lab);
+				}
+				if ($data['species_selection'] == '1') {
+					$shipUPrice = $this->OrdersModel->getShippingCostbyUser("2", $practice_lab);
+				}
+				if(!empty($shipUPrice)){
+					$this->_data['order_discount'] = $shipUPrice['uk_discount'];
+				}else{
+					if ($data['species_selection'] == '2') {
+						$shipDPrice = $this->OrdersModel->getDefaultShippingCost("3");
+						$this->_data['order_discount'] = $shipDPrice['uk_price'];
+					}
+					if ($data['species_selection'] == '1') {
+						$shipDPrice = $this->OrdersModel->getDefaultShippingCost("2");
+						$this->_data['order_discount'] = $shipDPrice['uk_price'];
+					}
+				}
+			}
+			$this->_data['final_price'] = $vetgoidPetslit['uk_price'];
+			$this->_data['price_currency'] = $vetgoidPetslit['price_currency'];
+		}
+
 		if (!empty($data)) {
 			$this->_data['data'] = $data;
 		}
@@ -11072,7 +11098,7 @@ class Orders extends CI_Controller{
 				$this->_data['data']['vet_interpretation'] = $interpData->vet_interpretation;
 			}
 		}
-		
+
 		if($this->user_role == '5' && ($this->session->userdata('user_type') == '1' || $this->session->userdata('user_type') == '2' || $this->session->userdata('user_type') == '3')){
 			if($this->_data['order_details']['is_order_completed'] == 1){
 				$this->load->view("orders/vet_dashboard", $this->_data);
@@ -14713,21 +14739,21 @@ class Orders extends CI_Controller{
 						$pc_selection = '6';
 					}
 					$orderProcess = array(
-						'order_type'    => $data['order_type'],
-						'sub_order_type' => $data['sub_order_type'],
-						'plc_selection' => $data['plc_selection'],
-						'species_selection' => $data['species_selection'],
-						'product_code_selection' => $pc_selection,
-						'single_double_selection' => $data['single_double_selection']  
+							'order_type'    => $data['order_type'],
+							'sub_order_type' => $data['sub_order_type'],
+							'plc_selection' => $data['plc_selection'],
+							'species_selection' => $data['species_selection'],
+							'product_code_selection' => $pc_selection,
+							'single_double_selection' => $data['single_double_selection']
 					);
 				}else{
 					$orderProcess = array(
-						'order_type'    => $data['order_type'],
-						'sub_order_type' => $data['sub_order_type'],
-						'plc_selection' => $data['plc_selection'],
-						'species_selection' => $data['species_selection'],
-						'product_code_selection' => $data['product_code_selection'],
-						'single_double_selection' => $data['single_double_selection']  
+							'order_type'    => $data['order_type'],
+							'sub_order_type' => $data['sub_order_type'],
+							'plc_selection' => $data['plc_selection'],
+							'species_selection' => $data['species_selection'],
+							'product_code_selection' => $data['product_code_selection'],
+							'single_double_selection' => $data['single_double_selection']
 					);
 				}
 				$this->session->set_userdata($orderProcess);
@@ -14750,7 +14776,11 @@ class Orders extends CI_Controller{
 					$orderData['updated_by'] = $this->user_id;
 					$orderData['updated_at'] = date("Y-m-d H:i:s");
 					$this->OrdersModel->add_edit($orderData);
-					redirect('orders/immmuno_summary/'. $newData['id']);
+					if(!empty($postData['OrderRecommendationsBtns'])) {
+						redirect('orders/immmuno_summary/' . $newData['id']."?vp=".$postData['OrderRecommendationsBtns']);
+					} else {
+						redirect('orders/immmuno_summary/' . $newData['id']);
+					}
 				}
 			}else{
 				$this->session->set_flashdata('error', 'Sorry! Immunotherpathy Order have an error.');
