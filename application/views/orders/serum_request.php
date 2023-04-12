@@ -63,7 +63,7 @@ $userData = logged_in_user_data();
 														<div class="input-group-addon">
 															<i class="fa fa-calendar"></i>
 														</div>
-														<input type="text" class="form-control pull-right datepicker" name="serum_drawn_date" placeholder="Enter Date serum drawn" value="<?php echo set_value('serum_drawn_date',isset($data['serum_drawn_date']) ? date("d/m/Y",strtotime($data['serum_drawn_date'])) : '');?>" autocomplete="off">
+														<input type="text" class="form-control pull-right datepicker" name="serum_drawn_date" placeholder="Enter Date serum drawn" value="<?php echo set_value('serum_drawn_date',isset($data['serum_drawn_date']) ? date("d/m/Y",strtotime($data['serum_drawn_date'])) : '');?>" autocomplete="off" data-date-end-date="0d" >
 													</div>
 													<?php echo form_error('serum_drawn_date', '<div class="error">','</div>'); ?>
 												</div>
@@ -282,9 +282,9 @@ $userData = logged_in_user_data();
 												</div>
 												<div class="form-group">
 													<label>Is this animal suffering from a zoonotic disease?</label>
-													<div class="checkbox">
-														<label><input type="checkbox" name="zoonotic_disease" value="1" <?php echo ( isset($data['zoonotic_disease']) && $data['zoonotic_disease']==1) ? 'checked' : ''; ?> class="select_zoonotic_disease">Yes</label>
-														<label><input type="checkbox" name="zoonotic_disease" value="0" <?php echo ( isset($data['zoonotic_disease']) && $data['zoonotic_disease']==0) ? 'checked' : ''; ?> class="select_zoonotic_disease">No</label>
+													<div class="radio">
+														<label><input type="radio" name="zoonotic_disease" value="1" <?php echo ( isset($data['zoonotic_disease']) && $data['zoonotic_disease']==1) ? 'checked' : ''; ?> class="select_zoonotic_disease">Yes</label>
+														<label><input type="radio" name="zoonotic_disease" value="0" <?php echo ( isset($data['zoonotic_disease']) && $data['zoonotic_disease']==0) ? 'checked' : ''; ?> class="select_zoonotic_disease">No</label>
 													</div>
 													<?php echo form_error('zoonotic_disease', '<div class="error">', '</div>'); ?>
 												</div>
@@ -295,9 +295,9 @@ $userData = logged_in_user_data();
 												</div>
 												<div class="form-group">
 													<label>Is the animal receiving any other medication at the moment?</label>
-													<div class="checkbox">
-														<label><input type="checkbox" name="medication" value="1" <?php echo ( isset($data['medication']) && $data['medication']==1) ? 'checked' : ''; ?> class="select_medication">Yes</label>
-														<label><input type="checkbox" name="medication" value="0" <?php echo ( isset($data['medication']) && $data['medication']==0) ? 'checked' : ''; ?> class="select_medication">No</label>
+													<div class="radio">
+														<label><input type="radio" name="medication" value="1" <?php echo ( isset($data['medication']) && $data['medication']==1) ? 'checked' : ''; ?> class="select_medication">Yes</label>
+														<label><input type="radio" name="medication" value="0" <?php echo ( isset($data['medication']) && $data['medication']==0) ? 'checked' : ''; ?> class="select_medication">No</label>
 													</div>
 													<?php echo form_error('medication', '<div class="error">', '</div>'); ?>
 												</div>

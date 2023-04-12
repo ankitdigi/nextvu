@@ -358,6 +358,7 @@ class OrdersModel extends CI_model{
 	}
 
 	private function _get_datatables_query(){
+
 		$postData = $this->input->post();
 		$this->db->select('ci_orders.*,petOwner.name AS pet_owner_name, petOwner.last_name AS po_last,ci_pets.name as pet_name,ci_pets.breed_id,ci_pets.other_breed,is_mail_sent,ci_branches.name as practice_name,practice.name AS practice_first_name,practice.last_name AS practice_last_name,practice.country AS practice_country,lab.name AS lab_name,lab.country AS lab_country');
 		$this->db->from($this->_table);	
@@ -456,8 +457,8 @@ class OrdersModel extends CI_model{
 			}
 		}
 
-		if (!empty($filterData['managed_by_id'])){
-			$this->db->where('(CONCAT(",", practice.managed_by_id, ",") REGEXP ",('. str_replace(",","|",$filterData['managed_by_id']) .')," OR CONCAT(",", lab.managed_by_id, ",") REGEXP ",('. str_replace(",","|",$filterData['managed_by_id']) .'),")');
+		if (!empty($filterData['managed_by_id'])) {
+			$this->db->where('(CONCAT(",", practice.managed_by_id, ",") REGEXP ",('. str_replace(",","|",implode(",",$filterData['managed_by_id'])) .')," OR CONCAT(",", lab.managed_by_id, ",") REGEXP ",('. str_replace(",","|",implode(",",$filterData['managed_by_id'])) .'),")');
 		}
 
 		if ($this->userData['role'] == '2') {

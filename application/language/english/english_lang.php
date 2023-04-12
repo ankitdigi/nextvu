@@ -84,6 +84,7 @@ $lang['Veterinary_practice'] = 'Veterinary practice';
 $lang['Address'] = 'Address';
 $lang['Phone_Fax'] = 'Phone / Fax';
 $lang['Email'] = 'Email';
+$lang['email_two'] = 'Secondary Email (If Any)';
 $lang['Test_type'] = 'Test type';
 $lang['Date_tested'] = 'Date tested';
 $lang['QR_Code'] = 'QR-Code';

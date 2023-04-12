@@ -1,0 +1,1 @@
+ALTER TABLE `ci_orders` ADD `email_two` VARCHAR(255) NOT NULL AFTER `email`;

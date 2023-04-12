@@ -128,7 +128,7 @@ $userData = logged_in_user_data();
 										<div class="col-sm-2">
 											<div class="form-group">
 												<label><?php echo $this->lang->line("managed_by");?></label>
-												<select class="form-control form-control-sm" name="managed_by_id" id="managed_by_id">
+													<select class="form-control selectpicker" data-live-search="true" name="managed_by_id[]" id="managed_by_id" multiple="multiple" required="required">
 													<option value="">--Select--</option>
 													<?php
 													$this->db->select("ci_managed_by_members.*");
