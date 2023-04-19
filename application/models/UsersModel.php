@@ -1,7 +1,7 @@
 <?php
 class UsersModel extends CI_model{
 
-    public function __construct() { 
+    public function __construct() {
 		parent::__construct();
 		$this->_table = 'ci_users';
 		$this->user_details = 'ci_user_details';
@@ -145,10 +145,16 @@ class UsersModel extends CI_model{
 		return $this->db->get()->row_array();
     }
 
-    function validate($email,$password){
+	function validate($email,$password){
 		$this->db->where('email',$email);
 		$this->db->where('password',$password);
 		$result = $this->db->get($this->_table,1);
+		return $result;
+	}
+
+	function check_email($email){
+		$this->db->where('email',$email);
+		$result = $this->db->get($this->_table,1)->row_array();
 		return $result;
 	}
 
@@ -163,16 +169,21 @@ class UsersModel extends CI_model{
 	}
 
 	public function add_edit($postUser = []) {
-		if(isset($postUser) && count($postUser)>0){
+		if (isset($postUser['id']) && is_numeric($postUser['id']) > 0) {
 			$this->db->where('id', $postUser['id']);
-			$update =  $this->db->update($this->_table,$postUser);
-		}
-
-		//echo $this->db->last_query(); exit;
-		if($update){
-			return $this->db->affected_rows();
-		}else{
-			return false;
+			$update =  $this->db->update($this->_table, $postUser);
+			if ($update) {
+				return $this->db->affected_rows();
+			} else {
+				return false;
+			}
+		} else {
+			if (isset($postUser) && count($postUser) > 0) {
+				$this->db->insert($this->_table, $postUser);
+				return $id = $this->db->insert_id();
+			} else {
+				return $id = null;
+			}
 		}
 	}
 
@@ -915,5 +926,6 @@ class UsersModel extends CI_model{
 		$this->db->where('column_name','account_ref');
 		return $this->db->get()->row();
     }
+
 
 }

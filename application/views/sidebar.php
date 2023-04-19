@@ -183,9 +183,15 @@
 				<li class="has-dropdown <?php if($this->uri->segment(1)=="getLIMSResults" || $this->uri->segment(1)=="reportPractices" || $this->uri->segment(1)=="reportLabs"){ echo 'active'; } ?>">
 					<a href="javascript:void(0);"><i class="fa fa-flag-checkered" aria-hidden="true"></i> <span><?php echo $this->lang->line('Reports_Management'); ?></span><i class="fa-solid fa-chevron-right toggle-child"></i></a>
 					<ul class="sub-menus">
+						<?php
+						if (in_array("1", $zoneby) && count($zoneby) == 1) {
+						?>
 						<li class="<?php if($this->uri->segment(1)=="getLIMSResults"){echo 'active';} ?>">
 							<a href="<?php echo site_url('getLIMSResults');?>"><i class="fa fa-circle-o"></i> <?php echo $this->lang->line('LIMS_API_Run'); ?></a>
 						</li>
+						<?php
+						}
+						?>
 						<li class="<?php if($this->uri->segment(1)=="reportPractices"){echo 'active';} ?>">
 							<a href="<?php echo site_url('reportPractices');?>"><i class="fa fa-circle-o"></i> <?php echo $this->lang->line('Practices_Report'); ?></a>
 						</li>

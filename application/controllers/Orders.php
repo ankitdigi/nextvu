@@ -653,7 +653,6 @@ class Orders extends CI_Controller{
 			$this->_data['labs'] = $this->UsersModel->getRecordAll("6");
 			$this->_data['corporates'] = $this->UsersModel->getRecordAll("7");
 		}
-
 		$this->_data['pet_owners'] = $this->UsersModel->get_petOwner_dropdown($vetUserData);
 		$this->_data['pets'] = $this->PetsModel->get_pets_dropdown($petOwnerData);
 		$this->_data['lab_branches'] = array();
@@ -1189,6 +1188,86 @@ class Orders extends CI_Controller{
 		$file = FCPATH . ORDERS_PDF_PATH . "order_" . $content_data['order_number'] . ".pdf";
 		file_put_contents($file, $pdf);
 		return '';
+	}
+
+	
+	function update_change_panel() {
+		$post = $this->input->post();
+		$html = '';
+		if($post['order_id'] > 0){
+			$id = $post['order_id'];
+			$this->allergensPopup($id, $post['product_code_selection']);
+			$price = $this->PriceCategoriesModel->getRecord($post['product_code_selection']);
+
+			$data = $this->OrdersModel->allData($id);
+			$productCodes = $this->PriceCategoriesModel->getRecordAllExcept($data['species_selection'], [$data['product_code_selection']]);
+
+			$shipPrice = $this->getShippingPrice($data);
+			$orderData['product_code_selection'] = $post['product_code_selection'];
+			$orderData['id'] = $id;
+			$orderData['unit_price'] = $price['uk_price'] + $shipPrice;
+			$this->OrdersModel->add_edit($orderData);
+			redirect('orders');
+		}
+	}
+
+	function getShippingPrice($data) {
+		if ($data['lab_id'] != 0) {
+			$practice_lab = $data['lab_id'];
+		} else {
+			$practice_lab = $data['vet_user_id'];
+		}
+		//Serum Test Shipping Price
+		$shipPrice = 0;
+		if ($data['order_type'] == '2') {
+			if ($data['species_selection'] == '2') {
+				$shipUPrice = $this->OrdersModel->getShippingCostbyUser("3", $practice_lab);
+			}
+			if ($data['species_selection'] == '1') {
+				$shipUPrice = $this->OrdersModel->getShippingCostbyUser("2", $practice_lab);
+			}
+			if(!empty($shipUPrice)){
+				$shipPrice = $shipUPrice['uk_discount'];
+			}else{
+				if ($data['species_selection'] == '2') {
+					$shipDPrice = $this->OrdersModel->getDefaultShippingCost("3");
+					$shipPrice = $shipDPrice['uk_price'];
+				}
+				if ($data['species_selection'] == '1') {
+					$shipDPrice = $this->OrdersModel->getDefaultShippingCost("2");
+					$shipPrice = $shipDPrice['uk_price'];
+				}
+			}
+		}
+
+		return $shipPrice;
+	}
+
+	function change_panel() {
+		$post = $this->input->post();
+		$html = '';
+		if($post['order_id'] > 0){
+			$id = $post['order_id'];
+			$data = $this->OrdersModel->allData($id);
+			$productCodes = $this->PriceCategoriesModel->getRecordAllExcept($data['species_selection'], [$data['product_code_selection']]);
+
+
+			$html .= '<select name="product_code_selection" class="form-control form-control-sm">';
+			$html .= '<option value="">---SELECT---</option>';
+			$i = 0;
+			foreach($productCodes as $key => $val) {
+				$html .= '<option value="' . $productCodes[$i]['id'] . '">' . $productCodes[$i]['name'] . '</option>';
+				$i++;
+			}
+			$html .= '</select>';
+			$html .= '<br><button type="submit" class="btn btn-primary">Submit<i class="fa fa-paper-plane next-btn-cls" style="font-size:initial;" aria-hidden="true"></i></button>';
+
+			echo $html;
+			exit;
+		}else{
+			echo $html;
+			exit();
+		}
 	}
 
 	function previewNLOrderDetails(){
@@ -1862,7 +1941,8 @@ class Orders extends CI_Controller{
 			}elseif($data['lab_id'] > 0 && $data['lab_id'] == '13788'){
 				$to_email = 'admin@nwlabs.co.uk';
 			}else{
-				$to_email = $data['email'];
+				$emailTwo = !empty($data['email_two']) ? ", ".$data['email_two'] : "";
+				$to_email = $data['email'].$emailTwo;
 			}
 		}
 
@@ -2540,8 +2620,20 @@ class Orders extends CI_Controller{
 			$this->OrdersModel->add_edit($orderData);
 		}
 
+		$getOrder = $this->OrdersModel->getRecord($order_id);
+		$getVetUser = $this->UsersModel->getRecord($getOrder['vet_user_id']);
+		$getLabUser = $this->UsersModel->getRecord($getOrder['lab_id']);
+		$zones = "";
+		if(!empty($getVetUser['email'])) {
+			$zones .= ($getVetUser['country'] == 1) ? "" : $getVetUser['email'].",";
+		}
+		if(!empty($getLabUser['email'])) {
+			$zones .= ($getLabUser['country'] == 1) ? "" : $getLabUser['email'].",";
+		}
+		$zones = substr($zones,0,-1);
+
 		$from_email = "Noreply@nextmune.com";
-		$to_email = RECIEVER_EMAIL;
+		$to_email = RECIEVER_EMAIL.$zones;
 
 		$html = "";
 		$html .= "Hello Netherlands,<br><br>";
@@ -3200,6 +3292,157 @@ class Orders extends CI_Controller{
 		$this->send_mail($id, 1);
 	}
 
+	function allergensPopup($id = '', $changePanel = 0) {
+		$data = $this->OrdersModel->getRecord($id);
+		$orderTypeData = array("0" => $data['sub_order_type']);
+		$this->_data['allergens_group'] = $this->AllergensModel->get_allergens_dropdown($orderTypeData);
+		$this->_data['id'] = $id;
+		$orderData = [];
+		if($data['order_type'] == '2') {
+			if($data['serum_type'] == '1'){
+				$respned = $this->OrdersModel->getProductInfo($changePanel);
+				$subOrderTypeArr = [];
+				if(!empty($respned)){
+					if($respned->id == "34" || $respned->name == "PAX Environmental" || $respned->id == "35" || $respned->name == "PAX Environmental Screening"){
+						$sub_order_type = '8';
+						$subOrderTypeArr[] = '8';
+					}elseif($respned->id == "33" || $respned->name == "PAX Food" || $respned->id == "36" || $respned->name == "PAX Food Screening"){
+						$sub_order_type = '9';
+						$subOrderTypeArr[] = '9';
+					}elseif($respned->id == "37" || $respned->name == "PAX Environmental + Food Screening" || $respned->id == "38" || $respned->name == "PAX Environmental + Food"){
+						$sub_order_type = '8,9';
+						$subOrderTypeArr = array("0" => "8","1" => "9");
+					}else{
+						$sub_order_type = $data['sub_order_type'];
+						$subOrderTypeArr = array("0" => "8","1" => "9","2" => "10");
+					}
+				}else{
+					$sub_order_type = $data['sub_order_type'];
+					$subOrderTypeArr = array("0" => "8","1" => "9","2" => "10");
+				}
+				$allergens_group = $this->AllergensModel->get_pax_allergens_dropdown($subOrderTypeArr);
+				if(!empty($allergens_group)){
+					$allergenslct = array();
+					foreach ($allergens_group as $key => $value) {
+						$subAllergens = $this->AllergensModel->getPAXSubAllergensdropdown($value['id'],'',$sub_order_type);
+						if(!empty($subAllergens)){
+							foreach($subAllergens as $skey => $svalue){
+								if($svalue['pax_name'] != "N/A"){
+									$allergenslct[] = $svalue['id'];
+								}
+							}
+						}
+					}
+					$orderData['id'] = $id;
+					if(!empty(json_decode($data['allergens']))){
+						$orderData['allergens'] = $data['allergens'];
+					}else{
+						$orderData['allergens'] = json_encode($allergenslct);
+					}
+					$orderData['practice_lab_comment'] = '';
+					$orderData['comment_by'] = 0;
+					$orderData['updated_by'] = $this->user_id;
+					$orderData['updated_at'] = date("Y-m-d H:i:s");
+					$this->OrdersModel->add_edit($orderData);
+				}else{
+					$orderData['id'] = $id;
+					$orderData['allergens'] = '[""]';
+					$orderData['practice_lab_comment'] = '';
+					$orderData['comment_by'] = 0;
+					$orderData['updated_by'] = $this->user_id;
+					$orderData['updated_at'] = date("Y-m-d H:i:s");
+					$this->OrdersModel->add_edit($orderData);
+				}
+			}else{
+				$respnedn = $this->OrdersModel->getProductInfo($changePanel);
+				$subOrder2TypeArr = [];
+				if(!empty($respnedn)){
+					if($data['species_selection'] == 1){
+						if((preg_match('/\bEnvironmental\b/', $respnedn->name)) && (!preg_match('/\bFood\b/', $respnedn->name))){
+							$sub_order_type = '3';
+							$subOrder2TypeArr = array("0" => "3");
+						}elseif((!preg_match('/\bEnvironmental\b/', $respnedn->name)) && (preg_match('/\bFood\b/', $respnedn->name))){
+							$sub_order_type = '5';
+							$subOrder2TypeArr = array("0" => "5");
+						}elseif((preg_match('/\bEnvironmental\b/', $respnedn->name)) && (preg_match('/\bFood\b/', $respnedn->name))){
+							$sub_order_type = '3,5';
+							$subOrder2TypeArr = array("0" => "3", "1" => "5");
+						}else{
+							$sub_order_type = '';
+							$subOrder2TypeArr = array("0" => "0");
+						}
+					}
+
+					if($data['species_selection'] == 2){
+						if((preg_match('/\bEnvironmental\b/', $respnedn->name)) && (!preg_match('/\bFood\b/', $respnedn->name))){
+							$sub_order_type = '6';
+							$subOrder2TypeArr = array("0" => "6");
+						}elseif((!preg_match('/\bEnvironmental\b/', $respnedn->name)) && (preg_match('/\bFood\b/', $respnedn->name))){
+							$sub_order_type = '7';
+							$subOrder2TypeArr = array("0" => "7");
+						}elseif((preg_match('/\bEnvironmental\b/', $respnedn->name)) && (preg_match('/\bFood\b/', $respnedn->name))){
+							$sub_order_type = '6,7';
+							$subOrder2TypeArr = array("0" => "6", "1" => "7");
+						}else{
+							$sub_order_type = '';
+							$subOrder2TypeArr = array("0" => "0");
+						}
+					}
+
+					if($data['species_selection'] == 3){
+						if((preg_match('/\bEnvironmental\b/', $respnedn->name)) && (!preg_match('/\bFood\b/', $respnedn->name))){
+							$sub_order_type = '31';
+							$subOrder2TypeArr = array("0" => "31");
+						}elseif((!preg_match('/\bEnvironmental\b/', $respnedn->name)) && (preg_match('/\bFood\b/', $respnedn->name))){
+							$sub_order_type = '51';
+							$subOrder2TypeArr = array("0" => "51");
+						}elseif((preg_match('/\bEnvironmental\b/', $respnedn->name)) && (preg_match('/\bFood\b/', $respnedn->name))){
+							$sub_order_type = '31,51';
+							$subOrder2TypeArr = array("0" => "31", "1" => "51");
+						}else{
+							$sub_order_type = '';
+							$subOrder2TypeArr = array("0" => "0");
+						}
+					}
+				}
+
+				$allergensGroup = $this->AllergensModel->get_allergens_dropdown($changePanel);
+				if(!empty($allergensGroup)){
+					$allergenslct = array();
+					foreach ($allergensGroup as $key => $value) {
+						$subAllergens = $this->AllergensModel->getSubAllergensdropdown($value['id'],'',$sub_order_type);
+						if(!empty($subAllergens)){
+							foreach($subAllergens as $skey => $svalue){
+								if($svalue['name'] != "N/A"){
+									$allergenslct[] = $svalue['id'];
+								}
+							}
+						}
+					}
+					$orderData['id'] = $id;
+					if(!empty(json_decode($data['allergens']))){
+						$orderData['allergens'] = $data['allergens'];
+					}else{
+						$orderData['allergens'] = json_encode($allergenslct);
+					}
+					$orderData['practice_lab_comment'] = '';
+					$orderData['comment_by'] = 0;
+					$orderData['updated_by'] = $this->user_id;
+					$orderData['updated_at'] = date("Y-m-d H:i:s");
+					$this->OrdersModel->add_edit($orderData);
+				}else{
+					$orderData['id'] = $id;
+					$orderData['allergens'] = '[""]';
+					$orderData['practice_lab_comment'] = '';
+					$orderData['comment_by'] = 0;
+					$orderData['updated_by'] = $this->user_id;
+					$orderData['updated_at'] = date("Y-m-d H:i:s");
+					$this->OrdersModel->add_edit($orderData);
+				}
+			}
+		}
+	}
+
 	function allergens($id = ''){
 		$data = $this->OrdersModel->getRecord($id);
 		$orderTypeData = array("0" => $data['sub_order_type']);
@@ -3348,10 +3591,9 @@ class Orders extends CI_Controller{
 					$this->OrdersModel->add_edit($orderData);
 				}
 			}
-			redirect('orders/serum_request/'. $id);
+			redirect('orders/serum_request/' . $id);
 		}else{
 			$allergen_total = $this->input->post('allergen_total');
-
 			//check allergens is available or not
 			$notAvailAllergens = $this->AllergensModel->getNotAvailAllergens($this->input->post('allergens'));
 			if ($allergen_total == 0) {
@@ -3381,11 +3623,11 @@ class Orders extends CI_Controller{
 					$totalVialsdb = $this->OrdersModel->Totalvials($id);
 					if ($data['sub_order_type'] == '3') {
 						redirect('orders/serum_request/' . $id);
-					}elseif((count($this->input->post('allergens')) > 8 && $data['is_repeat_order'] == '1' && in_array("13786", $labs) && $data['order_type'] == 1) || ($id > 0 && $totalVialsdb > 0)){
+					} elseif ((count($this->input->post('allergens')) > 8 && $data['is_repeat_order'] == '1' && in_array("13786", $labs) && $data['order_type'] == 1) || ($id > 0 && $totalVialsdb > 0)) {
 						redirect('orders/vials/' . $id);
-					}elseif($data['is_repeat_order'] == '0' && $data['cep_id'] > 0){
+					} elseif ($data['is_repeat_order'] == '0' && $data['cep_id'] > 0) {
 						redirect('orders/immmuno_summary/' . $id);
-					}else{
+					} else {
 						redirect('orders/summary/' . $id);
 					}
 				}
@@ -3658,7 +3900,45 @@ class Orders extends CI_Controller{
 			if ($data['order_type'] == '2') {
 				$order_discount = 0.00;
 				if($data['cep_id'] > 0){
-					$final_price  = $data['unit_price'];
+					if($data['product_code_selection'] == '34'){
+						$serum_test_price = $this->PriceCategoriesModel->serum_test_price(56, $practice_lab);
+						$final_price = $serum_test_price[0]['uk_price'];
+
+						/**discount **/
+						$serum_discount = $this->PriceCategoriesModel->get_discount($data['product_code_selection'], $practice_lab);
+						//print_r($serum_discount);
+						if (!empty($serum_discount)) {
+							$order_discount = ($serum_test_price[0]['uk_price'] * $serum_discount['uk_discount']) / 100;
+							$order_discount = sprintf("%.2f", $order_discount);
+						}
+						/**discount **/
+					}elseif($data['product_code_selection'] == '33'){
+						$serum_test_price = $this->PriceCategoriesModel->serum_test_price(57, $practice_lab);
+						$final_price = $serum_test_price[0]['uk_price'];
+
+						/**discount **/
+						$serum_discount = $this->PriceCategoriesModel->get_discount($data['product_code_selection'], $practice_lab);
+						//print_r($serum_discount);
+						if (!empty($serum_discount)) {
+							$order_discount = ($serum_test_price[0]['uk_price'] * $serum_discount['uk_discount']) / 100;
+							$order_discount = sprintf("%.2f", $order_discount);
+						}
+						/**discount **/
+					}elseif($data['product_code_selection'] == '38'){
+						$serum_test_price = $this->PriceCategoriesModel->serum_test_price(58, $practice_lab);
+						$final_price = $serum_test_price[0]['uk_price'];
+
+						/**discount **/
+						$serum_discount = $this->PriceCategoriesModel->get_discount($data['product_code_selection'], $practice_lab);
+						//print_r($serum_discount);
+						if (!empty($serum_discount)) {
+							$order_discount = ($serum_test_price[0]['uk_price'] * $serum_discount['uk_discount']) / 100;
+							$order_discount = sprintf("%.2f", $order_discount);
+						}
+						/**discount **/
+					} else {
+						$final_price = $data['unit_price'];
+					}
 				}else{
 					$product_code_id = $this->session->userdata('product_code_selection');
 					$serum_test_price = $this->PriceCategoriesModel->serum_test_price($product_code_id, $practice_lab);
@@ -4306,6 +4586,7 @@ class Orders extends CI_Controller{
 					$ajax["internal_comment"] = '';
 					$ajax["practice_lab_comment"] = '';
 				}
+				$ajax["cancel_comment"] = ($update['is_confirmed'] == 3) ? $update['cancel_comment'] : "";
 				echo json_encode($ajax);
 				exit;
 			}

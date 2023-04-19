@@ -16,10 +16,29 @@ class PriceCategoriesModel extends CI_model{
 		$this->db->select("id,name,product_info,display_order");
 		$this->db->from($this->_table);
 		if($parent_id!=''){
-			$this->db->where('parent_id', $parent_id); 
+			$this->db->where('parent_id', $parent_id);
 		}
 		$this->db->order_by('display_order','ASC');
-		return $this->db->get()->result_array();    
+		return $this->db->get()->result_array();
+	}
+
+	/**
+	 * @param int $parentId
+	 * @param array $exceptId
+	 * @return mixed
+	 */
+	function getRecordAllExcept($parentId = 0, $exceptId = []) {
+		$this->db->select("id,name,product_info,display_order");
+		$this->db->from($this->_table);
+		if($parentId!=''){
+			$this->db->where('parent_id', $parentId);
+		}
+		$this->db->where_not_in('id', $exceptId);
+		$this->db->not_like('name', 'Expansion');
+		$this->db->order_by('display_order','ASC');
+
+		return $this->db->get()->result_array();
+		//die($this->db->last_query());
 	}
 
 	public function get_price_categories_dropdown() {

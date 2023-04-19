@@ -6,6 +6,13 @@ class StaffCountriesModel extends CI_model{
         $this->_table = 'ci_staff_countries';
     }
 
+	public function getPreferLanguage($code="") {
+		$this->db->select('prefer_language');
+		$this->db->from($this->_table);
+		$this->db->where('code', $code);
+		return $this->db->get()->row_array();
+	}
+
 	public function getRecord($id="") {
 		$this->db->select('*');
 		$this->db->from($this->_table);

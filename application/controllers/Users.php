@@ -1,4 +1,6 @@
 <?php
+require_once(APPPATH . 'libraries/geoip/geoip2.phar');
+use GeoIp2\Database\Reader;
 if ( ! defined('BASEPATH')) exit('No direct script access allowed'); 
 error_reporting(E_ERROR | E_PARSE);
 class Users extends CI_Controller {
@@ -13,38 +15,119 @@ class Users extends CI_Controller {
 		$this->load->model('StaffMembersModel');
 	}
 
+	function getVisIpAddr() {
+		$ipaddress = '';
+		if (getenv('HTTP_CLIENT_IP'))
+			$ipaddress = getenv('HTTP_CLIENT_IP');
+		else if(getenv('HTTP_X_FORWARDED_FOR'))
+			$ipaddress = getenv('HTTP_X_FORWARDED_FOR');
+		else if(getenv('HTTP_X_FORWARDED'))
+			$ipaddress = getenv('HTTP_X_FORWARDED');
+		else if(getenv('HTTP_FORWARDED_FOR'))
+			$ipaddress = getenv('HTTP_FORWARDED_FOR');
+		else if(getenv('HTTP_FORWARDED'))
+			$ipaddress = getenv('HTTP_FORWARDED');
+		else if(getenv('REMOTE_ADDR'))
+			$ipaddress = getenv('REMOTE_ADDR');
+		else
+			$ipaddress = 'UNKNOWN';
+		return $ipaddress;
+	}
+
+	function getGeoLocation() {
+		$reader = new Reader(APPPATH . 'libraries/geoip/GeoLite2-City.mmdb');
+		$ip = $this->getVisIpAddr(); //109.71.56.0, 157.42.6.169
+		$ip = ($ip == "::1") ? '101.167.184.0' : $ip;
+		$record = $reader->city($ip);
+		$countryCode = $record->country->isoCode;
+		$language = $this->StaffCountriesModel->getPreferLanguage($countryCode);
+
+		return !empty($language['prefer_language']) ? $language['prefer_language'] : "english";
+	}
+
 	public function registration_form(){
+		$language = $this->getGeoLocation();
+		$this->lang->load($language.'_lang.php', $language);
 		if (!empty($this->input->post())) {
 			$postData = $this->input->post();
+			$checkEmail = $this->UsersModel->check_email($postData['email']);
 
-			$from_email = FROM_EMAIL;
-			$content_data['recipient_name'] = "Dear Admin";
-			$content_data['content_body'] = '<b>First Name: </b>'.$postData['first_name'].'<br><br><b>Last Name: </b>'.$postData['last_name'].'<br><br><b>Practice Name: </b>'.$postData['practice_name'].'<br><br><b>Practice Email Address: </b>'.$postData['practice_email'].'<br><br><b>Practice Post Code: </b>'.$postData['practice_postcode'].'';
-			$to_email = 'stewart@webbagency.co.uk';
-			//$to_email = 'reports.uk@nextmune.com';
-			$config = array(
-				'mailtype'  => 'html',
-				'charset'   => 'utf-8'
-			);
-			$this->load->library('email', $config);
-			$this->email->from($from_email, "NextVu");
-			$this->email->to($to_email);
-			$this->email->set_header('Content-Type', 'application/pdf');
-			$this->email->set_header('Content-Disposition', 'attachment');
-			$this->email->set_header('Content-Transfer-Encoding', 'base64');
-			$this->email->subject('Registration Page Details');
-			$msg_content = $this->load->view('users/registration_mail_template', $content_data, true);
-			$this->email->message($msg_content);
-			$this->email->set_mailtype("html");
-			$is_send = $this->email->send();
-			if ($is_send) {
-				$this->session->set_flashdata("success", "Thank you for your registration details.");
-			} else {
-				$this->session->set_flashdata("error", $this->email->print_debugger());
+			$error = "";
+			$success = "";
+			$data = [];
+			$errorNum = 0;
+			if(!empty($checkEmail)){
+				$error = "This email ID is already registered.";
+				$errorNum = 1;
+			} else if ($postData['password'] != $postData['confirm_password']) {
+				$error = "Password & Confirm Password doesn't match.";
+				$errorNum = 2;
 			}
-			redirect('users/registration-form');
+
+			if (empty($error)) {
+				unset($postData['confirm_password']);
+				$postData['password'] = md5($postData['password']);
+
+				$usersData['name'] = $postData['name'];
+				$usersData['last_name'] = $postData['last_name'];
+				$usersData['country'] = $postData['country'];
+				$usersData['phone_number'] = $postData['phone_number'];
+				$usersData['email'] = $postData['email'];
+				$usersData['password'] = $postData['password'];
+				$usersData['role'] = explode(",", $postData['role'])[0];
+				$usersData['user_type'] = explode(",", $postData['role'])[1];
+
+				$userDetailData['ivc_clinic_number'] = $postData['clinic'];
+				$userDetailData['add_1'] = $postData['street'];
+				$userDetailData['address_3'] = $postData['post_code'];
+				$userDetailData['address_2'] = $postData['city'];
+				$userDetailData['vat_reg'] = $postData['vat'];
+				$this->UsersDetailsModel->add_edit($usersData, $userDetailData);
+
+				$from_email = FROM_EMAIL;
+				$content_data['recipient_name'] = "Dear Admin";
+				$content_data['content_body'] = '<b>First Name: </b>' . $postData['name'] . '<br><br><b>Last Name: </b>' . $postData['last_name'] . '<br><br><b>Clinic: </b>' . $postData['clinic'] . '<br><br><b>Email Address: </b>' . $postData['email'] . '<br><br><b>Post Code: </b>' . $postData['post_code'] . '';
+				$to_email = 'stewart@webbagency.co.uk';
+				//$to_email = 'reports.uk@nextmune.com';
+				$config = array(
+					'mailtype' => 'html',
+					'charset' => 'utf-8'
+				);
+				$this->load->library('email', $config);
+				$this->email->from($from_email, "NextVu");
+				$this->email->to($to_email);
+				$this->email->set_header('Content-Type', 'application/pdf');
+				$this->email->set_header('Content-Disposition', 'attachment');
+				$this->email->set_header('Content-Transfer-Encoding', 'base64');
+				$this->email->subject('Registration Page Details');
+				$msg_content = $this->load->view('users/registration_mail_template', $content_data, true);
+				$this->email->message($msg_content);
+				$this->email->set_mailtype("html");
+				$is_send = $this->email->send();
+				if ($is_send) {
+					$success = "Thanks for registering to Nextview!<br><br><br>Before you are granted access to NextView, we have to validate that the created profile is linked to a veterinary clinic. We typically validate all registrations within 1-2 business days. We will send you an e-mail with your log on details as fast as the profile is validated. Please make sure to check your spam folder if you haven't received a confirmation in 2 business days or reach out to [local email address].";
+				} else {
+					$error = $this->email->print_debugger();
+					$errorNum = 3;
+				}
+			}
 		}
-		$this->load->view("users/registration");
+		$data = array(
+			'error' => $error,
+			'success' => $success,
+			'errorNum' => $errorNum
+		);
+		if (!empty($error)) {
+			$this->session->set_flashdata("error", $error);
+		}
+		if (!empty($success)) {
+			$this->session->set_flashdata("success", $success);
+		}
+
+		$data['data'] = $postData;
+		$data['controller'] = $this;
+		$data['staffCountries'] = $this->StaffCountriesModel->getRecordAll();
+		$this->load->view("users/registration", $data);
 	}
 
 	public function login(){
@@ -95,7 +178,7 @@ class Users extends CI_Controller {
 
 	function auth(){
 		$email = $this->input->post('email',TRUE);
-		$password = md5($this->input->post('password',TRUE)); 
+		$password = md5($this->input->post('password',TRUE));
 		$validate = $this->UsersModel->validate($email,$password);
 		if($validate->num_rows() > 0){
 			if ($this->input->post('remember')=='on') {
