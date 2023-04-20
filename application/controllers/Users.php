@@ -34,11 +34,28 @@ class Users extends CI_Controller {
 		return $ipaddress;
 	}
 
+	function validateIPs ($input) {
+		foreach(explode(',', $input) as $ip) {
+			if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+				return false;
+			} else {
+				return $ip;
+			}
+		}
+	}
+
 	function getGeoLocation() {
 		$reader = new Reader(APPPATH . 'libraries/geoip/GeoLite2-City.mmdb');
 		$ip = $this->getVisIpAddr(); //109.71.56.0, 157.42.6.169
 		$ip = ($ip == "::1") ? '101.167.184.0' : $ip;
-		$record = $reader->city($ip);
+		if (strstr($ip, ",")) {
+			$ip = $this->validateIPs ($ip);
+			if ($ip) {
+				$record = $reader->city($ip);
+			}
+		} else {
+			$record = $reader->city($ip);
+		}
 		$countryCode = $record->country->isoCode;
 		$language = $this->StaffCountriesModel->getPreferLanguage($countryCode);
 
