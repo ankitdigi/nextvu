@@ -1,0 +1,1 @@
+ALTER TABLE `ci_users` ADD `clinic` VARCHAR(255) NOT NULL AFTER `country`, ADD `street` VARCHAR(255) NOT NULL AFTER `clinic`, ADD `city` VARCHAR(255) NOT NULL AFTER `street`, ADD `vat` VARCHAR(50) NOT NULL AFTER `city`;

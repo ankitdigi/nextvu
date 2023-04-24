@@ -27,6 +27,7 @@ class Orders extends CI_Controller{
 		$this->load->model('PriceCategoriesModel');
 		$this->load->model('CountriesModel');
 		$this->load->model('StaffCountriesModel');
+		$this->load->model('ModifyExcelModel');
 		$this->_data['fetch_class'] = $this->router->fetch_class();
 		$this->_data['fetch_method'] = $this->router->fetch_method();
 		$this->_data['countries'] = $this->StaffCountriesModel->getRecordAll();
@@ -3829,6 +3830,10 @@ class Orders extends CI_Controller{
 		}
 		/***** delivery address details*/
 
+		$discountPercent = 0;
+		$discountPrice = 0;
+		$shippingPrice = 0;
+		$finalPrice = 0;
 		/***** Practice or Lab Name */
 		if ($order_details['lab_id'] > 0) {
 			$final_name = $order_details['lab_name'];
@@ -3894,6 +3899,8 @@ class Orders extends CI_Controller{
 				$this->_data['final_price'] = $final_price - ($single_order_discount + $insects_order_discount);
 				$this->_data['order_discount'] = $single_order_discount + $insects_order_discount;
 				$this->_data['price_currency'] = $skin_test_price[0]['price_currency'];
+				$finalPrice = $this->_data['final_price'];
+				$discountPercent = $this->_data['order_discount'];
 			}
 
 			//Serum Test Pricing 
@@ -3903,47 +3910,53 @@ class Orders extends CI_Controller{
 					if($data['product_code_selection'] == '34'){
 						$serum_test_price = $this->PriceCategoriesModel->serum_test_price(56, $practice_lab);
 						$final_price = $serum_test_price[0]['uk_price'];
-
+						$finalPrice = $final_price;
 						/**discount **/
 						$serum_discount = $this->PriceCategoriesModel->get_discount($data['product_code_selection'], $practice_lab);
 						//print_r($serum_discount);
 						if (!empty($serum_discount)) {
 							$order_discount = ($serum_test_price[0]['uk_price'] * $serum_discount['uk_discount']) / 100;
 							$order_discount = sprintf("%.2f", $order_discount);
+							$discountPercent = $serum_discount['uk_discount'];
 						}
 						/**discount **/
+
 					}elseif($data['product_code_selection'] == '33'){
 						$serum_test_price = $this->PriceCategoriesModel->serum_test_price(57, $practice_lab);
 						$final_price = $serum_test_price[0]['uk_price'];
-
+						$finalPrice = $final_price;
 						/**discount **/
 						$serum_discount = $this->PriceCategoriesModel->get_discount($data['product_code_selection'], $practice_lab);
 						//print_r($serum_discount);
 						if (!empty($serum_discount)) {
 							$order_discount = ($serum_test_price[0]['uk_price'] * $serum_discount['uk_discount']) / 100;
 							$order_discount = sprintf("%.2f", $order_discount);
+							$discountPercent = $serum_discount['uk_discount'];
 						}
 						/**discount **/
 					}elseif($data['product_code_selection'] == '38'){
 						$serum_test_price = $this->PriceCategoriesModel->serum_test_price(58, $practice_lab);
 						$final_price = $serum_test_price[0]['uk_price'];
-
+						$finalPrice = $final_price;
 						/**discount **/
 						$serum_discount = $this->PriceCategoriesModel->get_discount($data['product_code_selection'], $practice_lab);
 						//print_r($serum_discount);
 						if (!empty($serum_discount)) {
 							$order_discount = ($serum_test_price[0]['uk_price'] * $serum_discount['uk_discount']) / 100;
 							$order_discount = sprintf("%.2f", $order_discount);
+							$discountPercent = $serum_discount['uk_discount'];
 						}
 						/**discount **/
 					} else {
 						$final_price = $data['unit_price'];
+						$finalPrice = $final_price;
 					}
 				}else{
 					$product_code_id = $this->session->userdata('product_code_selection');
 					$serum_test_price = $this->PriceCategoriesModel->serum_test_price($product_code_id, $practice_lab);
 					//$final_price = $total_allergen * ($serum_test_price[0]['uk_price']);
 					$final_price = $serum_test_price[0]['uk_price'];
+					$finalPrice = $final_price;
 
 					/**discount **/
 					$serum_discount = $this->PriceCategoriesModel->get_discount($data['product_code_selection'], $practice_lab);
@@ -3951,6 +3964,7 @@ class Orders extends CI_Controller{
 					if (!empty($serum_discount)) {
 						$order_discount = ($serum_test_price[0]['uk_price'] * $serum_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $serum_discount['uk_discount'];
 					}
 					/**discount **/
 				}
@@ -3972,9 +3986,11 @@ class Orders extends CI_Controller{
 					if (!empty($artuvetrin_discount)) {
 						$order_discount = ($artuvetrin_test_price[0]['uk_price'] * $artuvetrin_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $artuvetrin_discount['uk_discount'];
 					}
 					/**discount **/
 
+					$finalPrice = $artuvetrin_test_price[0]['uk_price'];
 					$this->_data['final_price'] = $artuvetrin_test_price[0]['uk_price'] - $order_discount;
 					$this->_data['order_discount'] = round($order_discount, 2);
 					$this->_data['price_currency'] = $artuvetrin_test_price[0]['price_currency'];
@@ -3987,15 +4003,20 @@ class Orders extends CI_Controller{
 					if (!empty($artuvetrin_discount)) {
 						$order_discount = ($artuvetrin_test_price[1]['uk_price'] * $artuvetrin_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $artuvetrin_discount['uk_discount'];
 					}
 					/**discount **/
-
+					$finalPrice = $artuvetrin_test_price[1]['uk_price'];
 					$this->_data['final_price'] = $artuvetrin_test_price[1]['uk_price'] - $order_discount;
 					$this->_data['order_discount'] = round($order_discount, 2);
 					$this->_data['price_currency'] = $artuvetrin_test_price[1]['price_currency'];
 					//Artuvetrin Therapy more than 8 allergens
 
 				} elseif ($total_allergen > 8) {
+					$finalPrice1 = 0;
+					$finalPrice2 = 0;
+					$discountPercent1 = 0;
+					$discountPercent2 = 0;
 					$final_price = 0.00;
 					$first_range_price = 0.00;
 					$order_first_discount = 0.00;
@@ -4014,9 +4035,11 @@ class Orders extends CI_Controller{
 							$is_update=0;
 							$order_second_discount = ($quotient*($artuvetrin_test_price[1]['uk_price'] * $artuvetrin_second_discount['uk_discount'])) / 100;
 							$order_second_discount = sprintf("%.2f", $order_second_discount);
+							$discountPercent2 = $artuvetrin_second_discount['uk_discount'];
 						} else {
 							$order_second_discount = ($quotient*($artuvetrin_test_price[1]['uk_price'] * $artuvetrin_second_discount['uk_discount'])) / 100;
 							$order_second_discount = sprintf("%.2f", $order_second_discount);
+							$discountPercent2 = $artuvetrin_second_discount['uk_discount'];
 						}
 					}
 
@@ -4026,8 +4049,10 @@ class Orders extends CI_Controller{
 							$quotient++;
 						}
 						$second_range_price = ($quotient * ($artuvetrin_test_price[1]['uk_price'])) - $order_second_discount;
+						$finalPrice2 = ($quotient * ($artuvetrin_test_price[1]['uk_price']));
 					}else{
 						$second_range_price = ($quotient * ($artuvetrin_test_price[1]['uk_price'])) - $order_second_discount;
+						$finalPrice2 = ($quotient * ($artuvetrin_test_price[1]['uk_price']));
 					} 
 					if($remainder > 0){
 					    /**discount **/
@@ -4036,13 +4061,19 @@ class Orders extends CI_Controller{
 							if($_quotients <= 0.50 && $_quotients != 0) {
 								$order_first_discount = ($artuvetrin_test_price[0]['uk_price'] * $artuvetrin_first_discount['uk_discount'] )/100;
 					        	$order_first_discount = sprintf("%.2f", $order_first_discount);
+								$discountPercent1 = $artuvetrin_first_discount['uk_discount'];
 							}
 					    }
 						/**discount **/
 					}
 					if($_quotients <= 0.50 && $_quotients != 0) {
 						$first_range_price = (1 * ($artuvetrin_test_price[0]['uk_price'])) - $order_first_discount;
+						$finalPrice1 = (1 * ($artuvetrin_test_price[0]['uk_price']));
 					}
+					$finalPrice = $finalPrice1 + $finalPrice2;
+					$discountPercent = (($finalPrice1 * $discountPercent1) / 100) + (($finalPrice2 * $discountPercent2) / 100);
+					$finalPrice = $finalPrice - $discountPercent;
+
 					$final_price = $first_range_price + $second_range_price;
 					$this->_data['final_price'] = $final_price;
 					$this->_data['order_discount'] = round($order_first_discount + $order_second_discount, 2);
@@ -4068,9 +4099,12 @@ class Orders extends CI_Controller{
 					if (!empty($slit_discount)) {
 						$order_discount = ($slit_test_price[0]['uk_price'] * $slit_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $slit_discount['uk_discount']; //Check
+						$discountPrice = $order_discount;
 					}
 					/**discount **/
 					$final_price = $total_allergen * $single_price;
+					$finalPrice = $final_price;
 					$final_price = $final_price - $order_discount;
 				} else if ($data['single_double_selection'] == '2' && $culicoides_allergen == 0) {
 					/**discount **/
@@ -4078,10 +4112,13 @@ class Orders extends CI_Controller{
 					if (!empty($slit_discount)) {
 						$order_discount = ($slit_test_price[1]['uk_price'] * $slit_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $slit_discount['uk_discount']; //Check
+						$discountPrice = $order_discount;
 					}
 
 					/** discount **/
 					$final_price = $total_allergen * $double_price;
+					$finalPrice = $final_price;
 					$final_price = $final_price - $order_discount;
 				} else if ($data['single_double_selection'] == '1' && $culicoides_allergen > 0) {
 					/** discount **/
@@ -4089,10 +4126,13 @@ class Orders extends CI_Controller{
 					if (!empty($slit_discount)) {
 						$order_discount = ($slit_test_price[2]['uk_price'] * $slit_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $slit_discount['uk_discount']; //Check
+						$discountPrice = $order_discount;
 					}
 
 					/** discount **/
 					$final_price = ($single_price * $single_allergen) + ($single_with_culicoides * $culicoides_allergen);
+					$finalPrice = $final_price;
 					$final_price = $final_price - $order_discount;
 				} else if ($data['single_double_selection'] == '2' && $culicoides_allergen > 0) {
 					/**discount **/
@@ -4101,10 +4141,13 @@ class Orders extends CI_Controller{
 					if (!empty($slit_discount)) {
 						$order_discount = ($slit_test_price[3]['uk_price'] * $slit_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $slit_discount['uk_discount']; //Check
+						$discountPrice = $order_discount;
 					}
 
 					/**discount **/
 					$final_price = ($double_price * $single_allergen) + ($double_with_culicoides * $culicoides_allergen);
+					$finalPrice = $final_price;
 					$final_price = $final_price - $order_discount;
 				}
 				$this->_data['final_price'] = $final_price;
@@ -4133,10 +4176,12 @@ class Orders extends CI_Controller{
 				if ($data['order_type'] == '3') {
 					$shipUPrice = $this->OrdersModel->getShippingCostbyUser("4", $practice_lab);
 					if(!empty($shipUPrice)){
+						$finalPrice = $this->_data['final_price'];
 						$this->_data['final_price'] = $this->_data['final_price']+$shipUPrice['uk_discount'];
 						$this->_data['shipping_cost'] = $shipUPrice['uk_discount'];
 					}else{
 						$shipDPrice = $this->OrdersModel->getDefaultShippingCost("4");
+						$finalPrice = $this->_data['final_price'];
 						$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
 						$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
 					}
@@ -4151,16 +4196,19 @@ class Orders extends CI_Controller{
 						$shipUPrice = $this->OrdersModel->getShippingCostbyUser("2", $practice_lab);
 					}
 					if(!empty($shipUPrice)){
+						$finalPrice = $this->_data['final_price'];
 						$this->_data['final_price'] = $this->_data['final_price']+$shipUPrice['uk_discount'];
 						$this->_data['shipping_cost'] = $shipUPrice['uk_discount'];
 					}else{
 						if ($data['species_selection'] == '2') {
 							$shipDPrice = $this->OrdersModel->getDefaultShippingCost("3");
+							$finalPrice = $this->_data['final_price'];
 							$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
 							$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
 						}
 						if ($data['species_selection'] == '1') {
 							$shipDPrice = $this->OrdersModel->getDefaultShippingCost("2");
+							$finalPrice = $this->_data['final_price'];
 							$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
 							$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
 						}
@@ -4171,10 +4219,12 @@ class Orders extends CI_Controller{
 				if ($data['order_type'] == '1') {
 					$shipUPrice = $this->OrdersModel->getShippingCostbyUser("1", $practice_lab);
 					if(!empty($shipUPrice)){
+						$finalPrice = $this->_data['final_price'];
 						$this->_data['final_price'] = $this->_data['final_price']+$shipUPrice['uk_discount'];
 						$this->_data['shipping_cost'] = $shipUPrice['uk_discount'];
 					}else{
 						$shipDPrice = $this->OrdersModel->getDefaultShippingCost("1");
+						$finalPrice = $this->_data['final_price'];
 						$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
 						$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
 					}
@@ -4183,6 +4233,14 @@ class Orders extends CI_Controller{
 				$existCost = $this->OrdersModel->getexistShippingCost($id);
 				$this->_data['shipping_cost'] = !empty($existCost)?$existCost:'0.00';
 			}
+		}
+
+		if ($data['order_type'] == '1' && $data['sub_order_type'] == '2') {
+			$this->_data['final_price'] = ($finalPrice - $discountPrice) + $this->_data['shipping_cost'];
+			$this->_data['order_discount'] = $discountPrice;
+		} else {
+			$this->_data['order_discount'] = ($finalPrice * $discountPercent) / 100;
+			$this->_data['final_price'] = ($finalPrice + $this->_data['shipping_cost']) - $this->_data['order_discount'];
 		}
 
 		$orderData = []; $serumData = [];
@@ -10969,6 +11027,9 @@ class Orders extends CI_Controller{
 			$practice_lab = $data['vet_user_id'];
 		}
 
+		$discountPercent = 0;
+		$shippingPrice = 0;
+		$finalPrice = 0;
 		if ($total_allergen > 0) {
 			//Skin Test Pricing
 			if ($data['order_type'] == '3') {
@@ -10986,6 +11047,8 @@ class Orders extends CI_Controller{
 				if (!empty($single_discount)) {
 					$single_order_discount = ($skin_test_price[0]['uk_price'] * $single_discount['uk_discount']) / 100;
 					$single_order_discount = sprintf("%.2f", $single_order_discount);
+					$discountPercent = $single_discount['uk_discount'];
+					$finalPrice = $skin_test_price[0]['uk_price'];
 				}
 				/**single allergen discount **/
 
@@ -10995,6 +11058,8 @@ class Orders extends CI_Controller{
 					if (!empty($insects_discount)) {
 						$insects_order_discount = ($skin_test_price[1]['uk_price'] * $insects_discount['uk_discount']) / 100;
 						$insects_order_discount = sprintf("%.2f", $insects_order_discount);
+						$discountPercent = $insects_discount['uk_discount'];
+						$finalPrice = $skin_test_price[1]['uk_price'];
 					}
 				}
 				/**insects allergen discount **/
@@ -11017,6 +11082,8 @@ class Orders extends CI_Controller{
 				if (!empty($serum_discount)) {
 					$order_discount = ($serum_test_price[0]['uk_price'] * $serum_discount['uk_discount']) / 100;
 					$order_discount = sprintf("%.2f", $order_discount);
+					$discountPercent = $serum_discount['uk_discount'];
+					$finalPrice = $skin_test_price[0]['uk_price'];
 				}
 				/**discount **/
 
@@ -11036,6 +11103,8 @@ class Orders extends CI_Controller{
 					if (!empty($artuvetrin_discount)) {
 						$order_discount = ($artuvetrin_test_price[0]['uk_price'] * $artuvetrin_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $artuvetrin_discount['uk_discount'];
+						$finalPrice = $artuvetrin_test_price[0]['uk_price'];
 					}
 					/**discount **/
 
@@ -11050,6 +11119,8 @@ class Orders extends CI_Controller{
 					if (!empty($artuvetrin_discount)) {
 						$order_discount = ($artuvetrin_test_price[1]['uk_price'] * $artuvetrin_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $artuvetrin_discount['uk_discount'];
+						$finalPrice = $artuvetrin_test_price[1]['uk_price'];
 					}
 					/**discount **/
 
@@ -11081,6 +11152,8 @@ class Orders extends CI_Controller{
 							$order_second_discount = ($quotient*($artuvetrin_test_price[1]['uk_price'] * $artuvetrin_second_discount['uk_discount'])) / 100;
 							$order_second_discount = sprintf("%.2f", $order_second_discount);
 						}
+						$discountPercent = $artuvetrin_second_discount['uk_discount'];
+						$finalPrice = $artuvetrin_test_price[1]['uk_price'];
 					}
 
 					/**discount **/
@@ -11099,6 +11172,8 @@ class Orders extends CI_Controller{
 							if($_quotients <= 0.50 && $_quotients != 0) {
 								$order_first_discount = ($artuvetrin_test_price[0]['uk_price'] * $artuvetrin_first_discount['uk_discount'] )/100;
 					        	$order_first_discount = sprintf("%.2f", $order_first_discount);
+								$discountPercent = $artuvetrin_first_discount['uk_discount'];
+								$finalPrice = $artuvetrin_test_price[0]['uk_price'];
 							}
 					    }
 						/**discount **/
@@ -11130,6 +11205,8 @@ class Orders extends CI_Controller{
 					if (!empty($slit_discount)) {
 						$order_discount = ($slit_test_price[0]['uk_price'] * $slit_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $slit_discount['uk_discount'];
+						$finalPrice = $slit_test_price[0]['uk_price'];
 					}
 					/**discount **/
 					$final_price = $total_allergen * $single_price;
@@ -11140,6 +11217,8 @@ class Orders extends CI_Controller{
 					if (!empty($slit_discount)) {
 						$order_discount = ($slit_test_price[1]['uk_price'] * $slit_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $slit_discount['uk_discount'];
+						$finalPrice = $slit_test_price[1]['uk_price'];
 					}
 
 					/** discount **/
@@ -11151,6 +11230,8 @@ class Orders extends CI_Controller{
 					if (!empty($slit_discount)) {
 						$order_discount = ($slit_test_price[2]['uk_price'] * $slit_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $slit_discount['uk_discount'];
+						$finalPrice = $slit_test_price[2]['uk_price'];
 					}
 
 					/** discount **/
@@ -11163,6 +11244,8 @@ class Orders extends CI_Controller{
 					if (!empty($slit_discount)) {
 						$order_discount = ($slit_test_price[3]['uk_price'] * $slit_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $slit_discount['uk_discount'];
+						$finalPrice = $slit_test_price[3]['uk_price'];
 					}
 
 					/**discount **/
@@ -11195,10 +11278,14 @@ class Orders extends CI_Controller{
 					if(!empty($shipUPrice)){
 						$this->_data['final_price'] = $this->_data['final_price']+$shipUPrice['uk_discount'];
 						$this->_data['shipping_cost'] = $shipUPrice['uk_discount'];
+						$discountPercent = $shipUPrice['uk_discount'];
+						$finalPrice = $this->_data['final_price'];
 					}else{
 						$shipDPrice = $this->OrdersModel->getDefaultShippingCost("4");
 						$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
 						$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
+						$discountPercent = $shipDPrice['uk_discount'];
+						$finalPrice = $this->_data['final_price'];
 					}
 				}
 
@@ -11213,16 +11300,22 @@ class Orders extends CI_Controller{
 					if(!empty($shipUPrice)){
 						$this->_data['final_price'] = $this->_data['final_price']+$shipUPrice['uk_discount'];
 						$this->_data['shipping_cost'] = $shipUPrice['uk_discount'];
+						$discountPercent = $shipUPrice['uk_discount'];
+						$finalPrice = $this->_data['final_price'];
 					}else{
 						if ($data['species_selection'] == '2') {
 							$shipDPrice = $this->OrdersModel->getDefaultShippingCost("3");
 							$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
 							$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
+							$discountPercent = $shipDPrice['uk_discount'];
+							$finalPrice = $this->_data['final_price'];
 						}
 						if ($data['species_selection'] == '1') {
 							$shipDPrice = $this->OrdersModel->getDefaultShippingCost("2");
 							$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
 							$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
+							$discountPercent = $shipDPrice['uk_discount'];
+							$finalPrice = $this->_data['final_price'];
 						}
 					}
 				}
@@ -11233,10 +11326,14 @@ class Orders extends CI_Controller{
 					if(!empty($shipUPrice)){
 						$this->_data['final_price'] = $this->_data['final_price']+$shipUPrice['uk_discount'];
 						$this->_data['shipping_cost'] = $shipUPrice['uk_discount'];
+						$discountPercent = $shipUPrice['uk_discount'];
+						$finalPrice = $this->_data['final_price'];
 					}else{
 						$shipDPrice = $this->OrdersModel->getDefaultShippingCost("1");
 						$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
 						$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
+						$discountPercent = $shipDPrice['uk_discount'];
+						$finalPrice = $this->_data['final_price'];
 					}
 				}
 			}else{
@@ -11304,25 +11401,21 @@ class Orders extends CI_Controller{
 			if ($data['order_type'] == '2') {
 				if ($data['species_selection'] == '2') {
 					$shipUPrice = $this->OrdersModel->getShippingCostbyUser("3", $practice_lab);
+					$shipDPrice = $this->OrdersModel->getDefaultShippingCost("3");
+					$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
 				}
 				if ($data['species_selection'] == '1') {
 					$shipUPrice = $this->OrdersModel->getShippingCostbyUser("2", $practice_lab);
-				}
-				if(!empty($shipUPrice)){
-					$this->_data['order_discount'] = $shipUPrice['uk_discount'];
-				}else{
-					if ($data['species_selection'] == '2') {
-						$shipDPrice = $this->OrdersModel->getDefaultShippingCost("3");
-						$this->_data['order_discount'] = $shipDPrice['uk_price'];
-					}
-					if ($data['species_selection'] == '1') {
-						$shipDPrice = $this->OrdersModel->getDefaultShippingCost("2");
-						$this->_data['order_discount'] = $shipDPrice['uk_price'];
-					}
+					$shipDPrice = $this->OrdersModel->getDefaultShippingCost("2");
+					$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
 				}
 			}
-			$this->_data['final_price'] = $vetgoidPetslit['uk_price'];
 			$this->_data['price_currency'] = $vetgoidPetslit['price_currency'];
+			$this->_data['order_discount'] = ($vetgoidPetslit['uk_price'] * $discountPercent) / 100;
+			$this->_data['final_price'] = ($vetgoidPetslit['uk_price'] + $this->_data['shipping_cost']) - $this->_data['order_discount'];
+		} else {
+			$this->_data['order_discount'] = ($finalPrice * $discountPercent) / 100;
+			$this->_data['final_price'] = ($finalPrice + $this->_data['shipping_cost']) - $this->_data['order_discount'];
 		}
 
 		if (!empty($data)) {
@@ -15938,6 +16031,95 @@ class Orders extends CI_Controller{
 		redirect('orders');
 	}
 
+	function downloadModifiedExcel($orderId)
+	{
+		ini_set('memory_limit', '256M');
+		$data['data'] = $this->ModifyExcelModel->getRecordByOrderId($orderId);
+		$data['orderId'] = $orderId;
+		$order = $this->OrdersModel->allData($orderId, "");
+		$respnedn = $this->OrdersModel->getProductInfo($order['product_code_selection']);
+		if($respnedn->name == 'PAX Environmental') {
+			$fileName = 'PAX_Complete_Environmental_Result_' . $NextmuneRef;
+		}
+		elseif($respnedn->name == 'PAX Environmental + Food') {
+			$fileName = 'PAX_Complete_Environmental_+_Food_Result_' . $NextmuneRef;
+		} else {
+			$fileName = 'Result';
+		}
+		$modified = $data['data'];
+		$this->load->library('excel');
+		$objPHPExcel = new PHPExcel();
+		$objPHPExcel->setActiveSheetIndex(0);
+		$row = 1;
+		foreach($modified as $key=>$val) {
+			$objPHPExcel->getActiveSheet()->SetCellValue('A'.$row, $val['column1']);
+			$objPHPExcel->getActiveSheet()->SetCellValue('B'.$row, $val['column2']);
+			$objPHPExcel->getActiveSheet()->SetCellValue('C'.$row, $val['column3']);
+			$objPHPExcel->getActiveSheet()->SetCellValue('D'.$row, $val['column4']);
+			$row++;
+		}
+
+		$fileName = $fileName.'.csv';
+		header('Content-Type: application/vnd.ms-excel');
+		header('Content-Disposition: attachment;filename="'.$fileName.'"');
+		header('Cache-Control: max-age=0');
+		$objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'CSV');
+		$objWriter->save('php://output');
+		exit;
+	}
+
+
+	function modifyExcel($orderId)
+	{
+		ini_set('memory_limit', '256M');
+		$data['data'] = $this->ModifyExcelModel->getRecordByOrderId($orderId);
+		$data['orderId'] = $orderId;
+
+		if(!empty($this->input->post())){
+			$post = $this->input->post();
+			$order = $this->OrdersModel->allData($orderId, "");
+			$respnedn = $this->OrdersModel->getProductInfo($order['product_code_selection']);
+			if($respnedn->name == 'PAX Environmental') {
+				$fileName = 'PAX_Complete_Environmental_Result_' . $NextmuneRef;
+			}
+			elseif($respnedn->name == 'PAX Environmental + Food') {
+				$fileName = 'PAX_Complete_Environmental_+_Food_Result_' . $NextmuneRef;
+			} else {
+				$fileName = 'Result';
+			}
+			foreach($post['column4'] as $key=>$val) {
+				$updateData['id'] = $key;
+				$updateData['column4'] = $val;
+				$this->ModifyExcelModel->add_edit($updateData);
+			}
+			$modified = $this->ModifyExcelModel->getRecordByOrderId($orderId);
+			$this->load->library('excel');
+			$objPHPExcel = new PHPExcel();
+			$objPHPExcel->setActiveSheetIndex(0);
+			$row = 1;
+			foreach($modified as $key=>$val) {
+				$objPHPExcel->getActiveSheet()->SetCellValue('A'.$row, $val['column1']);
+				$objPHPExcel->getActiveSheet()->SetCellValue('B'.$row, $val['column2']);
+				$objPHPExcel->getActiveSheet()->SetCellValue('C'.$row, $val['column3']);
+				$objPHPExcel->getActiveSheet()->SetCellValue('D'.$row, $val['column4']);
+				$row++;
+			}
+
+			$fileName = $fileName.'.csv';
+			header('Content-Type: application/vnd.ms-excel');
+			header('Content-Disposition: attachment;filename="'.$fileName.'"');
+			header('Cache-Control: max-age=0');
+			$objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'CSV');
+			$objWriter->save('php://output');
+			exit;
+
+
+			redirect("orders/modify-excel/".$orderId);
+		}
+
+		$this->load->view("orders/modify-excel", $data);
+	}
+
 	function getSerumResultExcel($orderId){
 		ini_set('memory_limit', '256M');
 		if($orderId > 0){
@@ -15945,6 +16127,8 @@ class Orders extends CI_Controller{
 			$objPHPExcel = new PHPExcel();
 			$objPHPExcel->setActiveSheetIndex(0);
 
+			$modify = $this->input->get('modify', TRUE);
+			$modifyExcelData = [];
 			$data = $this->OrdersModel->allData($orderId, "");
 			$respnedn = $this->OrdersModel->getProductInfo($data['product_code_selection']);
 			$order_number = $data['order_number'];
@@ -15958,34 +16142,66 @@ class Orders extends CI_Controller{
 				$raptorData = $this->OrdersModel->getRaptorData($data['order_number']);
 				if($respnedn->name == 'PAX Environmental'){
 					$fileName = 'PAX_Complete_Environmental_Result_'.$NextmuneRef;
+					$modifyExcelData['column1'][] = 'REF. NEXTMUNE';
+					$modifyExcelData['column2'][] = $NextmuneRef;
+					$modifyExcelData['column3'][] = '';
+					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
 					$objPHPExcel->getActiveSheet()->SetCellValue('C1', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D1', '');
+					$modifyExcelData['column1'][] = 'REF. VETLAB';
+					$modifyExcelData['column2'][] = $data['lab_order_number'];
+					$modifyExcelData['column3'][] = '';
+					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. VETLAB');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['lab_order_number']);
 					$objPHPExcel->getActiveSheet()->SetCellValue('C2', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D2', '');
+					$modifyExcelData['column1'][] = 'DATE';
+					$modifyExcelData['column2'][] = date('d-m-Y', strtotime($data['order_date']));
+					$modifyExcelData['column3'][] = '';
+					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A3', 'DATE');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B3', date('d-m-Y', strtotime($data['order_date'])));
 					$objPHPExcel->getActiveSheet()->SetCellValue('C3', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D3', '');
+					$modifyExcelData['column1'][] = 'ANIMAL';
+					$modifyExcelData['column2'][] = $data['pet_name'];
+					$modifyExcelData['column3'][] = '';
+					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A4', 'ANIMAL');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B4', $data['pet_name']);
 					$objPHPExcel->getActiveSheet()->SetCellValue('C4', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D4', '');
+					$modifyExcelData['column1'][] = 'INMUNOTHERAPY RECOMMENDED';
+					$modifyExcelData['column2'][] = 'ARTUVETRIN';
+					$modifyExcelData['column3'][] = '';
+					$modifyExcelData['column4'][] = 'ALLERGENS TO BE INCLUDED IN IMMUNOTHERAPY';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A5', 'INMUNOTHERAPY RECOMMENDED');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B5', 'ARTUVETRIN');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C5', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D5', 'ALLERGENS TO BE INCLUDED IN IMMUNOTHERAPY');
+					$modifyExcelData['column1'][] = '';
+					$modifyExcelData['column2'][] = '';
+					$modifyExcelData['column3'][] = '';
+					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A6', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B6', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C6', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D6', '');
+					$modifyExcelData['column1'][] = 'ANALYSIS';
+					$modifyExcelData['column2'][] = 'ng/mL';
+					$modifyExcelData['column3'][] = 'RESULT';
+					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A7', 'ANALYSIS');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B7', 'ng/mL');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C7', 'RESULT');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D7', '');
+					$modifyExcelData['column1'][] = '';
+					$modifyExcelData['column2'][] = '';
+					$modifyExcelData['column3'][] = '';
+					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A8', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B8', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C8', '');
@@ -16010,21 +16226,31 @@ class Orders extends CI_Controller{
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
+								$modifyExcelData['column1'][] = $paxname;
+								$modifyExcelData['column2'][] = '';
+								$modifyExcelData['column3'][] = '';
+								$modifyExcelData['column4'][] = '';
 								if($rpvalue['id'] == '81'){
 									$submVluArr = $this->OrdersModel->getsubAllergensforPanel('459674',$raptorData->result_id);
 									if(!empty($submVluArr)){
 										$rowCount = $rowCount+1;
 										foreach ($submVluArr as $mrow){
+											$modifyExcelData['column1'][] = $mrow->raptor_code;
+											$modifyExcelData['column2'][] = $mrow->result_value;
 											if(floor($mrow->result_value) >= $cutoffs){
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $mrow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $mrow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
+												$modifyExcelData['column3'][] = 'POSITIVE';
+												$modifyExcelData['column4'][] = 'A';
 											}else{
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $mrow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $mrow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
 												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
+												$modifyExcelData['column3'][] = 'NEGATIVE';
+												$modifyExcelData['column4'][] = '';
 											}
 											$rowCount++;
 										}
@@ -16034,16 +16260,22 @@ class Orders extends CI_Controller{
 									if(!empty($subpVluArr)){
 										$rowCount = $rowCount;
 										foreach ($subpVluArr as $srow){
+											$modifyExcelData['column1'][] = $srow->raptor_code;
+											$modifyExcelData['column2'][] = $srow->result_value;
 											if(floor($srow->result_value) >= $cutoffs){
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
+												$modifyExcelData['column3'][] = 'POSITIVE';
+												$modifyExcelData['column4'][] = 'A';
 											}else{
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
 												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
+												$modifyExcelData['column3'][] = 'NEGATIVE';
+												$modifyExcelData['column4'][] = '';
 											}
 											$rowCount++;
 										}
@@ -16053,16 +16285,22 @@ class Orders extends CI_Controller{
 									if(!empty($subpVluArr)){
 										$rowCount = $rowCount+1;
 										foreach ($subpVluArr as $srow){
+											$modifyExcelData['column1'][] = $srow->raptor_code;
+											$modifyExcelData['column2'][] = $srow->result_value;
 											if(floor($srow->result_value) >= $cutoffs){
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
+												$modifyExcelData['column3'][] = 'POSITIVE';
+												$modifyExcelData['column4'][] = 'A';
 											}else{
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
 												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
+												$modifyExcelData['column3'][] = 'NEGATIVE';
+												$modifyExcelData['column4'][] = '';
 											}
 											$rowCount++;
 										}
@@ -16073,7 +16311,33 @@ class Orders extends CI_Controller{
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
+								$modifyExcelData['column1'][] = '';
+								$modifyExcelData['column2'][] = '';
+								$modifyExcelData['column3'][] = '';
+								$modifyExcelData['column4'][] = '';
 							}
+						}
+					}
+					if(!empty($modify)) {
+						$i = 0;
+						//$this->ModifyExcelModel->deleteByOrderId($orderId);
+						$checkRecord = $this->ModifyExcelModel->getOneRecordByOrderId($orderId);
+						if (empty($checkRecord)) {
+							foreach ($modifyExcelData['column1'] as $key => $val) {
+								$insertData['order_id'] = $orderId;
+								$insertData['column1'] = $modifyExcelData['column1'][$i];
+								$insertData['column2'] = $modifyExcelData['column2'][$i];
+								$insertData['column3'] = $modifyExcelData['column3'][$i];
+								$insertData['column4'] = $modifyExcelData['column4'][$i];
+								$this->ModifyExcelModel->add_edit($insertData);
+								$i++;
+							}
+						}
+						redirect('orders/modify-excel/'.$orderId);
+					} else {
+						$checkRecord = $this->ModifyExcelModel->getOneRecordByOrderId($orderId);
+						if (!empty($checkRecord)) {
+							$this->downloadModifiedExcel($orderId);
 						}
 					}
 				}elseif($respnedn->name == 'PAX Food'){
@@ -16153,34 +16417,66 @@ class Orders extends CI_Controller{
 					}
 				}elseif($respnedn->name == 'PAX Environmental + Food'){
 					$fileName = 'PAX_Complete_Environmental_+_Food_Result_'.$NextmuneRef;
+					$modifyExcelData['column1'][] = 'REF. NEXTMUNE';
+					$modifyExcelData['column2'][] = $NextmuneRef;
+					$modifyExcelData['column3'][] = '';
+					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
 					$objPHPExcel->getActiveSheet()->SetCellValue('C1', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D1', '');
+					$modifyExcelData['column1'][] = 'REF. VETLAB';
+					$modifyExcelData['column2'][] = $data['lab_order_number'];
+					$modifyExcelData['column3'][] = '';
+					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. VETLAB');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['lab_order_number']);
 					$objPHPExcel->getActiveSheet()->SetCellValue('C2', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D2', '');
+					$modifyExcelData['column1'][] = 'DATE';
+					$modifyExcelData['column2'][] = date('d-m-Y', strtotime($data['order_date']));
+					$modifyExcelData['column3'][] = '';
+					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A3', 'DATE');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B3', date('d-m-Y', strtotime($data['order_date'])));
 					$objPHPExcel->getActiveSheet()->SetCellValue('C3', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D3', '');
+					$modifyExcelData['column1'][] = 'ANIMAL';
+					$modifyExcelData['column2'][] = $data['pet_name'];
+					$modifyExcelData['column3'][] = '';
+					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A4', 'ANIMAL');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B4', $data['pet_name']);
 					$objPHPExcel->getActiveSheet()->SetCellValue('C4', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D4', '');
+					$modifyExcelData['column1'][] = 'INMUNOTHERAPY RECOMMENDED';
+					$modifyExcelData['column2'][] = 'ARTUVETRIN';
+					$modifyExcelData['column3'][] = '';
+					$modifyExcelData['column4'][] = 'ALLERGENS TO BE INCLUDED IN IMMUNOTHERAPY';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A5', 'INMUNOTHERAPY RECOMMENDED');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B5', 'ARTUVETRIN');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C5', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D5', 'ALLERGENS TO BE INCLUDED IN IMMUNOTHERAPY');
+					$modifyExcelData['column1'][] = '';
+					$modifyExcelData['column2'][] = '';
+					$modifyExcelData['column3'][] = '';
+					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A6', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B6', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C6', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D6', '');
+					$modifyExcelData['column1'][] = 'ANALYSIS';
+					$modifyExcelData['column2'][] = 'ng/mL';
+					$modifyExcelData['column3'][] = 'RESULT';
+					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A7', 'ANALYSIS');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B7', 'ng/mL');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C7', 'RESULT');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D7', '');
+					$modifyExcelData['column1'][] = '';
+					$modifyExcelData['column2'][] = '';
+					$modifyExcelData['column3'][] = '';
+					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A8', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B8', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C8', '');
@@ -16205,21 +16501,31 @@ class Orders extends CI_Controller{
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
+								$modifyExcelData['column1'][] = $paxname;
+								$modifyExcelData['column2'][] = '';
+								$modifyExcelData['column3'][] = '';
+								$modifyExcelData['column4'][] = '';
 								if($rpvalue['id'] == '81'){
 									$submVluArr = $this->OrdersModel->getsubAllergensforPanel('459674',$raptorData->result_id);
 									if(!empty($submVluArr)){
 										$rowCount = $rowCount+1;
 										foreach ($submVluArr as $mrow){
+											$modifyExcelData['column1'][] = $mrow->raptor_code;
+											$modifyExcelData['column2'][] = $mrow->result_value;
 											if(floor($mrow->result_value) >= $cutoffs){
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $mrow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $mrow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
+												$modifyExcelData['column3'][] = 'POSITIVE';
+												$modifyExcelData['column4'][] = 'A';
 											}else{
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $mrow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $mrow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
 												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
+												$modifyExcelData['column3'][] = 'NEGATIVE';
+												$modifyExcelData['column4'][] = '';
 											}
 											$rowCount++;
 										}
@@ -16229,16 +16535,22 @@ class Orders extends CI_Controller{
 									if(!empty($subpVluArr)){
 										$rowCount = $rowCount;
 										foreach ($subpVluArr as $srow){
+											$modifyExcelData['column1'][] = $srow->raptor_code;
+											$modifyExcelData['column2'][] = $srow->result_value;
 											if(floor($srow->result_value) >= $cutoffs){
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
+												$modifyExcelData['column3'][] = 'POSITIVE';
+												$modifyExcelData['column4'][] = 'A';
 											}else{
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
 												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
+												$modifyExcelData['column3'][] = 'NEGATIVE';
+												$modifyExcelData['column4'][] = '';
 											}
 											$rowCount++;
 										}
@@ -16248,16 +16560,22 @@ class Orders extends CI_Controller{
 									if(!empty($subpVluArr)){
 										$rowCount = $rowCount+1;
 										foreach ($subpVluArr as $srow){
+											$modifyExcelData['column1'][] = $srow->raptor_code;
+											$modifyExcelData['column2'][] = $srow->result_value;
 											if(floor($srow->result_value) >= $cutoffs){
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
+												$modifyExcelData['column3'][] = 'POSITIVE';
+												$modifyExcelData['column4'][] = 'A';
 											}else{
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
 												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
+												$modifyExcelData['column3'][] = 'NEGATIVE';
+												$modifyExcelData['column4'][] = '';
 											}
 											$rowCount++;
 										}
@@ -16268,6 +16586,10 @@ class Orders extends CI_Controller{
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
+								$modifyExcelData['column1'][] = '';
+								$modifyExcelData['column2'][] = '';
+								$modifyExcelData['column3'][] = '';
+								$modifyExcelData['column4'][] = '';
 							}
 						}
 					}
@@ -16280,26 +16602,37 @@ class Orders extends CI_Controller{
 							foreach ($subAllergndArr as $rpvalue){
 								if($rpvalue['name'] != "N/A"){
 									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['name'].' ('.$rpvalue['pax_latin_name'].')');
+									$modifyExcelData['column1'][] = $rpvalue['name'].' ('.$rpvalue['pax_latin_name'].')';
 								}else{
 									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['pax_name'].' ('.$rpvalue['pax_latin_name'].')');
+									$modifyExcelData['column1'][] = $rpvalue['pax_name'].' ('.$rpvalue['pax_latin_name'].')';
 								}
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
+								$modifyExcelData['column2'][] = '';
+								$modifyExcelData['column3'][] = '';
+								$modifyExcelData['column4'][] = '';
 								$subpVluArr = $this->OrdersModel->getsubAllergensforPanel($rpvalue['id'],$raptorData->result_id);
 								if(!empty($subpVluArr)){
 									$rowCount = $rowCount+1;
 									foreach ($subpVluArr as $srow){
+										$modifyExcelData['column1'][] = $srow->raptor_code;
+										$modifyExcelData['column2'][] = $srow->result_value;
 										if(floor($srow->result_value) >= $cutoffs){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
 											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
+											$modifyExcelData['column3'][] = 'POSITIVE';
+											$modifyExcelData['column4'][] = 'A';
 										}else{
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
 											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
+											$modifyExcelData['column3'][] = 'NEGATIVE';
+											$modifyExcelData['column4'][] = '';
 										}
 										$rowCount++;
 									}
@@ -16309,7 +16642,33 @@ class Orders extends CI_Controller{
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
+								$modifyExcelData['column1'][] = '';
+								$modifyExcelData['column2'][] = '';
+								$modifyExcelData['column3'][] = '';
+								$modifyExcelData['column4'][] = '';
 							}
+						}
+					}
+					if(!empty($modify)) {
+						$i = 0;
+						//$this->ModifyExcelModel->deleteByOrderId($orderId);
+						$checkRecord = $this->ModifyExcelModel->getOneRecordByOrderId($orderId);
+						if (empty($checkRecord)) {
+							foreach ($modifyExcelData['column1'] as $key => $val) {
+								$insertData['order_id'] = $orderId;
+								$insertData['column1'] = $modifyExcelData['column1'][$i];
+								$insertData['column2'] = $modifyExcelData['column2'][$i];
+								$insertData['column3'] = $modifyExcelData['column3'][$i];
+								$insertData['column4'] = $modifyExcelData['column4'][$i];
+								$this->ModifyExcelModel->add_edit($insertData);
+								$i++;
+							}
+						}
+						redirect('orders/modify-excel/'.$orderId);
+					} else {
+						$checkRecord = $this->ModifyExcelModel->getOneRecordByOrderId($orderId);
+						if (!empty($checkRecord)) {
+							$this->downloadModifiedExcel($orderId);
 						}
 					}
 				}elseif($respnedn->name == 'PAX Environmental Screening'){

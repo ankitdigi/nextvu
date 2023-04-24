@@ -73,6 +73,7 @@ $route['orders/add'] = 'Orders/orderType';
 $route['orders/edit/(:num)'] = 'Orders/orderType/$1';
 $route['orders/send_mail/(:num)'] = 'Orders/send_mail/$1';
 $route['orders/track_order/(:num)'] = 'Orders/track_order/$1';
+$route['orders/modify-excel/(:num)'] = 'Orders/modifyExcel/$1';
 
 $route['repeatOrder/repeat_order/(:num)'] = 'RepeatOrder/orderType/$1';
 

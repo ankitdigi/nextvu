@@ -528,8 +528,14 @@ if($order_details['species_name'] == 'Horse'){
 											$zonesIds = $this->OrdersModel->checkZones($order_details['id']);
 											if(!empty($zonesIds) && in_array("8", $zonesIds)){
 											?>
-											<a target="_blank" href="<?php echo site_url('orders/getSerumResultExcel/'.$order_details['id'].''); ?>" class="btn btn-primary mrgnbtm10"> Download Excel Document</a>
-											<?php } ?>
+												<a target="_blank" href="<?php echo site_url('orders/getSerumResultExcel/'.$order_details['id'].''); ?>" class="btn btn-primary mrgnbtm10"> Download Excel Document</a>
+												<?php
+												if($ordeType == 'PAX Environmental' || $ordeType == 'PAX Environmental + Food'){
+												?>
+<a target="_blank" href="<?php echo site_url('orders/getSerumResultExcel/'.$order_details['id'].'?modify=1'); ?>" class="btn btn-primary mrgnbtm10"> Modify Excel Document</a>
+												<?php
+												}
+											} ?>
 											<br>
 											<?php if($ordeType == 'PAX Environmental' || $ordeType == 'PAX Environmental + Food'){ ?>
 												<?php if(!empty($block1) && $boxremoved > 0 && $order_details['is_serum_result_sent'] != 1){ ?>
