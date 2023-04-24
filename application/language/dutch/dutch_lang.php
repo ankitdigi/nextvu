@@ -1729,3 +1729,4 @@ $lang['confirm_password'] = 'Bevestig wachtwoord';
 $lang['submit'] = 'Verzenden';
 $lang['register_error_1'] = 'Dit e-mail-ID is al geregistreerd.';
 $lang['register_error_2'] = "Wachtwoord & Bevestig wachtwoord komt niet overeen.";
+$lang['register_success'] = "Bedankt voor het registreren bij Nextview!<br><br><br>Voordat u toegang krijgt tot NextView, moeten we valideren dat het aangemaakte profiel gekoppeld is aan een dierenkliniek. We valideren meestal alle registraties binnen 1-2 werkdagen. We sturen u een e-mail met uw inloggegevens zodra het profiel is gevalideerd. Controleer uw spam-map als u binnen 2 werkdagen nog geen bevestiging heeft ontvangen of neem contact op met vetruus@nextmune.com.";

@@ -1728,3 +1728,4 @@ $lang['confirm_password'] = 'Passwort bestätigen';
 $lang['submit'] = 'Senden';
 $lang['register_error_1'] = 'Diese E-Mail-ID ist bereits registriert.';
 $lang['register_error_2'] = "Passwort & Passwort bestätigen stimmen nicht überein.";
+$lang['register_success'] = "Danke, dass Sie sich bei Nextview registriert haben!<br><br><br>Bevor Sie Zugriff auf NextView erhalten, müssen wir validieren, dass das erstellte Profil mit einer Tierklinik verknüpft ist. Normalerweise validieren wir alle Registrierungen innerhalb von 1-2 Werktagen. Wir senden Ihnen eine E-Mail mit Ihren Anmeldedaten, sobald das Profil validiert ist. Bitte überprüfen Sie Ihren Spam-Ordner, wenn Sie innerhalb von 2 Werktagen keine Bestätigung erhalten haben oder wenden Sie sich an vetruus@nextmune.com.";

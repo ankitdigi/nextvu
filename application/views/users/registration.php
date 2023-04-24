@@ -1,6 +1,5 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
-
 ?>
 <!DOCTYPE html>
 <html>
@@ -53,7 +52,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 						<span class="form-control-feedback"><i class="fa fa-user" aria-hidden="true"></i></span>
 					</div>
 					<div class="form-group has-feedback">
-						<input type="text" class="form-control" placeholder="<?= $this->lang->line("last_name"); ?>" name="last_name" value="<?= !empty($error) ? $data['last_name'] : ""; ?>" required="">
+						<input type="text" class="form-control" placeholder="<?= $this->lang->line("last_name"); ?>" name="last_name" value="<?= !empty($error) ? $data['last_name'] : ""; ?>" >
 						<span class="form-control-feedback"><i class="fa fa-user" aria-hidden="true"></i></span>
 					</div>
 					<div class="form-group has-feedback">

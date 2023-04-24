@@ -1814,3 +1814,4 @@ $lang['confirm_password'] = 'Confirmar contraseña';
 $lang['submit'] = 'Submit';
 $lang['register_error_1'] = 'Este ID de correo electrónico ya está registrado.';
 $lang['register_error_2'] = "La contraseña y la confirmación de contraseña no coinciden.";
+$lang['register_success'] = "¡Gracias por registrarse en Nextview!<br><br><br>Antes de que se le otorgue acceso a NextView, debemos validar que el perfil creado esté vinculado a una clínica veterinaria. Por lo general, validamos todos los registros dentro de 1-2 días hábiles. Le enviaremos un correo electrónico con sus detalles de inicio de sesión tan pronto como se valide el perfil. Asegúrese de revisar su carpeta de correo no deseado si no ha recibido una confirmación en 2 días hábiles. o comuníquese con vetruus@nextmune.com.";

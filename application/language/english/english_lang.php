@@ -1727,3 +1727,4 @@ $lang['confirm_password'] = 'Confirm Password';
 $lang['submit'] = 'Submit';
 $lang['register_error_1'] = 'This email ID is already registered.';
 $lang['register_error_2'] = "Password & Confirm Password doesn't match.";
+$lang['register_success'] = "Thanks for registering to Nextview!<br><br><br>Before you are granted access to NextView, we have to validate that the created profile is linked to a veterinary clinic. We typically validate all registrations within 1-2 business days. We will send you an e-mail with your log on details as fast as the profile is validated. Please make sure to check your spam folder if you haven't received a confirmation in 2 business days or reach out to vetruus@nextmune.com.";

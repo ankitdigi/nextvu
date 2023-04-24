@@ -1730,3 +1730,4 @@ $lang['confirm_password'] = 'Confirmer le mot de passe';
 $lang['submit'] = 'Soumettre';
 $lang['register_error_1'] = 'Cette adresse e-mail est déjà enregistrée.';
 $lang['register_error_2'] = "Le mot de passe et la confirmation du mot de passe ne correspondent pas.";
+$lang['register_success'] = "Merci de vous être inscrit à Nextview !<br><br><br>Avant de vous accorder l'accès à NextView, nous devons valider que le profil créé est lié à une clinique vétérinaire. Nous validons généralement toutes les inscriptions dans un délai de 1 à 2 jours ouvrables. Nous vous enverrons un e-mail avec vos informations de connexion dès que le profil sera validé. Assurez-vous de vérifier votre dossier spam si vous n'avez pas reçu de confirmation dans les 2 jours ouvrables. ou contactez vetruus@nextmune.com.";

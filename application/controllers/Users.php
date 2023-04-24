@@ -101,31 +101,35 @@ class Users extends CI_Controller {
 				$userDetailData['vat_reg'] = $postData['vat'];
 				$this->UsersDetailsModel->add_edit($usersData, $userDetailData);
 
-				$from_email = FROM_EMAIL;
-				$content_data['recipient_name'] = "Dear Admin";
-				$content_data['content_body'] = '<b>First Name: </b>' . $postData['name'] . '<br><br><b>Last Name: </b>' . $postData['last_name'] . '<br><br><b>Clinic: </b>' . $postData['clinic'] . '<br><br><b>Email Address: </b>' . $postData['email'] . '<br><br><b>Post Code: </b>' . $postData['post_code'] . '';
-				$to_email = 'stewart@webbagency.co.uk';
-				//$to_email = 'reports.uk@nextmune.com';
-				$config = array(
-					'mailtype' => 'html',
-					'charset' => 'utf-8'
-				);
-				$this->load->library('email', $config);
-				$this->email->from($from_email, "NextVu");
-				$this->email->to($to_email);
-				$this->email->set_header('Content-Type', 'application/pdf');
-				$this->email->set_header('Content-Disposition', 'attachment');
-				$this->email->set_header('Content-Transfer-Encoding', 'base64');
-				$this->email->subject('Registration Page Details');
-				$msg_content = $this->load->view('users/registration_mail_template', $content_data, true);
-				$this->email->message($msg_content);
-				$this->email->set_mailtype("html");
-				$is_send = $this->email->send();
-				if ($is_send) {
-					$success = "Thanks for registering to Nextview!<br><br><br>Before you are granted access to NextView, we have to validate that the created profile is linked to a veterinary clinic. We typically validate all registrations within 1-2 business days. We will send you an e-mail with your log on details as fast as the profile is validated. Please make sure to check your spam folder if you haven't received a confirmation in 2 business days or reach out to [local email address].";
+				if (ENVIRONMENT == production) {
+					$from_email = FROM_EMAIL;
+					$content_data['recipient_name'] = "Dear Admin";
+					$content_data['content_body'] = '<b>First Name: </b>' . $postData['name'] . '<br><br><b>Last Name: </b>' . $postData['last_name'] . '<br><br><b>Clinic: </b>' . $postData['clinic'] . '<br><br><b>Email Address: </b>' . $postData['email'] . '<br><br><b>Post Code: </b>' . $postData['post_code'] . '';
+					$to_email = 'stewart@webbagency.co.uk';
+					//$to_email = 'reports.uk@nextmune.com';
+					$config = array(
+						'mailtype' => 'html',
+						'charset' => 'utf-8'
+					);
+					$this->load->library('email', $config);
+					$this->email->from($from_email, "NextVu");
+					$this->email->to($to_email);
+					$this->email->set_header('Content-Type', 'application/pdf');
+					$this->email->set_header('Content-Disposition', 'attachment');
+					$this->email->set_header('Content-Transfer-Encoding', 'base64');
+					$this->email->subject('Registration Page Details');
+					$msg_content = $this->load->view('users/registration_mail_template', $content_data, true);
+					$this->email->message($msg_content);
+					$this->email->set_mailtype("html");
+					$is_send = $this->email->send();
+					if ($is_send) {
+						$success = "Thanks for registering to Nextview!<br><br><br>Before you are granted access to NextView, we have to validate that the created profile is linked to a veterinary clinic. We typically validate all registrations within 1-2 business days. We will send you an e-mail with your log on details as fast as the profile is validated. Please make sure to check your spam folder if you haven't received a confirmation in 2 business days or reach out to [local email address].";
+					} else {
+						$error = $this->email->print_debugger();
+						$errorNum = 3;
+					}
 				} else {
-					$error = $this->email->print_debugger();
-					$errorNum = 3;
+					$success = "Thanks for registering to Nextview!<br><br><br>Before you are granted access to NextView, we have to validate that the created profile is linked to a veterinary clinic. We typically validate all registrations within 1-2 business days. We will send you an e-mail with your log on details as fast as the profile is validated. Please make sure to check your spam folder if you haven't received a confirmation in 2 business days or reach out to [local email address].";
 				}
 			}
 		}

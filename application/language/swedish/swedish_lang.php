@@ -1732,3 +1732,4 @@ $lang['confirm_password'] = 'Bekräfta lösenord';
 $lang['submit'] = 'Skicka';
 $lang['register_error_1'] = 'Detta e-post-ID är redan registrerat.';
 $lang['register_error_2'] = "Lösenord och bekräfta lösenord matchar inte.";
+$lang['register_success'] = "Tack för att du registrerade dig på Nextview!<br><br><br>Innan du beviljas åtkomst till NextView måste vi validera att den skapade profilen är länkad till en veterinärklinik. Vi validerar vanligtvis alla registreringar inom 1-2 arbetsdagar. Vi skickar dig ett e-postmeddelande med dina inloggningsuppgifter så fort profilen har validerats. Se till att kontrollera din skräppostmapp om du inte har fått en bekräftelse inom 2 arbetsdagar eller kontakta vetruus@nextmune.com.";
