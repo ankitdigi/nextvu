@@ -1,7 +1,7 @@
 <?php
 require_once(APPPATH . 'libraries/geoip/geoip2.phar');
 use GeoIp2\Database\Reader;
-if ( ! defined('BASEPATH')) exit('No direct script access allowed'); 
+if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 error_reporting(E_ERROR | E_PARSE);
 class Users extends CI_Controller {
 	public function __construct(){
@@ -101,35 +101,31 @@ class Users extends CI_Controller {
 				$userDetailData['vat_reg'] = $postData['vat'];
 				$this->UsersDetailsModel->add_edit($usersData, $userDetailData);
 
-				if (ENVIRONMENT == production) {
-					$from_email = FROM_EMAIL;
-					$content_data['recipient_name'] = "Dear Admin";
-					$content_data['content_body'] = '<b>First Name: </b>' . $postData['name'] . '<br><br><b>Last Name: </b>' . $postData['last_name'] . '<br><br><b>Clinic: </b>' . $postData['clinic'] . '<br><br><b>Email Address: </b>' . $postData['email'] . '<br><br><b>Post Code: </b>' . $postData['post_code'] . '';
-					$to_email = 'stewart@webbagency.co.uk';
-					//$to_email = 'reports.uk@nextmune.com';
-					$config = array(
-						'mailtype' => 'html',
-						'charset' => 'utf-8'
-					);
-					$this->load->library('email', $config);
-					$this->email->from($from_email, "NextVu");
-					$this->email->to($to_email);
-					$this->email->set_header('Content-Type', 'application/pdf');
-					$this->email->set_header('Content-Disposition', 'attachment');
-					$this->email->set_header('Content-Transfer-Encoding', 'base64');
-					$this->email->subject('Registration Page Details');
-					$msg_content = $this->load->view('users/registration_mail_template', $content_data, true);
-					$this->email->message($msg_content);
-					$this->email->set_mailtype("html");
-					$is_send = $this->email->send();
-					if ($is_send) {
-						$success = "Thanks for registering to Nextview!<br><br><br>Before you are granted access to NextView, we have to validate that the created profile is linked to a veterinary clinic. We typically validate all registrations within 1-2 business days. We will send you an e-mail with your log on details as fast as the profile is validated. Please make sure to check your spam folder if you haven't received a confirmation in 2 business days or reach out to [local email address].";
-					} else {
-						$error = $this->email->print_debugger();
-						$errorNum = 3;
-					}
-				} else {
+				$from_email = FROM_EMAIL;
+				$content_data['recipient_name'] = "Dear Admin";
+				$content_data['content_body'] = '<b>First Name: </b>' . $postData['name'] . '<br><br><b>Last Name: </b>' . $postData['last_name'] . '<br><br><b>Clinic: </b>' . $postData['clinic'] . '<br><br><b>Email Address: </b>' . $postData['email'] . '<br><br><b>Post Code: </b>' . $postData['post_code'] . '';
+				$to_email = 'stewart@webbagency.co.uk';
+				//$to_email = 'reports.uk@nextmune.com';
+				$config = array(
+					'mailtype' => 'html',
+					'charset' => 'utf-8'
+				);
+				$this->load->library('email', $config);
+				$this->email->from($from_email, "NextVu");
+				$this->email->to($to_email);
+				$this->email->set_header('Content-Type', 'application/pdf');
+				$this->email->set_header('Content-Disposition', 'attachment');
+				$this->email->set_header('Content-Transfer-Encoding', 'base64');
+				$this->email->subject('Registration Page Details');
+				$msg_content = $this->load->view('users/registration_mail_template', $content_data, true);
+				$this->email->message($msg_content);
+				$this->email->set_mailtype("html");
+				$is_send = $this->email->send();
+				if ($is_send) {
 					$success = "Thanks for registering to Nextview!<br><br><br>Before you are granted access to NextView, we have to validate that the created profile is linked to a veterinary clinic. We typically validate all registrations within 1-2 business days. We will send you an e-mail with your log on details as fast as the profile is validated. Please make sure to check your spam folder if you haven't received a confirmation in 2 business days or reach out to [local email address].";
+				} else {
+					$error = $this->email->print_debugger();
+					$errorNum = 3;
 				}
 			}
 		}
@@ -203,23 +199,23 @@ class Users extends CI_Controller {
 		$validate = $this->UsersModel->validate($email,$password);
 		if($validate->num_rows() > 0){
 			if ($this->input->post('remember')=='on') {
-                $cookie = array(
-                    'name'   => 'vetordmgmt_email',
-                    'value'  => $email,
-                    'expire' => (3600 * 24 * 7)
-                );
-                set_cookie($cookie);
-                $cookie2 = array(
-                    'name'   => 'vetordmgmt_password',
-                    'value'  => $this->input->post('password',TRUE),
-                    'expire' => (3600 * 24 * 7)
-                );
-                set_cookie($cookie2);
-            } else {
-                delete_cookie("vetordmgmt_email");
-                delete_cookie("vetordmgmt_password");
-            }
-	        $data  = $validate->row_array();
+				$cookie = array(
+					'name'   => 'vetordmgmt_email',
+					'value'  => $email,
+					'expire' => (3600 * 24 * 7)
+				);
+				set_cookie($cookie);
+				$cookie2 = array(
+					'name'   => 'vetordmgmt_password',
+					'value'  => $this->input->post('password',TRUE),
+					'expire' => (3600 * 24 * 7)
+				);
+				set_cookie($cookie2);
+			} else {
+				delete_cookie("vetordmgmt_email");
+				delete_cookie("vetordmgmt_password");
+			}
+			$data  = $validate->row_array();
 			if(!empty($data)){
 				$email = $data['email'];
 				$role  = $data['role'];
@@ -253,7 +249,7 @@ class Users extends CI_Controller {
 			}
 		}else{
 			$this->session->set_flashdata('msg','Email or Password is wrong');
-	        redirect('users/login');
+			redirect('users/login');
 		}
 	}
 
@@ -269,7 +265,7 @@ class Users extends CI_Controller {
 			exit();
 		}
 		redirect('dashboard');
-    }
+	}
 
 	function admin_users_list(){
 		$this->load->view('users/admin_users/index');
@@ -277,28 +273,28 @@ class Users extends CI_Controller {
 
 	function admin_users_getTableData(){
 		$role = '1';
-		$admin_users = $this->UsersModel->getAdminTableData($role); 
-        if(!empty($admin_users)){
-            foreach ($admin_users as $key => $value) {
-                if(!empty($value->name)){
-                    $admin_users[$key]->name = $value->name;
-                    $admin_users[$key]->email = $value->email;
+		$admin_users = $this->UsersModel->getAdminTableData($role);
+		if(!empty($admin_users)){
+			foreach ($admin_users as $key => $value) {
+				if(!empty($value->name)){
+					$admin_users[$key]->name = $value->name;
+					$admin_users[$key]->email = $value->email;
 					if($value->role ==1 && $value->is_admin ==0){
-					$admin_users[$key]->role = 'Super Admin';
+						$admin_users[$key]->role = 'Super Admin';
 					}else{
-					$admin_users[$key]->role = 'Admin';
+						$admin_users[$key]->role = 'Admin';
 					}
-                }
-            }
-        }
+				}
+			}
+		}
 
-        $total = $this->UsersModel->count_all();
-        $totalFiltered = $this->UsersModel->count_admin_filtered($role);
-        $ajax["recordsTotal"] = $total;
-        $ajax["recordsFiltered"]  = $totalFiltered;
-        $ajax['data'] = $admin_users;
-        echo json_encode($ajax); exit();
-    }
+		$total = $this->UsersModel->count_all();
+		$totalFiltered = $this->UsersModel->count_admin_filtered($role);
+		$ajax["recordsTotal"] = $total;
+		$ajax["recordsFiltered"]  = $totalFiltered;
+		$ajax['data'] = $admin_users;
+		echo json_encode($ajax); exit();
+	}
 
 	function admin_users_addEdit($id= ''){
 		$postUser = [];
@@ -341,21 +337,21 @@ class Users extends CI_Controller {
 					$postUser['is_admin'] = '0';
 				}
 				$postUser['id'] = $id;
-                if(is_numeric($id)>0){
-                    $postUser['updated_by'] = $this->user_id;
-                    $postUser['updated_at'] = date("Y-m-d H:i:s");
-                    if ($id = $this->UsersModel->admin_add_edit($postUser)>0) {
+				if(is_numeric($id)>0){
+					$postUser['updated_by'] = $this->user_id;
+					$postUser['updated_at'] = date("Y-m-d H:i:s");
+					if ($id = $this->UsersModel->admin_add_edit($postUser)>0) {
 						$this->session->set_flashdata('success','Admin data has been updated successfully.');
 						redirect('users/admin_users_list');
-                    }
-                }else{
-                    $postUser['created_by'] = $this->user_id;
-                    $postUser['created_at'] = date("Y-m-d H:i:s");
-                    if ($id = $this->UsersModel->admin_add_edit($postUser)) {
-                        $this->session->set_flashdata('success','Admin data has been added successfully.');
-                        redirect('users/admin_users_list');
-                    }
-                }
+					}
+				}else{
+					$postUser['created_by'] = $this->user_id;
+					$postUser['created_at'] = date("Y-m-d H:i:s");
+					if ($id = $this->UsersModel->admin_add_edit($postUser)) {
+						$this->session->set_flashdata('success','Admin data has been added successfully.');
+						redirect('users/admin_users_list');
+					}
+				}
 			}
 		}
 
@@ -369,15 +365,15 @@ class Users extends CI_Controller {
 	}
 
 	function admin_user_delete($id){
-        if ($id != '' && is_numeric($id)) {
-            $dataWhere['id'] = $id;
-            $delete = $this->UsersModel->admin_user_delete($dataWhere);
-            if($delete){
-                echo "success"; exit;
-            }
-        }
-        echo "failed"; exit;
-    }
+		if ($id != '' && is_numeric($id)) {
+			$dataWhere['id'] = $id;
+			$delete = $this->UsersModel->admin_user_delete($dataWhere);
+			if($delete){
+				echo "success"; exit;
+			}
+		}
+		echo "failed"; exit;
+	}
 
 	function profile(){
 		$postUser = [];
@@ -387,17 +383,17 @@ class Users extends CI_Controller {
 		$data = $this->UsersModel->getUser($this->_data);
 		$data = (array)$data;
 		if ($this->input->post('submit')) {
-            //set unique value
+			//set unique value
 			$is_email_unique = "";
 			$current_email = $data['email'];
 			if($this->input->post('email') != $current_email){
 				$is_email_unique = "|is_unique[ci_users.email]";
 			}
 
-            //set rules
-            $this->form_validation->set_rules('name', 'name', 'required');
-            $this->form_validation->set_rules('email', 'email', 'required'.$is_email_unique);
-            if($this->input->post('password')!='') {
+			//set rules
+			$this->form_validation->set_rules('name', 'name', 'required');
+			$this->form_validation->set_rules('email', 'email', 'required'.$is_email_unique);
+			if($this->input->post('password')!='') {
 				$this->form_validation->set_rules('password', 'password', 'required');
 			}
 
@@ -412,7 +408,7 @@ class Users extends CI_Controller {
 				}
 				$postUser['country'] = $this->input->post('country');
 				$postUser['preferred_language'] = $this->input->post('preferred_language');
-                if(is_numeric($this->user_id)>0){
+				if(is_numeric($this->user_id)>0){
 					$postUser['updated_at'] = date("Y-m-d H:i:s");
 					$postUser['updated_by'] = $this->user_id;
 					$postUser['id'] = $this->user_id;
@@ -424,7 +420,7 @@ class Users extends CI_Controller {
 			}
 		}
 
-        //load data edit time
+		//load data edit time
 		if(is_numeric($this->user_id)>0){
 			if(!empty($data)){
 				$this->_data['data'] = $data;
@@ -473,7 +469,7 @@ class Users extends CI_Controller {
 
 	function tm_users_getTableData(){
 		$role = '5';
-		$tm_users = $this->UsersModel->getTmUsersTableData($role); 
+		$tm_users = $this->UsersModel->getTmUsersTableData($role);
 		if(!empty($tm_users)){
 			foreach ($tm_users as $key => $value) {
 				if(!empty($value->name)){
@@ -490,46 +486,46 @@ class Users extends CI_Controller {
 				}
 			}
 		}
-        $total = $this->UsersModel->count_all();
-        $totalFiltered = $this->UsersModel->count_tm_users_filtered($role);
-        $ajax["recordsTotal"] = $total;
-        $ajax["recordsFiltered"]  = $totalFiltered;
-        $ajax['data'] = $tm_users;
-        echo json_encode($ajax); exit();
-    }
+		$total = $this->UsersModel->count_all();
+		$totalFiltered = $this->UsersModel->count_tm_users_filtered($role);
+		$ajax["recordsTotal"] = $total;
+		$ajax["recordsFiltered"]  = $totalFiltered;
+		$ajax['data'] = $tm_users;
+		echo json_encode($ajax); exit();
+	}
 
-    function tm_users_addEdit($id= ''){
-        $postUser = [];
-        $postUserDetails = [];
-        $this->_data['data'] = [];
-        $this->_data['countries'] = $this->StaffCountriesModel->getRecordAll();
+	function tm_users_addEdit($id= ''){
+		$postUser = [];
+		$postUserDetails = [];
+		$this->_data['data'] = [];
+		$this->_data['countries'] = $this->StaffCountriesModel->getRecordAll();
 		$this->_data['staff_members'] = $this->StaffMembersModel->getManagedbyRecordAll();
-  		$this->_data['id'] = $id;
-        $data = $this->UsersModel->getRecord($id,"5");
-        $role_id = "2";
-        $this->_data['practices'] = $this->UsersModel->getRecordAll($role_id);
-        $this->_data['labs'] = $this->UsersModel->getRecordAll("6");
-        $this->_data['corporates'] = $this->UsersModel->getRecordAll("7");
-        if($id>0 && isset($data['column_field']) && $data['column_field']!=''){
-            $tmDatas = $this->UsersDetailsModel->getColumnAllArray($id);
+		$this->_data['id'] = $id;
+		$data = $this->UsersModel->getRecord($id,"5");
+		$role_id = "2";
+		$this->_data['practices'] = $this->UsersModel->getRecordAll($role_id);
+		$this->_data['labs'] = $this->UsersModel->getRecordAll("6");
+		$this->_data['corporates'] = $this->UsersModel->getRecordAll("7");
+		if($id>0 && isset($data['column_field']) && $data['column_field']!=''){
+			$tmDatas = $this->UsersDetailsModel->getColumnAllArray($id);
 			$tmDatas = array_column($tmDatas, 'column_field', 'column_name');
 			$this->practice_data['ids'] = !empty($tmDatas['practices']) ? implode(",",json_decode($tmDatas['practices'])) : '';
 			$this->lab_data['ids'] = !empty($tmDatas['labs']) ? implode(",",json_decode($tmDatas['labs'])) : '';
 			$this->corporate_data['ids']= !empty($tmDatas['corporates']) ? implode(",",json_decode($tmDatas['corporates'])) : '';
-        }else{
-            $this->practice_data['ids'] = "";
-            $this->lab_data['ids'] = "";
-            $this->corporate_data['ids'] = "";
-        }
+		}else{
+			$this->practice_data['ids'] = "";
+			$this->lab_data['ids'] = "";
+			$this->corporate_data['ids'] = "";
+		}
 
-        $this->_data['branches'] = $this->UsersDetailsModel->get_petowner_branch("",$this->practice_data);
-        $this->_data['lab_branches'] = $this->UsersDetailsModel->get_petowner_branch("",$this->lab_data);
-        $this->_data['corporate_branches'] = $this->UsersDetailsModel->get_petowner_branch("",$this->corporate_data);
-        if ($this->input->post('name')!='') {
-            //set unique value
-            $is_email_unique = "";
-            $current_email = $data['email'];
-            if($this->input->post('email') != $current_email){
+		$this->_data['branches'] = $this->UsersDetailsModel->get_petowner_branch("",$this->practice_data);
+		$this->_data['lab_branches'] = $this->UsersDetailsModel->get_petowner_branch("",$this->lab_data);
+		$this->_data['corporate_branches'] = $this->UsersDetailsModel->get_petowner_branch("",$this->corporate_data);
+		if ($this->input->post('name')!='') {
+			//set unique value
+			$is_email_unique = "";
+			$current_email = $data['email'];
+			if($this->input->post('email') != $current_email){
 				$this->db->select('email');
 				$this->db->from('ci_users');
 				$this->db->where('role', 5);
@@ -538,24 +534,24 @@ class Users extends CI_Controller {
 				if($res2->num_rows() > 0){
 					$is_email_unique = "|is_unique[ci_users.email]";
 				}
-            }
+			}
 
-            //set rules
-            $this->form_validation->set_rules('name', 'name', 'required');
-            $this->form_validation->set_rules('email', 'email', 'required'.$is_email_unique);
-            if($this->input->post('password')!='') {
+			//set rules
+			$this->form_validation->set_rules('name', 'name', 'required');
+			$this->form_validation->set_rules('email', 'email', 'required'.$is_email_unique);
+			if($this->input->post('password')!='') {
 				$this->form_validation->set_rules('password', 'password', 'required');
 			}
-            if ($this->form_validation->run() == FALSE){
-                $this->load->view('users/tm_users/add_edit','',TRUE);
-            }else{
-                //user post data
+			if ($this->form_validation->run() == FALSE){
+				$this->load->view('users/tm_users/add_edit','',TRUE);
+			}else{
+				//user post data
 				$postUser['name'] = $this->input->post('name');
 				$postUser['email'] = $this->input->post('email');
 				$postUser['country'] = $this->input->post('country');
 				$postUser['preferred_language'] = $this->input->post('preferred_language');
 				if($this->input->post('password')){
-				$postUser['password'] = md5($this->input->post('password'));
+					$postUser['password'] = md5($this->input->post('password'));
 				}
 				$postUser['user_type'] = $this->input->post('user_type');
 				$postUser['managed_by_id'] = !empty($this->input->post('managed_by_id'))?implode(",",$this->input->post('managed_by_id')):'';
@@ -568,56 +564,56 @@ class Users extends CI_Controller {
 				$postUserDetails['corporate_branches'] = NULL;
 				$postUserDetails['labs'] = NULL;
 				$postUserDetails['lab_branches'] = NULL;
-                if(is_numeric($id)>0){
-                    $postUser['updated_by'] = $this->user_id;
-                    $postUser['updated_at'] = date("Y-m-d H:i:s");
-                    if ($updid = $this->UsersModel->tmUsers_add_edit($postUser,$postUserDetails)>0) {
+				if(is_numeric($id)>0){
+					$postUser['updated_by'] = $this->user_id;
+					$postUser['updated_at'] = date("Y-m-d H:i:s");
+					if ($updid = $this->UsersModel->tmUsers_add_edit($postUser,$postUserDetails)>0) {
 						$this->UsersModel->updateTMUsers_practice($id,$postUserDetails['practices']);
-                        if( $this->user_role=='5' ){
-                            $this->session->set_flashdata('success','Profile has been updated successfully.');
-                            redirect('tm_users/edit/'.$this->user_id);
-                        }else{
-                            $this->session->set_flashdata('success','TM user data has been updated successfully.');
-                            redirect('users/tm_users_list');
-                        }
-                    }
-                }else{
-                    $postUser['role'] = '5';
-                    $postUser['created_by'] = $this->user_id;
-                    $postUser['created_at'] = date("Y-m-d H:i:s");
-                    if ($insrtid = $this->UsersModel->tmUsers_add_edit($postUser,$postUserDetails)) {
+						if( $this->user_role=='5' ){
+							$this->session->set_flashdata('success','Profile has been updated successfully.');
+							redirect('tm_users/edit/'.$this->user_id);
+						}else{
+							$this->session->set_flashdata('success','TM user data has been updated successfully.');
+							redirect('users/tm_users_list');
+						}
+					}
+				}else{
+					$postUser['role'] = '5';
+					$postUser['created_by'] = $this->user_id;
+					$postUser['created_at'] = date("Y-m-d H:i:s");
+					if ($insrtid = $this->UsersModel->tmUsers_add_edit($postUser,$postUserDetails)) {
 						$this->UsersModel->updateTMUsers_practice($insrtid,$postUserDetails['practices']);
-                        $this->session->set_flashdata('success','TM user data has been added successfully.');
-                        redirect('users/tm_users_list');
-                    }
-                }
-            }
-        }
+						$this->session->set_flashdata('success','TM user data has been added successfully.');
+						redirect('users/tm_users_list');
+					}
+				}
+			}
+		}
 
-        //load data edit time
-        if(is_numeric($id)>0){
+		//load data edit time
+		if(is_numeric($id)>0){
 			if(!empty($data)){
-                $tmDatas = $this->UsersDetailsModel->getColumnAllArray($id);
+				$tmDatas = $this->UsersDetailsModel->getColumnAllArray($id);
 				$tmDatas = array_column($tmDatas, 'column_field', 'column_name');
 				$data['practices'] = !empty($tmDatas['practices']) ? $tmDatas['practices'] : '';
 				$data['labs'] = !empty($tmDatas['labs']) ? $tmDatas['labs'] : '';
 				$data['corporates'] = !empty($tmDatas['corporates']) ? $tmDatas['corporates'] : '';
-                $this->_data['data'] = $data;
-            }
-  		}
-  		$this->load->view("users/tm_users/add_edit", $this->_data);
-    }
+				$this->_data['data'] = $data;
+			}
+		}
+		$this->load->view("users/tm_users/add_edit", $this->_data);
+	}
 
-    function tm_users_delete($id){
-        if ($id != '' && is_numeric($id)) {
-            $dataWhere['id'] = $id;
-            $delete = $this->UsersModel->tm_users_delete($dataWhere);
-            if($delete){
-                echo "success"; exit;
-            }
-        }
-        echo "failed"; exit;
-    }
+	function tm_users_delete($id){
+		if ($id != '' && is_numeric($id)) {
+			$dataWhere['id'] = $id;
+			$delete = $this->UsersModel->tm_users_delete($dataWhere);
+			if($delete){
+				echo "success"; exit;
+			}
+		}
+		echo "failed"; exit;
+	}
 
 	function customer_users_list(){
 		$this->load->view('users/customer_users/index');
@@ -625,7 +621,7 @@ class Users extends CI_Controller {
 
 	function customer_users_getTableData(){
 		$role = '5';
-		$tm_users = $this->UsersModel->getCustomerUsersTableData($role); 
+		$tm_users = $this->UsersModel->getCustomerUsersTableData($role);
 		if(!empty($tm_users)){
 			foreach ($tm_users as $key => $value) {
 				if(!empty($value->name)){
@@ -642,27 +638,27 @@ class Users extends CI_Controller {
 				}
 			}
 		}
-        $total = $this->UsersModel->count_all();
-        $totalFiltered = $this->UsersModel->count_customer_users_filtered($role);
-        $ajax["recordsTotal"] = $total;
-        $ajax["recordsFiltered"]  = $totalFiltered;
-        $ajax['data'] = $tm_users;
-        echo json_encode($ajax); exit();
-    }
+		$total = $this->UsersModel->count_all();
+		$totalFiltered = $this->UsersModel->count_customer_users_filtered($role);
+		$ajax["recordsTotal"] = $total;
+		$ajax["recordsFiltered"]  = $totalFiltered;
+		$ajax['data'] = $tm_users;
+		echo json_encode($ajax); exit();
+	}
 
 	function customer_users_addEdit($id= ''){
-        $postUser = [];
-        $postUserDetails = [];
-        $this->_data['data'] = [];
-        $this->_data['countries'] = $this->StaffCountriesModel->getRecordAll();
+		$postUser = [];
+		$postUserDetails = [];
+		$this->_data['data'] = [];
+		$this->_data['countries'] = $this->StaffCountriesModel->getRecordAll();
 		$this->_data['staff_members'] = $this->StaffMembersModel->getManagedbyRecordAll();
-  		$this->_data['id'] = $id;
-        $data = $this->UsersModel->getRecord($id,"5");
-        $role_id = "2";
-        $this->_data['practices'] = $this->UsersModel->getRecordAll($role_id);
-        $this->_data['labs'] = $this->UsersModel->getRecordAll("6");
-        $this->_data['corporates'] = $this->UsersModel->getRecordAll("7");
-        if($id > 0 && isset($data['column_field']) && $data['column_field']!=''){
+		$this->_data['id'] = $id;
+		$data = $this->UsersModel->getRecord($id,"5");
+		$role_id = "2";
+		$this->_data['practices'] = $this->UsersModel->getRecordAll($role_id);
+		$this->_data['labs'] = $this->UsersModel->getRecordAll("6");
+		$this->_data['corporates'] = $this->UsersModel->getRecordAll("7");
+		if($id > 0 && isset($data['column_field']) && $data['column_field']!=''){
 			$this->db->select("*");
 			$this->db->from('ci_user_details');
 			$this->db->where("column_name IN('labs','practices','corporates')");
@@ -670,34 +666,34 @@ class Users extends CI_Controller {
 			$refDetails = $this->db->get()->result_array();
 			$columnField = array_column($refDetails, 'column_field', 'column_name');
 			if(isset($columnField['practices']) && !empty($columnField['practices'])){
-                $this->practice_data['ids']= implode(",",json_decode($columnField['practices']));
-            }else{
-                $this->practice_data['ids'] = "";
-            }
+				$this->practice_data['ids']= implode(",",json_decode($columnField['practices']));
+			}else{
+				$this->practice_data['ids'] = "";
+			}
 			if(isset($columnField['labs']) && !empty($columnField['labs'])){
-                $this->lab_data['ids']= implode(",",json_decode($columnField['labs']));
-            }else{
-                $this->lab_data['ids'] = "";
-            }
+				$this->lab_data['ids']= implode(",",json_decode($columnField['labs']));
+			}else{
+				$this->lab_data['ids'] = "";
+			}
 			if(isset($columnField['corporates']) && !empty($columnField['corporates'])){
-                $this->corporate_data['ids']= implode(",",json_decode($columnField['corporates']));
-            }else{
-                $this->corporate_data['ids'] = "";
-            }
-        }else{
-            $this->practice_data['ids'] = "";
-            $this->lab_data['ids'] = "";
-            $this->corporate_data['ids'] = "";
-        }
+				$this->corporate_data['ids']= implode(",",json_decode($columnField['corporates']));
+			}else{
+				$this->corporate_data['ids'] = "";
+			}
+		}else{
+			$this->practice_data['ids'] = "";
+			$this->lab_data['ids'] = "";
+			$this->corporate_data['ids'] = "";
+		}
 
-        $this->_data['branches'] = $this->UsersDetailsModel->get_petowner_branch("",$this->practice_data);
-        $this->_data['lab_branches'] = $this->UsersDetailsModel->get_petowner_branch("",$this->lab_data);
-        $this->_data['corporate_branches'] = $this->UsersDetailsModel->get_petowner_branch("",$this->corporate_data);
-        if ($this->input->post('name')!='') {
-            //set unique value
-            $is_email_unique = "";
-            $current_email = $data['email'];
-            if($this->input->post('email') != $current_email){
+		$this->_data['branches'] = $this->UsersDetailsModel->get_petowner_branch("",$this->practice_data);
+		$this->_data['lab_branches'] = $this->UsersDetailsModel->get_petowner_branch("",$this->lab_data);
+		$this->_data['corporate_branches'] = $this->UsersDetailsModel->get_petowner_branch("",$this->corporate_data);
+		if ($this->input->post('name')!='') {
+			//set unique value
+			$is_email_unique = "";
+			$current_email = $data['email'];
+			if($this->input->post('email') != $current_email){
 				$this->db->select('email');
 				$this->db->from('ci_users');
 				$this->db->where('role', 5);
@@ -706,24 +702,24 @@ class Users extends CI_Controller {
 				if($res2->num_rows() > 0){
 					$is_email_unique = "|is_unique[ci_users.email]";
 				}
-            }
+			}
 
-            //set rules
-            $this->form_validation->set_rules('name', 'name', 'required');
-            $this->form_validation->set_rules('email', 'email', 'required'.$is_email_unique);
-            if($this->input->post('password')!='') {
+			//set rules
+			$this->form_validation->set_rules('name', 'name', 'required');
+			$this->form_validation->set_rules('email', 'email', 'required'.$is_email_unique);
+			if($this->input->post('password')!='') {
 				$this->form_validation->set_rules('password', 'password', 'required');
 			}
-            if ($this->form_validation->run() == FALSE){
-                $this->load->view('users/customer_users/add_edit','',TRUE);
-            }else{
-                //user post data
+			if ($this->form_validation->run() == FALSE){
+				$this->load->view('users/customer_users/add_edit','',TRUE);
+			}else{
+				//user post data
 				$postUser['name'] = $this->input->post('name');
 				$postUser['email'] = $this->input->post('email');
 				$postUser['country'] = $this->input->post('country');
 				$postUser['preferred_language'] = $this->input->post('preferred_language');
 				if($this->input->post('password')){
-				$postUser['password'] = md5($this->input->post('password'));
+					$postUser['password'] = md5($this->input->post('password'));
 				}
 				$postUser['user_type'] = $this->input->post('user_type');
 				$postUser['managed_by_id'] = !empty($this->input->post('managed_by_id'))?implode(",",$this->input->post('managed_by_id')):'';
@@ -744,32 +740,32 @@ class Users extends CI_Controller {
 					$postUserDetails['corporates'] = NULL;
 					$postUserDetails['corporate_branches'] = NULL;
 				}
-                if(is_numeric($id)>0){
-                    $postUser['updated_by'] = $this->user_id;
-                    $postUser['updated_at'] = date("Y-m-d H:i:s");
-                    if ($id = $this->UsersModel->customerUsers_add_edit($postUser,$postUserDetails)>0) {
-                        if( $this->user_role=='5' ){
-                            $this->session->set_flashdata('success','Profile has been updated successfully.');
-                            redirect('customer_users/edit/'.$this->user_id);
-                        }else{
-                            $this->session->set_flashdata('success','Customer user data has been updated successfully.');
-                            redirect('customer_users');
-                        }
-                    }
-                }else{
-                    $postUser['role'] = '5';
-                    $postUser['created_by'] = $this->user_id;
-                    $postUser['created_at'] = date("Y-m-d H:i:s");
-                    if ($id = $this->UsersModel->customerUsers_add_edit($postUser,$postUserDetails)) {
-                        $this->session->set_flashdata('success','Customer user data has been added successfully.');
-                        redirect('customer_users');
-                    }
-                }
-            }
-        }
+				if(is_numeric($id)>0){
+					$postUser['updated_by'] = $this->user_id;
+					$postUser['updated_at'] = date("Y-m-d H:i:s");
+					if ($id = $this->UsersModel->customerUsers_add_edit($postUser,$postUserDetails)>0) {
+						if( $this->user_role=='5' ){
+							$this->session->set_flashdata('success','Profile has been updated successfully.');
+							redirect('customer_users/edit/'.$this->user_id);
+						}else{
+							$this->session->set_flashdata('success','Customer user data has been updated successfully.');
+							redirect('customer_users');
+						}
+					}
+				}else{
+					$postUser['role'] = '5';
+					$postUser['created_by'] = $this->user_id;
+					$postUser['created_at'] = date("Y-m-d H:i:s");
+					if ($id = $this->UsersModel->customerUsers_add_edit($postUser,$postUserDetails)) {
+						$this->session->set_flashdata('success','Customer user data has been added successfully.');
+						redirect('customer_users');
+					}
+				}
+			}
+		}
 
-        //load data edit time
-        if(is_numeric($id)>0){
+		//load data edit time
+		if(is_numeric($id)>0){
 			if(!empty($data)){
 				$this->db->select("*");
 				$this->db->from('ci_user_details');
@@ -794,22 +790,22 @@ class Users extends CI_Controller {
 						$data['corporates'] = "";
 					}
 				}
-                $this->_data['data'] = $data;
-            }
-  		}
-  		$this->load->view("users/customer_users/add_edit", $this->_data);
-    }
+				$this->_data['data'] = $data;
+			}
+		}
+		$this->load->view("users/customer_users/add_edit", $this->_data);
+	}
 
 	function customer_users_delete($id){
-        if ($id != '' && is_numeric($id)) {
-            $dataWhere['id'] = $id;
-            $delete = $this->UsersModel->customer_users_delete($dataWhere);
-            if($delete){
-                echo "success"; exit;
-            }
-        }
-        echo "failed"; exit;
-    }
+		if ($id != '' && is_numeric($id)) {
+			$dataWhere['id'] = $id;
+			$delete = $this->UsersModel->customer_users_delete($dataWhere);
+			if($delete){
+				echo "success"; exit;
+			}
+		}
+		echo "failed"; exit;
+	}
 
 	function lims_users_list(){
 		$this->load->view('users/lims_users/index');
@@ -817,23 +813,23 @@ class Users extends CI_Controller {
 
 	function lims_users_getTableData(){
 		$role = '10';
-		$lims_users = $this->UsersModel->getLIMSTableData($role); 
-        if(!empty($lims_users)){
-            foreach ($lims_users as $key => $value) {
-                if(!empty($value->name)){
-                    $lims_users[$key]->name = $value->name;
-                    $lims_users[$key]->email = $value->email;
-                }
-            }
-        }
+		$lims_users = $this->UsersModel->getLIMSTableData($role);
+		if(!empty($lims_users)){
+			foreach ($lims_users as $key => $value) {
+				if(!empty($value->name)){
+					$lims_users[$key]->name = $value->name;
+					$lims_users[$key]->email = $value->email;
+				}
+			}
+		}
 
-        $total = $this->UsersModel->count_all();
-        $totalFiltered = $this->UsersModel->count_lims_filtered($role);
-        $ajax["recordsTotal"] = $total;
-        $ajax["recordsFiltered"]  = $totalFiltered;
-        $ajax['data'] = $lims_users;
-        echo json_encode($ajax); exit();
-    }
+		$total = $this->UsersModel->count_all();
+		$totalFiltered = $this->UsersModel->count_lims_filtered($role);
+		$ajax["recordsTotal"] = $total;
+		$ajax["recordsFiltered"]  = $totalFiltered;
+		$ajax['data'] = $lims_users;
+		echo json_encode($ajax); exit();
+	}
 
 	function lims_users_addEdit($id= ''){
 		$postUser = [];
@@ -869,21 +865,21 @@ class Users extends CI_Controller {
 				$postUser['role'] = '10';
 				$postUser['is_admin'] = '0';
 				$postUser['id'] = $id;
-                if(is_numeric($id)>0){
-                    $postUser['updated_by'] = $this->user_id;
-                    $postUser['updated_at'] = date("Y-m-d H:i:s");
-                    if ($id = $this->UsersModel->lims_add_edit($postUser)>0) {
+				if(is_numeric($id)>0){
+					$postUser['updated_by'] = $this->user_id;
+					$postUser['updated_at'] = date("Y-m-d H:i:s");
+					if ($id = $this->UsersModel->lims_add_edit($postUser)>0) {
 						$this->session->set_flashdata('success','LIMS User has been updated successfully.');
 						redirect('users/lims_users_list');
-                    }
-                }else{
-                    $postUser['created_by'] = $this->user_id;
-                    $postUser['created_at'] = date("Y-m-d H:i:s");
-                    if ($id = $this->UsersModel->lims_add_edit($postUser)) {
-                        $this->session->set_flashdata('success','LIMS User has been added successfully.');
-                        redirect('users/lims_users_list');
-                    }
-                }
+					}
+				}else{
+					$postUser['created_by'] = $this->user_id;
+					$postUser['created_at'] = date("Y-m-d H:i:s");
+					if ($id = $this->UsersModel->lims_add_edit($postUser)) {
+						$this->session->set_flashdata('success','LIMS User has been added successfully.');
+						redirect('users/lims_users_list');
+					}
+				}
 			}
 		}
 
@@ -896,15 +892,15 @@ class Users extends CI_Controller {
 	}
 
 	function lims_user_delete($id){
-        if ($id != '' && is_numeric($id)) {
-            $dataWhere['id'] = $id;
-            $delete = $this->UsersModel->lims_user_delete($dataWhere);
-            if($delete){
-                echo "success"; exit;
-            }
-        }
-        echo "failed"; exit;
-    }
+		if ($id != '' && is_numeric($id)) {
+			$dataWhere['id'] = $id;
+			$delete = $this->UsersModel->lims_user_delete($dataWhere);
+			if($delete){
+				echo "success"; exit;
+			}
+		}
+		echo "failed"; exit;
+	}
 
 	function country_users_list(){
 		$this->load->view('users/country_users/index');
@@ -922,26 +918,26 @@ class Users extends CI_Controller {
 			}
 		}
 
-        $total = $this->UsersModel->country_users_count_all();
-        $totalFiltered = $this->UsersModel->count_country_users_filtered($role);
-        $ajax["recordsTotal"] = $total;
-        $ajax["recordsFiltered"]  = $totalFiltered;
-        $ajax['data'] = $cu_users;
-        echo json_encode($ajax); exit();
-    }
+		$total = $this->UsersModel->country_users_count_all();
+		$totalFiltered = $this->UsersModel->count_country_users_filtered($role);
+		$ajax["recordsTotal"] = $total;
+		$ajax["recordsFiltered"]  = $totalFiltered;
+		$ajax['data'] = $cu_users;
+		echo json_encode($ajax); exit();
+	}
 
 	function country_users_addEdit($id= ''){
-        $postUser = [];
-        $this->_data['data'] = [];
-        $this->_data['countries'] = $this->StaffCountriesModel->getRecordAll();
+		$postUser = [];
+		$this->_data['data'] = [];
+		$this->_data['countries'] = $this->StaffCountriesModel->getRecordAll();
 		$this->_data['staff_members'] = $this->StaffMembersModel->getManagedbyRecordAll();
-  		$this->_data['id'] = $id;
-        $data = $this->UsersModel->getCountryUsersRecord($id,"11");
-        if ($this->input->post('name')!='') {
-            //set unique value
-            $is_email_unique = "";
-            $current_email = $data['email'];
-            if($this->input->post('email') != $current_email){
+		$this->_data['id'] = $id;
+		$data = $this->UsersModel->getCountryUsersRecord($id,"11");
+		if ($this->input->post('name')!='') {
+			//set unique value
+			$is_email_unique = "";
+			$current_email = $data['email'];
+			if($this->input->post('email') != $current_email){
 				$this->db->select('email');
 				$this->db->from('ci_users');
 				$this->db->where('role', 11);
@@ -950,68 +946,68 @@ class Users extends CI_Controller {
 				if($res2->num_rows() > 0){
 					$is_email_unique = "|is_unique[ci_users.email]";
 				}
-            }
+			}
 
-            //set rules
-            $this->form_validation->set_rules('name', 'name', 'required');
-            $this->form_validation->set_rules('email', 'email', 'required'.$is_email_unique);
-            if($this->input->post('password')!='') {
+			//set rules
+			$this->form_validation->set_rules('name', 'name', 'required');
+			$this->form_validation->set_rules('email', 'email', 'required'.$is_email_unique);
+			if($this->input->post('password')!='') {
 				$this->form_validation->set_rules('password', 'password', 'required');
 			}
-            if ($this->form_validation->run() == FALSE){
-                $this->load->view('users/country_users/add_edit','',TRUE);
-            }else{
-                //user post data
+			if ($this->form_validation->run() == FALSE){
+				$this->load->view('users/country_users/add_edit','',TRUE);
+			}else{
+				//user post data
 				$postUser['name'] = $this->input->post('name');
 				$postUser['email'] = $this->input->post('email');
 				$postUser['country'] = $this->input->post('country');
 				if($this->input->post('password')){
-				$postUser['password'] = md5($this->input->post('password'));
+					$postUser['password'] = md5($this->input->post('password'));
 				}
 				$postUser['managed_by_id'] = !empty($this->input->post('managed_by_id'))?implode(",",$this->input->post('managed_by_id')):'';
-                if(is_numeric($id)>0){
-                    $postUser['updated_by'] = $this->user_id;
-                    $postUser['updated_at'] = date("Y-m-d H:i:s");
-                    if ($id = $this->UsersModel->countryUsers_add_edit($postUser,$id)>0) {
-                        if( $this->user_role=='11' ){
-                            $this->session->set_flashdata('success','Profile has been updated successfully.');
-                            redirect('country_users/edit/'.$this->user_id);
-                        }else{
-                            $this->session->set_flashdata('success','Country Admin User data has been updated successfully.');
-                            redirect('country_users');
-                        }
-                    }
-                }else{
-                    $postUser['role'] = '11';
-                    $postUser['created_by'] = $this->user_id;
-                    $postUser['created_at'] = date("Y-m-d H:i:s");
-                    if ($id = $this->UsersModel->countryUsers_add_edit($postUser,'')) {
-                        $this->session->set_flashdata('success','Country Admin User data has been added successfully.');
-                        redirect('country_users');
-                    }
-                }
-            }
-        }
+				if(is_numeric($id)>0){
+					$postUser['updated_by'] = $this->user_id;
+					$postUser['updated_at'] = date("Y-m-d H:i:s");
+					if ($id = $this->UsersModel->countryUsers_add_edit($postUser,$id)>0) {
+						if( $this->user_role=='11' ){
+							$this->session->set_flashdata('success','Profile has been updated successfully.');
+							redirect('country_users/edit/'.$this->user_id);
+						}else{
+							$this->session->set_flashdata('success','Country Admin User data has been updated successfully.');
+							redirect('country_users');
+						}
+					}
+				}else{
+					$postUser['role'] = '11';
+					$postUser['created_by'] = $this->user_id;
+					$postUser['created_at'] = date("Y-m-d H:i:s");
+					if ($id = $this->UsersModel->countryUsers_add_edit($postUser,'')) {
+						$this->session->set_flashdata('success','Country Admin User data has been added successfully.');
+						redirect('country_users');
+					}
+				}
+			}
+		}
 
-        //load data edit time
-        if(is_numeric($id)>0){
+		//load data edit time
+		if(is_numeric($id)>0){
 			if(!empty($data)){
-                $this->_data['data'] = $data;
-            }
-  		}
-  		$this->load->view("users/country_users/add_edit", $this->_data);
-    }
+				$this->_data['data'] = $data;
+			}
+		}
+		$this->load->view("users/country_users/add_edit", $this->_data);
+	}
 
 	function country_users_delete($id){
-        if ($id != '' && is_numeric($id)) {
-            $dataWhere['id'] = $id;
-            $delete = $this->UsersModel->country_users_delete($dataWhere);
-            if($delete){
-                echo "success"; exit;
-            }
-        }
-        echo "failed"; exit;
-    }
+		if ($id != '' && is_numeric($id)) {
+			$dataWhere['id'] = $id;
+			$delete = $this->UsersModel->country_users_delete($dataWhere);
+			if($delete){
+				echo "success"; exit;
+			}
+		}
+		echo "failed"; exit;
+	}
 
 }
 ?>

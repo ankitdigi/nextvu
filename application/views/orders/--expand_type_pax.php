@@ -35,13 +35,6 @@ $userData = logged_in_user_data();
 
 								<!-- form start -->
 								<?php echo form_open('', array('name'=>'orderType', 'id'=>'orderType')); ?>
-									<?php
-									if (!empty($this->_data['data']['is_expanded'])) {
-									?>
-									<input type="hidden" name="is_expanded" value="1" >
-									<?php
-									}
-									?>
 									<!--Order Type-->
 									<div class="box-body">
 										<div class="row">

@@ -1098,22 +1098,38 @@ $userData = logged_in_user_data();
 							if (row.order_type_id != '2') {
 								repeat_order = '<a class="btn btn-sm btn-outline-light" href="<?php echo base_url('repeatOrder/addEdit/'); ?>' + data + '" title="Repeat Order"><i class="fa fa-repeat" style="font-size:initial;"></i>Repeat Order</a>';
 							}
-
+							var expandedLabel = '';
 							if (row.order_type_id == '2') {
 								if ((user_role == 1 || user_role == 11) && row.serum_type == 2 && row.is_expand == 1 && row.is_order_completed == 1) {
 									if((data > '57338') || (data == '57166') || (data == '57156') || (data == '57152') || (data == '56592') || (data == '56898') || (data == '57293') || (data == '56766') || (data == '57296') || (data == '57144')){
 										if(data == '57459' || data == '57438' || data == '57434' || data == '57428' || data == '57904'){
-										CEP_after_screening = '<a class="btn btn-sm btn-outline-light" href="<?php echo base_url('expandOldOrder/addEdit/'); ?>' + data + '" title="Expand Results"><i class="fa fa-repeat" style="font-size:initial;"></i>Expand Results</a>';
+											expandedLabel = 'Expand Results';
+											if(row.is_expanded == 1 && row.product_code_selection == 37) {
+												expandedLabel = 'Re-Expand Results';
+											}
+											CEP_after_screening = '<a class="btn btn-sm btn-outline-light" href="<?php echo base_url('expandOldOrder/addEdit/'); ?>' + data + '" title="' + expandedLabel + '"><i class="fa fa-repeat" style="font-size:initial;"></i>' + expandedLabel + '</a>';
 										}else{
-										CEP_after_screening = '<a class="btn btn-sm btn-outline-light" href="<?php echo base_url('expandOrder/addEdit/'); ?>' + data + '" title="Expand Results"><i class="fa fa-repeat" style="font-size:initial;"></i>Expand Results</a>';
+											expandedLabel = 'Expand Results';
+											if(row.is_expanded == 1 && row.product_code_selection == 37) {
+												expandedLabel = 'Re-Expand Results';
+											}
+											CEP_after_screening = '<a class="btn btn-sm btn-outline-light" href="<?php echo base_url('expandOrder/addEdit/'); ?>' + data + '" title="' + expandedLabel + '"><i class="fa fa-repeat" style="font-size:initial;"></i>' + expandedLabel + '</a>';
 										}
 									}else{
-										CEP_after_screening = '<a class="btn btn-sm btn-outline-light" href="<?php echo base_url('expandOldOrder/addEdit/'); ?>' + data + '" title="Expand Results"><i class="fa fa-repeat" style="font-size:initial;"></i>Expand Results</a>';
+										expandedLabel = 'Expand Results';
+										if(row.is_expanded == 1 && row.product_code_selection == 37) {
+											expandedLabel = 'Re-Expand Results';
+										}
+										CEP_after_screening = '<a class="btn btn-sm btn-outline-light" href="<?php echo base_url('expandOldOrder/addEdit/'); ?>' + data + '" title="' + expandedLabel + '"><i class="fa fa-repeat" style="font-size:initial;"></i>' + expandedLabel + '</a>';
 									}
 								}
 
 								if ((user_role == 1 || user_role == 11) && row.serum_type == 1 && row.is_expand == 1 && row.cep_id == 0 && row.is_order_completed == 1) {
-									CEP_after_screening = '<a class="btn btn-sm btn-outline-light" href="<?php echo base_url('expandOrder/expandPAX/'); ?>' + data + '" title="Expand Results"><i class="fa fa-repeat" style="font-size:initial;"></i>Expand Results</a>';
+									expandedLabel = 'Expand Results';
+									if(row.is_expanded == 1 && row.product_code_selection == 37) {
+										expandedLabel = 'Re-Expand Results';
+									}
+									CEP_after_screening = '<a class="btn btn-sm btn-outline-light" href="<?php echo base_url('expandOrder/expandPAX/'); ?>' + data + '" title="' + expandedLabel + '"><i class="fa fa-repeat" style="font-size:initial;"></i>' + expandedLabel + '</a>';
 								}
 
 								if ((user_role == 1 || user_role == 11 || user_role == 10 ) && row.serum_type == '2'){
