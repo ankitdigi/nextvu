@@ -94,10 +94,12 @@ $userData = logged_in_user_data();
 										$this->db->from('ci_price');
 										$this->db->where('id', $order_details['product_code_selection']);
 										$ordeType = $this->db->get()->row()->name;
-										if(in_array($order_details['product_code_selection'],array(33,34))) {
-											$ordeType = $ordeType." Screening Expanded";
-										} elseif($order_details['product_code_selection'] == 38) {
-											$ordeType = "PAX Environmental & Food Screening Expanded";
+										if ($order_details['is_expanded']) {
+											if (in_array($order_details['product_code_selection'], array(33, 34))) {
+												$ordeType = $ordeType . " Screening Expanded";
+											} elseif ($order_details['product_code_selection'] == 38) {
+												$ordeType = "PAX Environmental & Food Screening Expanded";
+											}
 										}
 									}else{
 										$ordeType = 'Serum Testing';
