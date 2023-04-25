@@ -1288,6 +1288,9 @@ $userData = logged_in_user_data();
 						if (data.status == 'faill') {
 							$('#message').text(data.error);
 						} else {
+							if (data.showCancelComment == 0) {
+								data.cancel_comment = '';
+							}
 							if (data.cancel_comment != '') {
 								$(".cancel_comment_box").show();
 							}
