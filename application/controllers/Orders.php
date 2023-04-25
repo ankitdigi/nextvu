@@ -4645,6 +4645,10 @@ class Orders extends CI_Controller{
 					$ajax["practice_lab_comment"] = '';
 				}
 				$ajax["cancel_comment"] = ($update['is_confirmed'] == 3) ? $update['cancel_comment'] : "";
+
+				$currentUser = $this->UsersModel->getRecord($update["vet_user_id"]);
+				$ajax["showCancelComment"] = ($this->user_role == 1) ? 1 : (($this->user_role == 11) ? 1 : ($currentUser['id'] == $this->user_id ? 1 : 0));
+
 				echo json_encode($ajax);
 				exit;
 			}
