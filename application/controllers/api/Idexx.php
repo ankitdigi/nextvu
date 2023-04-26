@@ -26,13 +26,13 @@ class Idexx extends IDEXX_API_Controller {
 			$Sap_ID = !empty($post['Sap_ID'])?$post['Sap_ID']:'';
 			$caseID = !empty($post['Case_ID'])?$post['Case_ID']:'';
 			$practice_lab = '24083';
-			$this->db->select('ci_orders.id, ci_orders.order_number, ci_orders.allergens, ci_orders.vet_user_id, ci_orders.lab_id, ci_orders.order_can_send_to, ci_orders.delivery_practice_id, ci_orders.reference_number, ci_orders.shipping_cost, ci_orders.unit_price, ci_orders.order_discount, ci_orders.case_ID, ci_orders.batch_number, ci_orders.order_date, ci_orders.is_confirmed, ci_orders.shipping_date, ci_orders.track_number, petOwner.name AS pet_owner_name, petOwner.last_name AS pet_owner_lname, ci_pets.name AS pet_name, ci_pets.type,practice.country');
+			$this->db->select('ci_orders.id, ci_orders.order_number, ci_orders.allergens, ci_orders.vet_user_id, ci_orders.lab_id, ci_orders.order_can_send_to, ci_orders.delivery_practice_id, ci_orders.reference_number, ci_orders.shipping_cost, ci_orders.unit_price, ci_orders.order_discount, ci_orders.case_ID, ci_orders.sap_lims, ci_orders.batch_number, ci_orders.order_date, ci_orders.is_confirmed, ci_orders.shipping_date, ci_orders.track_number, ci_orders.order_type, ci_orders.is_invoiced, petOwner.name AS pet_owner_name, petOwner.last_name AS pet_owner_lname, ci_pets.name AS pet_name, ci_pets.type,practice.country');
 			$this->db->from($this->_table);
 			$this->db->join('ci_users as petOwner', 'ci_orders.pet_owner_id = petOwner.id','left');
 			$this->db->join('ci_users as practice', 'ci_orders.vet_user_id = practice.id','left');
 			$this->db->join('ci_pets', 'ci_orders.pet_id = ci_pets.id','left');
 			$this->db->where('ci_orders.is_draft', '0');
-			$this->db->where('ci_orders.lab_id', $practice_lab);
+			//$this->db->where('ci_orders.lab_id', $practice_lab);
 			if(!empty($orderNumber)){
 			$this->db->where('ci_orders.order_number', $orderNumber);
 			}
@@ -51,13 +51,13 @@ class Idexx extends IDEXX_API_Controller {
 			$this->db->where('ci_orders.sap_lims', $Sap_ID);
 			}
 			if(!empty($caseID)){
-			$this->db->where('ci_orders.case_ID', $caseID);
+			$this->db->where('ci_orders.case_ID LIKE', $caseID);
 			}
 			$datas = $this->db->get()->result_array();
 			$data = []; $numericArr = []; $alphaArr = [];
 			$dataDetails = $userData = $usersDetails =$column_field = [];
 			$allergens = [];
-			$allergen_name = $order_send_to = $add_1 = $add_2 = $add_3 = $add_4 = $address_2 = $odelivery_address = $allergensCode =''; $ownerName =''; $userArr = array();
+			$allergen_name = $order_send_to = $add_1 = $add_2 = $add_3 = $add_4 = $address_2 = $odelivery_address = $allergensCode = $is_status = $ownerName =''; $userArr = array();
 			foreach($datas as $data_detail){
 				$AnimalType = "";
 				if($data_detail['type']==1){
@@ -66,6 +66,28 @@ class Idexx extends IDEXX_API_Controller {
 					$AnimalType = "Dog";
 				}elseif($data_detail['type']==3){
 					$AnimalType = "Horse";
+				}
+
+				if($data_detail['is_confirmed'] == 0){
+					$is_status = "New Order";
+				}elseif($data_detail['is_confirmed'] == 1){
+					$is_status = "Order Confirmed";
+				}elseif($data_detail['is_confirmed'] == 2){
+					$is_status = "On Hold";
+				}elseif($data_detail['is_confirmed'] == 3){
+					$is_status = "Cancelled";
+				}elseif($data_detail['is_confirmed'] == 4){
+					$is_status = "Shipped";
+				}elseif($data_detail['is_confirmed'] == 5){
+					$is_status = "In Process";
+				}elseif($data_detail['is_confirmed'] == 6){
+					$is_status = "Error at Exact";
+				}elseif($data_detail['is_confirmed'] == 7){
+					$is_status = "Order Confirmed";
+				}elseif($data_detail['is_confirmed'] == 8){
+					$is_status = "Sent to Nextmune";
+				}elseif($data_detail['is_invoiced'] == 1){
+					$is_status = "Invoiced";
 				}
 
 				//allergen details
@@ -180,7 +202,7 @@ class Idexx extends IDEXX_API_Controller {
 				$allergenArr = explode("|@|",$allergen_name);
 				$total_allergen = count($allergenArr);
 				if ($total_allergen <= 4) {
-					$allergensCode = ''; $numericArr = []; $alphaArr = []; 
+					$allergensCode = ''; $numericArr = []; $alphaArr = []; $allergensNameArr = [];
 					foreach($allergenArr as $key=>$aleName){
 						$allergensCode = $this->AllergensModel->getAllergensCode($aleName);
 						if(is_numeric($allergensCode)){
@@ -188,6 +210,7 @@ class Idexx extends IDEXX_API_Controller {
 						}else{
 							$alphaArr[] = $allergensCode;
 						}
+						$allergensNameArr[] = $aleName;
 					}
 					$numericArr = array_unique($numericArr);
 					$alphaArr = array_unique($alphaArr);
@@ -204,22 +227,18 @@ class Idexx extends IDEXX_API_Controller {
 					$data["Unit_Price"] = $data_detail['unit_price'];
 					$data["Order_Discount"] = $data_detail['order_discount'];
 					$data["Freight_Cost"] = $freightCost;
+					$data["Allergens"] = json_encode($allergensNameArr);
 					$data["Itemcode"] = $allergeName;
 					$data["Vialnumber"] = '';
+					$data["Total_Vial"] = '1';
 					$data["Order is to be sent to"] = $order_send_to;
 					$data["Case_ID"] = $data_detail['case_ID'];
-					$data["Perscriptions_number"] = $data_detail['batch_number'];
+					$data["SAP_ID"] = $data_detail['sap_lims'];
+					$data["BILL_TO_SAP"] = '';
+					$data["BILL_FROM_SAP"] = '';
+					$data["Batch_Number"] = $data_detail['batch_number'];
 					$data["Order_date"] = $data_detail['order_date'];
-					if ($data_detail['is_confirmed'] == 1){
-					$data["Order_confirmation"] = 'Being built';
-					}else{
-					$data["Order_confirmation"] = '';
-					}
-					if ($data_detail['is_confirmed'] == 4){
-					$data["Order_produced"] = 'Being built';
-					}else{
-					$data["Order_produced"] = '';
-					}
+					$data["Order_Status"] = $is_status;
 					$data["Shipping_date"] = !empty($data_detail['shipping_date'])?$data_detail['shipping_date']:'';
 					if($data_detail['track_number']!=""){
 					$data["Tracking_number_Courier"] = $data_detail['track_number'];
@@ -228,7 +247,7 @@ class Idexx extends IDEXX_API_Controller {
 					}
 					$dataDetails[] = $data;
 				} elseif ($total_allergen > 4 && $total_allergen <= 8) {
-					$allergensCode = ''; $numericArr = []; $alphaArr = []; 
+					$allergensCode = ''; $numericArr = []; $alphaArr = []; $allergensNameArr = [];
 					foreach($allergenArr as $key=>$aleName){
 						$allergensCode = $this->AllergensModel->getAllergensCode($aleName);
 						if(is_numeric($allergensCode)){
@@ -236,6 +255,7 @@ class Idexx extends IDEXX_API_Controller {
 						}else{
 							$alphaArr[] = $allergensCode;
 						}
+						$allergensNameArr[] = $aleName;
 					}
 					$numericArr = array_unique($numericArr);
 					$alphaArr = array_unique($alphaArr);
@@ -252,22 +272,18 @@ class Idexx extends IDEXX_API_Controller {
 					$data["Unit_Price"] = $data_detail['unit_price'];
 					$data["Order_Discount"] = $data_detail['order_discount'];
 					$data["Freight_Cost"] = $freightCost;
+					$data["Allergens"] = json_encode($allergensNameArr);
 					$data["Itemcode"] = $allergeName;
 					$data["Vialnumber"] = '';
+					$data["Total_Vial"] = '1';
 					$data["Order is to be sent to"] = $order_send_to;
 					$data["Case_ID"] = $data_detail['case_ID'];
-					$data["Perscriptions_number"] = $data_detail['batch_number'];
+					$data["SAP_ID"] = $data_detail['sap_lims'];
+					$data["BILL_TO_SAP"] = '';
+					$data["BILL_FROM_SAP"] = '';
+					$data["Batch_Number"] = $data_detail['batch_number'];
 					$data["Order_date"] = $data_detail['order_date'];
-					if ($data_detail['is_confirmed'] == 1){
-					$data["Order_confirmation"] = 'Being built';
-					}else{
-					$data["Order_confirmation"] = '';
-					}
-					if ($data_detail['is_confirmed'] == 4){
-					$data["Order_produced"] = 'Being built';
-					}else{
-					$data["Order_produced"] = '';
-					}
+					$data["Order_Status"] = $is_status;
 					$data["Shipping_date"] = !empty($data_detail['shipping_date'])?$data_detail['shipping_date']:'';
 					if($data_detail['track_number']!=""){
 					$data["Tracking_number_Courier"] = $data_detail['track_number'];
@@ -283,27 +299,30 @@ class Idexx extends IDEXX_API_Controller {
 						$totalVials = $totalVials+1;
 					}
 
-					$allergensCode = ''; $numericArr = array();
+					$allergensCode = ''; $numericArr = array(); $allergensName1Arr = [];
 					foreach($allergenArr as $key=>$aleName){
 						$allergensCode = $this->AllergensModel->getAllergensCode($aleName);
 						if(is_numeric($allergensCode)){
 							$numericArr[] = $allergensCode;
 						}
+						$allergensName1Arr[] = $aleName;
 					}
 					$numericArr = array_unique($numericArr);
 					asort($numericArr);
 
-					$allergensCode = ''; $alphaArr = array();
+					$allergensCode = ''; $alphaArr = array(); $allergensName2Arr = [];
 					foreach($allergenArr as $key=>$aleName){
 						$allergensCode = $this->AllergensModel->getAllergensCode($aleName);
 						if(!is_numeric($allergensCode)){
 							$alphaArr[] = $allergensCode;
 						}
+						$allergensName2Arr[] = $aleName;
 					}
 					$alphaArr = array_unique($alphaArr);
 					sort($alphaArr);
 
 					$testArr = array_merge($alphaArr,$numericArr);
+					$$allergensNameArr = array_merge($allergensName1Arr,$allergensName2Arr);
 					$a=1; $b = 1; $testedArr = array();
 					foreach($testArr as $key=>$value){
 						if($a == 9){
@@ -329,6 +348,7 @@ class Idexx extends IDEXX_API_Controller {
 						}else{
 						$data["Freight_Cost"] = "0";
 						}
+						$data["Allergens"] = json_encode($allergensNameArr);
 						if(count($allergeName[$x]) == 8){
 						$data["Itemcode"] = '8'.implode("",$allergeName[$x]);
 						}else{
@@ -339,20 +359,15 @@ class Idexx extends IDEXX_API_Controller {
 							}
 						}
 						$data["Vialnumber"] = $x;
+						$data["Total_Vial"] = $totalVials;
 						$data["Order is to be sent to"] = $order_send_to;
 						$data["Case_ID"] = $data_detail['case_ID'];
-						$data["Perscriptions_number"] = $data_detail['batch_number'];
+						$data["SAP_ID"] = $data_detail['sap_lims'];
+						$data["BILL_TO_SAP"] = '';
+						$data["BILL_FROM_SAP"] = '';
+						$data["Batch_Number"] = $data_detail['batch_number'];
 						$data["Order_date"] = $data_detail['order_date'];
-						if ($data_detail['is_confirmed'] == 1){
-						$data["Order_confirmation"] = 'Being built';
-						}else{
-						$data["Order_confirmation"] = '';
-						}
-						if ($data_detail['is_confirmed'] == 4){
-						$data["Order_produced"] = 'Being built';
-						}else{
-						$data["Order_produced"] = '';
-						}
+						$data["Order_Status"] = $is_status;
 						$data["Shipping_date"] = !empty($data_detail['shipping_date'])?$data_detail['shipping_date']:'';
 						if($data_detail['track_number']!=""){
 						$data["Tracking_number_Courier"] = $data_detail['track_number'];
@@ -645,7 +660,7 @@ class Idexx extends IDEXX_API_Controller {
 			$this->response($dataDetails, IDEXX_API_Controller::HTTP_OK);
 		}elseif($this->uri->segment('3') == 'order_details'){
 			$practice_lab = '24083';
-			$this->db->select('ci_orders.id, ci_orders.order_number, ci_orders.allergens, ci_orders.vet_user_id, ci_orders.lab_id, ci_orders.order_can_send_to, ci_orders.delivery_practice_id, ci_orders.reference_number, ci_orders.shipping_cost, ci_orders.unit_price, ci_orders.order_discount, ci_orders.case_ID, ci_orders.batch_number, ci_orders.order_date, ci_orders.is_confirmed, ci_orders.shipping_date, ci_orders.track_number, petOwner.name AS pet_owner_name, petOwner.last_name AS pet_owner_lname, ci_pets.name AS pet_name, ci_pets.type,practice.country');
+			$this->db->select('ci_orders.id, ci_orders.order_number, ci_orders.allergens, ci_orders.vet_user_id, ci_orders.lab_id, ci_orders.order_can_send_to, ci_orders.delivery_practice_id, ci_orders.reference_number, ci_orders.shipping_cost, ci_orders.unit_price, ci_orders.order_discount, ci_orders.case_ID, ci_orders.sap_lims, ci_orders.batch_number, ci_orders.order_date, ci_orders.is_confirmed, ci_orders.shipping_date, ci_orders.track_number, ci_orders.order_type, ci_orders.is_invoiced, petOwner.name AS pet_owner_name, petOwner.last_name AS pet_owner_lname, ci_pets.name AS pet_name, ci_pets.type,practice.country');
 			$this->db->from($this->_table);
 			$this->db->join('ci_users as petOwner', 'ci_orders.pet_owner_id = petOwner.id','left');
 			$this->db->join('ci_users as practice', 'ci_orders.vet_user_id = practice.id','left');
@@ -656,7 +671,7 @@ class Idexx extends IDEXX_API_Controller {
 			$data = []; $numericArr = []; $alphaArr = [];
 			$dataDetails = $userData = $usersDetails =$column_field = [];
 			$allergens = [];
-			$allergen_name = $order_send_to = $add_1 = $add_2 = $add_3 = $add_4 = $address_2 = $odelivery_address = $allergensCode =''; $ownerName =''; $userArr = array();
+			$allergen_name = $order_send_to = $add_1 = $add_2 = $add_3 = $add_4 = $address_2 = $odelivery_address = $allergensCode =$is_status = $ownerName =''; $userArr = array();
 			foreach($datas as $data_detail){
 				$AnimalType = "";
 				if($data_detail['type']==1){
@@ -665,6 +680,28 @@ class Idexx extends IDEXX_API_Controller {
 					$AnimalType = "Dog";
 				}elseif($data_detail['type']==3){
 					$AnimalType = "Horse";
+				}
+
+				if($data_detail['is_confirmed'] == 0){
+					$is_status = "New Order";
+				}elseif($data_detail['is_confirmed'] == 1){
+					$is_status = "Order Confirmed";
+				}elseif($data_detail['is_confirmed'] == 2){
+					$is_status = "On Hold";
+				}elseif($data_detail['is_confirmed'] == 3){
+					$is_status = "Cancelled";
+				}elseif($data_detail['is_confirmed'] == 4){
+					$is_status = "Shipped";
+				}elseif($data_detail['is_confirmed'] == 5){
+					$is_status = "In Process";
+				}elseif($data_detail['is_confirmed'] == 6){
+					$is_status = "Error at Exact";
+				}elseif($data_detail['is_confirmed'] == 7){
+					$is_status = "Order Confirmed";
+				}elseif($data_detail['is_confirmed'] == 8){
+					$is_status = "Sent to Nextmune";
+				}elseif($data_detail['is_invoiced'] == 1){
+					$is_status = "Invoiced";
 				}
 
 				//allergen details
@@ -779,7 +816,7 @@ class Idexx extends IDEXX_API_Controller {
 				$allergenArr = explode("|@|",$allergen_name);
 				$total_allergen = count($allergenArr);
 				if ($total_allergen <= 4) {
-					$allergensCode = ''; $numericArr = []; $alphaArr = []; 
+					$allergensCode = ''; $numericArr = []; $alphaArr = []; $allergensNameArr = []; 
 					foreach($allergenArr as $key=>$aleName){
 						$allergensCode = $this->AllergensModel->getAllergensCode($aleName);
 						if(is_numeric($allergensCode)){
@@ -787,6 +824,7 @@ class Idexx extends IDEXX_API_Controller {
 						}else{
 							$alphaArr[] = $allergensCode;
 						}
+						$allergensNameArr[] = $aleName;
 					}
 					$numericArr = array_unique($numericArr);
 					$alphaArr = array_unique($alphaArr);
@@ -803,22 +841,18 @@ class Idexx extends IDEXX_API_Controller {
 					$data["Unit_Price"] = $data_detail['unit_price'];
 					$data["Order_Discount"] = $data_detail['order_discount'];
 					$data["Freight_Cost"] = $freightCost;
+					$data["Allergens"] = json_encode($allergensNameArr);
 					$data["Itemcode"] = $allergeName;
 					$data["Vialnumber"] = '';
+					$data["Total_Vial"] = '1';
 					$data["Order is to be sent to"] = $order_send_to;
 					$data["Case_ID"] = $data_detail['case_ID'];
-					$data["Perscriptions_number"] = $data_detail['batch_number'];
+					$data["SAP_ID"] = $data_detail['sap_lims'];
+					$data["BILL_TO_SAP"] = '';
+					$data["BILL_FROM_SAP"] = '';
+					$data["Batch_Number"] = $data_detail['batch_number'];
 					$data["Order_date"] = $data_detail['order_date'];
-					if ($data_detail['is_confirmed'] == 1){
-					$data["Order_confirmation"] = 'Being built';
-					}else{
-					$data["Order_confirmation"] = '';
-					}
-					if ($data_detail['is_confirmed'] == 4){
-					$data["Order_produced"] = 'Being built';
-					}else{
-					$data["Order_produced"] = '';
-					}
+					$data["Order_Status"] = $is_status;
 					$data["Shipping_date"] = !empty($data_detail['shipping_date'])?$data_detail['shipping_date']:'';
 					if($data_detail['track_number']!=""){
 					$data["Tracking_number_Courier"] = $data_detail['track_number'];
@@ -827,7 +861,7 @@ class Idexx extends IDEXX_API_Controller {
 					}
 					$dataDetails[] = $data;
 				} elseif ($total_allergen > 4 && $total_allergen <= 8) {
-					$allergensCode = ''; $numericArr = []; $alphaArr = []; 
+					$allergensCode = ''; $numericArr = []; $alphaArr = []; $allergensNameArr = [];
 					foreach($allergenArr as $key=>$aleName){
 						$allergensCode = $this->AllergensModel->getAllergensCode($aleName);
 						if(is_numeric($allergensCode)){
@@ -835,6 +869,7 @@ class Idexx extends IDEXX_API_Controller {
 						}else{
 							$alphaArr[] = $allergensCode;
 						}
+						$allergensNameArr[] = $aleName;
 					}
 					$numericArr = array_unique($numericArr);
 					$alphaArr = array_unique($alphaArr);
@@ -851,22 +886,18 @@ class Idexx extends IDEXX_API_Controller {
 					$data["Unit_Price"] = $data_detail['unit_price'];
 					$data["Order_Discount"] = $data_detail['order_discount'];
 					$data["Freight_Cost"] = $freightCost;
+					$data["Allergens"] = json_encode($allergensNameArr);
 					$data["Itemcode"] = $allergeName;
 					$data["Vialnumber"] = '';
+					$data["Total_Vial"] = '1';
 					$data["Order is to be sent to"] = $order_send_to;
 					$data["Case_ID"] = $data_detail['case_ID'];
-					$data["Perscriptions_number"] = $data_detail['batch_number'];
+					$data["SAP_ID"] = $data_detail['sap_lims'];
+					$data["BILL_TO_SAP"] = '';
+					$data["BILL_FROM_SAP"] = '';
+					$data["Batch_Number"] = $data_detail['batch_number'];
 					$data["Order_date"] = $data_detail['order_date'];
-					if ($data_detail['is_confirmed'] == 1){
-					$data["Order_confirmation"] = 'Being built';
-					}else{
-					$data["Order_confirmation"] = '';
-					}
-					if ($data_detail['is_confirmed'] == 4){
-					$data["Order_produced"] = 'Being built';
-					}else{
-					$data["Order_produced"] = '';
-					}
+					$data["Order_Status"] = $is_status;
 					$data["Shipping_date"] = !empty($data_detail['shipping_date'])?$data_detail['shipping_date']:'';
 					if($data_detail['track_number']!=""){
 					$data["Tracking_number_Courier"] = $data_detail['track_number'];
@@ -882,27 +913,30 @@ class Idexx extends IDEXX_API_Controller {
 						$totalVials = $totalVials+1;
 					}
 
-					$allergensCode = ''; $numericArr = array();
+					$allergensCode = ''; $numericArr = array(); $allergensName1Arr = [];
 					foreach($allergenArr as $key=>$aleName){
 						$allergensCode = $this->AllergensModel->getAllergensCode($aleName);
 						if(is_numeric($allergensCode)){
 							$numericArr[] = $allergensCode;
 						}
+						$allergensName1Arr[] = $aleName;
 					}
 					$numericArr = array_unique($numericArr);
 					asort($numericArr);
 
-					$allergensCode = ''; $alphaArr = array();
+					$allergensCode = ''; $alphaArr = array(); $allergensName2Arr = [];
 					foreach($allergenArr as $key=>$aleName){
 						$allergensCode = $this->AllergensModel->getAllergensCode($aleName);
 						if(!is_numeric($allergensCode)){
 							$alphaArr[] = $allergensCode;
 						}
+						$allergensName2Arr[] = $aleName;
 					}
 					$alphaArr = array_unique($alphaArr);
 					sort($alphaArr);
 
 					$testArr = array_merge($alphaArr,$numericArr);
+					$allergensNameArr = array_merge($allergensName1Arr,$allergensName2Arr);
 					$a=1; $b = 1; $testedArr = array();
 					foreach($testArr as $key=>$value){
 						if($a == 9){
@@ -928,6 +962,7 @@ class Idexx extends IDEXX_API_Controller {
 						}else{
 						$data["Freight_Cost"] = "0";
 						}
+						$data["Allergens"] = json_encode($allergensNameArr);
 						if(count($allergeName[$x]) == 8){
 						$data["Itemcode"] = '8'.implode("",$allergeName[$x]);
 						}else{
@@ -938,20 +973,15 @@ class Idexx extends IDEXX_API_Controller {
 							}
 						}
 						$data["Vialnumber"] = $x;
+						$data["Total_Vial"] = $totalVials;
 						$data["Order is to be sent to"] = $order_send_to;
 						$data["Case_ID"] = $data_detail['case_ID'];
-						$data["Perscriptions_number"] = $data_detail['batch_number'];
+						$data["SAP_ID"] = $data_detail['sap_lims'];
+						$data["BILL_TO_SAP"] = '';
+						$data["BILL_FROM_SAP"] = '';
+						$data["Batch_Number"] = $data_detail['batch_number'];
 						$data["Order_date"] = $data_detail['order_date'];
-						if ($data_detail['is_confirmed'] == 1){
-						$data["Order_confirmation"] = 'Being built';
-						}else{
-						$data["Order_confirmation"] = '';
-						}
-						if ($data_detail['is_confirmed'] == 4){
-						$data["Order_produced"] = 'Being built';
-						}else{
-						$data["Order_produced"] = '';
-						}
+						$data["Order_Status"] = $is_status;
 						$data["Shipping_date"] = !empty($data_detail['shipping_date'])?$data_detail['shipping_date']:'';
 						if($data_detail['track_number']!=""){
 						$data["Tracking_number_Courier"] = $data_detail['track_number'];

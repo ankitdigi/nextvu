@@ -1194,7 +1194,6 @@ class ExpandOrder extends CI_Controller {
 			$respnedn = $this->OrdersModel->getProductInfo($data['product_code_selection']);
 			$orderOData['id'] = $id;
 			$orderOData['is_cep_after_screening'] = 1;
-			$orderOData['is_expanded'] = 1;
 			$this->OrdersModel->add_edit($orderOData);
 
 			$orderData = $data;
@@ -1206,15 +1205,15 @@ class ExpandOrder extends CI_Controller {
 			if((preg_match('/\bPAX Environmental\b/', $respnedn->name)) && (preg_match('/\bFood Screening\b/', $respnedn->name))){
 				if(!empty($this->input->post())){
 					if($this->input->post('expand_type') == 1){
-						$orderData['product_code_selection'] = '34';
+						$orderData['product_code_selection'] = '56';
 						$sub_order_type = '8';
 						$subOrderTypeArr[] = '8';
 					}elseif($this->input->post('expand_type') == 2){
-						$orderData['product_code_selection'] = '33';
+						$orderData['product_code_selection'] = '57';
 						$sub_order_type = '9';
 						$subOrderTypeArr[] = '9';
 					}elseif($this->input->post('expand_type') == 3){
-						$orderData['product_code_selection'] = '38';
+						$orderData['product_code_selection'] = '58';
 						$sub_order_type = '8,9';
 						$subOrderTypeArr = array("0" => "8","1" => "9");
 					}
@@ -1244,17 +1243,31 @@ class ExpandOrder extends CI_Controller {
 					}else{
 						$orderData['allergens'] = '[""]';
 					}
-					$unitPrice = ($parentCount)*45;
+					if ($data['lab_id'] != 0) {
+						$practice_lab = $data['lab_id'];
+					} else {
+						$practice_lab = $data['vet_user_id'];
+					}
+					$final_price = '0.00';
+					$order_discount = '0.00';
+					$serum_test_price = $this->PriceCategoriesModel->serum_test_price($orderData['product_code_selection'], $practice_lab);
+					$final_price = $serum_test_price[0]['uk_price'];
+					$serum_discount = $this->PriceCategoriesModel->get_discount($orderData['product_code_selection'], $practice_lab);
+					if (!empty($serum_discount)) {
+						$order_discount = ($serum_test_price[0]['uk_price'] * $serum_discount['uk_discount']) / 100;
+						$order_discount = sprintf("%.2f", $order_discount);
+					}
 					$order_number = $this->OrdersModel->get_order_number();
-					if ($order_number['order_number'] == '' || $order_number['order_number'] == NULL || $order_number['order_number'] == 0) {
+					if($order_number['order_number'] == '' || $order_number['order_number'] == NULL || $order_number['order_number'] == 0){
 						$final_order_number = 1001;
 					} else {
 						$final_order_number = $order_number['order_number'] + 1;
 					}
 					$orderData['order_number'] = $final_order_number;
 					$orderData['order_date'] = date("Y-m-d");
-					$orderData['unit_price'] = $unitPrice;
-					$orderData['order_discount'] = '0.00';
+					$orderData['price_currency'] = $serum_test_price[0]['price_currency'];
+					$orderData['unit_price'] = $final_price - $order_discount;
+					$orderData['order_discount'] = $order_discount;
 					$orderData['shipping_cost'] = '0.00';
 					$orderData['is_mail_sent'] = '0';
 					$orderData['is_confirmed'] = '0';
@@ -1269,22 +1282,10 @@ class ExpandOrder extends CI_Controller {
 					$orderData['is_order_completed'] = '0';
 					$orderData['created_by'] = $this->user_id;
 					$orderData['created_at'] = date("Y-m-d H:i:s");
-					if ($this->input->post('is_expanded')) {
-						$reExpandedData = $this->OrdersModel->getRecordCepId($id);
-						$reExpanded['id'] = $reExpandedData['id'];
-						$reExpanded['product_code_selection'] = $orderData['product_code_selection'];
-						$reExpanded['allergens'] = $orderData['allergens'];
-						$reExpanded['unit_price'] = $orderData['unit_price'];
-						$orderData = $reExpanded;
-					}
-					if($ins_id = $this->OrdersModel->add_edit_expanded($orderData)) {
+					if($ins_id = $this->OrdersModel->add_edit($orderData)) {
 						unset($orderData['save']);
 						unset($orderData['next']);
-						if ($this->input->post('is_expanded')) {
-							redirect('orders/summary/' . $ins_id."?re_expand=1");
-						} else {
-							redirect('orders/summary/' . $ins_id);
-						}
+						redirect('orders/summary/'.$ins_id);
 					}
 				}else{
 					$this->_data['id'] = $id;
@@ -1313,15 +1314,15 @@ class ExpandOrder extends CI_Controller {
 			$orderData['shipping_date'] = NULL;
 			$sub_order_type = ''; $subOrderTypeArr = [];
 			if(preg_match('/\bPAX Environmental Screening\b/', $respnedn->name)){
-				$orderData['product_code_selection'] = '34';
+				$orderData['product_code_selection'] = '56';
 				$sub_order_type = '8';
 				$subOrderTypeArr[] = '8';
 			}elseif(preg_match('/\bPAX Food Screening\b/', $respnedn->name)){
-				$orderData['product_code_selection'] = '33';
+				$orderData['product_code_selection'] = '57';
 				$sub_order_type = '9';
 				$subOrderTypeArr[] = '9';
 			}elseif((preg_match('/\bPAX Environmental\b/', $respnedn->name)) && (preg_match('/\bFood Screening\b/', $respnedn->name))){
-				$orderData['product_code_selection'] = '38';
+				$orderData['product_code_selection'] = '58';
 				$sub_order_type = '8,9';
 				$subOrderTypeArr = array("0" => "8","1" => "9");
 			}
@@ -1351,7 +1352,20 @@ class ExpandOrder extends CI_Controller {
 			}else{
 				$orderData['allergens'] = '[""]';
 			}
-			$unitPrice = ($parentCount)*45;
+			if ($data['lab_id'] != 0) {
+				$practice_lab = $data['lab_id'];
+			} else {
+				$practice_lab = $data['vet_user_id'];
+			}
+			$final_price = '0.00';
+			$order_discount = '0.00';
+			$serum_test_price = $this->PriceCategoriesModel->serum_test_price($orderData['product_code_selection'], $practice_lab);
+			$final_price = $serum_test_price[0]['uk_price'];
+			$serum_discount = $this->PriceCategoriesModel->get_discount($orderData['product_code_selection'], $practice_lab);
+			if (!empty($serum_discount)) {
+				$order_discount = ($serum_test_price[0]['uk_price'] * $serum_discount['uk_discount']) / 100;
+				$order_discount = sprintf("%.2f", $order_discount);
+			}
 			$order_number = $this->OrdersModel->get_order_number();
 			if ($order_number['order_number'] == '' || $order_number['order_number'] == NULL || $order_number['order_number'] == 0) {
 				$final_order_number = 1001;
@@ -1360,8 +1374,9 @@ class ExpandOrder extends CI_Controller {
 			}
 			$orderData['order_number'] = $final_order_number;
 			$orderData['order_date'] = date("Y-m-d");
-			$orderData['unit_price'] = $unitPrice;
-			$orderData['order_discount'] = '0.00';
+			$orderData['price_currency'] = $serum_test_price[0]['price_currency'];
+			$orderData['unit_price'] = $final_price - $order_discount;
+			$orderData['order_discount'] = $order_discount;
 			$orderData['shipping_cost'] = '0.00';
 			$orderData['is_mail_sent'] = '0';
 			$orderData['is_confirmed'] = '0';

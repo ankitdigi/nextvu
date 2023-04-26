@@ -56,7 +56,7 @@ $userData = logged_in_user_data();
 									<form class="row" id="filterForm" method="POST" action="">
 										<div class="col-sm-3">
 											<div class="form-group">
-												<label>Managed By</label>
+												<label><?php echo $this->lang->line("managed_by");?></label>
 												<select class="form-control form-control-sm" name="managed_by_id" id="managed_by_id">
 													<option value="">--Select--</option>
 													<?php

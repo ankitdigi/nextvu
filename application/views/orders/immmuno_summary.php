@@ -202,7 +202,7 @@ if($order_details['lab_id'] > 0){
 									<div class="box-header with-border"><h3 class="box-title"><?php echo $this->lang->line("price_details");?></h3></div><!-- /.box-header -->
 										<div class="box-body">
 											<div class="row">
-												<?php if($userData['role']!=1 && $id>0){ $readonly = "readonly"; }else{ $readonly = ""; } ?>
+												<?php if($userData['role']!=1 && $userData['role']!=11 && $id > 0){ $readonly = "readonly"; }else{ $readonly = ""; } ?>
 												<div class="col-sm-4 col-md-4 col-lg-4">
 													<div class="form-group">
 														<label><?php echo $this->lang->line("order_price_£GBP");?></label>
@@ -218,7 +218,7 @@ if($order_details['lab_id'] > 0){
 												</div><!-- /.col -->
 												<div class="col-sm-4 col-md-4 col-lg-4">
 													<?php 
-													if(($userData['role'] == 1) || ($userData['role'] == 2) || ($id == '') || ($userData['role'] == 5 && $this->session->userdata('user_type') == '3') || ($userData['role'] == 6) || ($userData['role'] == 7)){ ?>
+													if(($userData['role'] == 1) || ($userData['role'] == 11) || ($userData['role'] == 2) || ($id == '') || ($userData['role'] == 5 && $this->session->userdata('user_type') == '3') || ($userData['role'] == 6) || ($userData['role'] == 7)){ ?>
 														<div class="form-group">
 															<label><?php echo $this->lang->line("order_discount");?></label>
 															<div class="input-group">
@@ -232,19 +232,23 @@ if($order_details['lab_id'] > 0){
 													<?php } ?>
 												</div><!-- /.col -->
 												<div class="col-sm-4 col-md-4 col-lg-4">
-													<?php if(($userData['role'] == 1) || ($userData['role'] == 5 && $this->session->userdata('user_type') == '3')){ ?>
+													<?php if(($userData['role'] == 1) || ($userData['role'] == 11) || ($userData['role'] == 5 && $this->session->userdata('user_type') == '3')){ ?>
 														<div class="form-group">
 															<label><?php echo $this->lang->line("shipping_cost");?></label>
 															<div class="input-group">
 																<div class="input-group-addon">
 																	<i class="fa fa-gbp"></i>
 																</div>
-																<input type="text" class="form-control" name="shipping_cost" id="shipping_cost" placeholder="<?php echo $this->lang->line("enter_order_discount");?>" value="<?php echo set_value('shipping_cost',isset($shipping_cost) ? $shipping_cost : '');?>"  <?php echo $readonly; ?>>
+																<input type="text" class="form-control" name="shipping_cost" id="shipping_cost" placeholder="<?php echo $this->lang->line("enter_order_discount");?>" value="<?php echo set_value('shipping_cost',isset($shipping_cost) ? $shipping_cost : '');?>" <?php echo $readonly; ?>>
 																<?php echo form_error('shipping_cost', '<div class="error">', '</div>'); ?>
 															</div>
 														</div>
 													<?php }else{ ?>
+														<?php if($id > 0){ ?>
+														<input type="hidden" name="shipping_cost" id="shipping_cost" value="<?php echo set_value('shipping_cost',isset($shipping_cost) ? $shipping_cost : '');?>">
+														<?php }else{ ?>
 														<input type="hidden" name="shipping_cost" id="shipping_cost" value="0">
+														<?php } ?>
 													<?php } ?>
 												</div><!-- /.col -->
 											</div><!-- /.row -->

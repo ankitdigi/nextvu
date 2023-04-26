@@ -10,7 +10,7 @@
 		</li>
 		<?php if($userData['role']==1 || $userData['role']==2 || $userData['role']==5 || $userData['role']==6){ ?>
 			<li class="has-dropdown <?php if($this->uri->segment(1)=="orders" || $this->uri->segment(1)=="invoices"){ echo 'active'; } ?>">
-				<a href="javascript:void(0);"><i><img src="<?php echo base_url(); ?>assets/images/ico-orders.svg" alt="Orders Ic6n" /></i> <span><?php echo $this->lang->line('Orders_Management'); ?></span><i class="fa-solid fa-chevron-right toggle-child"></i></a>
+				<a href="javascript:void(0);"><i><img src="<?php echo base_url(); ?>assets/images/ico-orders.svg" alt="Orders Icon" /></i> <span><?php echo $this->lang->line('Orders_Management'); ?></span><i class="fa-solid fa-chevron-right toggle-child"></i></a>
 				<ul class="sub-menus">
 					<li class="<?php if($this->uri->segment(1)=="orders" && $this->uri->segment(2)=="add"){ echo 'active'; } ?>"><a href="<?php echo site_url('orders/add');?>"><i class="fa fa-circle-o"></i> <?php echo $this->lang->line('Place_Order'); ?></a></li>
 					<li class="<?php if($this->uri->segment(1)=="orders" && $this->uri->segment(2)==""){ echo 'active'; } ?>"><a href="<?php echo site_url('orders');?>"><i class="fa fa-circle-o"></i> <?php echo $this->lang->line('All_Orders'); ?></a></li>
@@ -44,8 +44,6 @@
 		<?php } ?>
 		<?php if($userData['role']==10){ ?>
 		<li class="<?php if($this->uri->segment(1)=="orders" && $this->uri->segment(2)==""){ echo 'active'; } ?>"><a href="<?php echo site_url('orders');?>"><i class="fa fa-circle-o"></i> <?php echo $this->lang->line('All_Orders'); ?></a></li>
-		<?php /* <li class="<?php if($this->uri->segment(1)=="importPetowners" && $this->uri->segment(2)==""){ echo 'active'; } ?>"><a href="<?php echo site_url('ImportExportExcel/importPetowners');?>"><i class="fa fa-circle-o"></i> Import Petowners</a></li>
-		<li class="<?php if($this->uri->segment(1)=="importPets" && $this->uri->segment(2)==""){ echo 'active'; } ?>"><a href="<?php echo site_url('ImportExportExcel/importPets');?>"><i class="fa fa-circle-o"></i> Import Pets</a></li> */ ?>
 		<?php } ?>
 		<?php if(($userData['role']==1 && $userData['is_admin']==0) || $userData['role']==3 || $userData['role']==5){ ?>
 			<li class="has-dropdown <?php if($this->uri->segment(1)=="vet_lab_users" || $this->uri->segment(1)=="pet_owners" || $this->uri->segment(1)=="pets" || $this->uri->segment(1)=="customer_users" || $this->uri->segment(1)=="country_users" || $this->uri->segment(1)=="tm_users" || $this->uri->segment(1)=="lims_users" || $this->uri->segment(1)=="labs" || $this->uri->segment(1)=="corporates" || $this->uri->segment(1)=="buying_groups" || $this->uri->segment(1)=="referrals"){ echo 'active'; } ?>">
@@ -153,7 +151,7 @@
 		}
 		if($userData['role']==11){ ?>
 			<li class="has-dropdown <?php if($this->uri->segment(1)=="orders"){ echo 'active'; } ?>">
-				<a href="javascript:void(0);"><i><img src="<?php echo base_url(); ?>assets/images/ico-orders.svg" alt="Orders Ic6n" /></i> <span><?php echo $this->lang->line('Orders_Management'); ?></span><i class="fa-solid fa-chevron-right toggle-child"></i></a>
+				<a href="javascript:void(0);"><i><img src="<?php echo base_url(); ?>assets/images/ico-orders.svg" alt="Orders Icon" /></i> <span><?php echo $this->lang->line('Orders_Management'); ?></span><i class="fa-solid fa-chevron-right toggle-child"></i></a>
 				<ul class="sub-menus">
 					<li class="<?php if($this->uri->segment(1)=="orders" && $this->uri->segment(2)=="add"){ echo 'active'; } ?>"><a href="<?php echo site_url('orders/add');?>"><i class="fa fa-circle-o"></i> <?php echo $this->lang->line('Place_Order'); ?></a></li>
 					<li class="<?php if($this->uri->segment(1)=="orders" && $this->uri->segment(2)==""){ echo 'active'; } ?>"><a href="<?php echo site_url('orders');?>"><i class="fa fa-circle-o"></i> <?php echo $this->lang->line('All_Orders'); ?></a></li>
@@ -183,15 +181,9 @@
 				<li class="has-dropdown <?php if($this->uri->segment(1)=="getLIMSResults" || $this->uri->segment(1)=="reportPractices" || $this->uri->segment(1)=="reportLabs"){ echo 'active'; } ?>">
 					<a href="javascript:void(0);"><i class="fa fa-flag-checkered" aria-hidden="true"></i> <span><?php echo $this->lang->line('Reports_Management'); ?></span><i class="fa-solid fa-chevron-right toggle-child"></i></a>
 					<ul class="sub-menus">
-						<?php
-						if (in_array("1", $zoneby) && count($zoneby) == 1) {
-						?>
 						<li class="<?php if($this->uri->segment(1)=="getLIMSResults"){echo 'active';} ?>">
 							<a href="<?php echo site_url('getLIMSResults');?>"><i class="fa fa-circle-o"></i> <?php echo $this->lang->line('LIMS_API_Run'); ?></a>
 						</li>
-						<?php
-						}
-						?>
 						<li class="<?php if($this->uri->segment(1)=="reportPractices"){echo 'active';} ?>">
 							<a href="<?php echo site_url('reportPractices');?>"><i class="fa fa-circle-o"></i> <?php echo $this->lang->line('Practices_Report'); ?></a>
 						</li>

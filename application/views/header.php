@@ -223,16 +223,22 @@ if($fetchClass == 'Dashboard' || $fetchClass == 'dashboard'){
 			<div class="dashboard_top_bar">
 				<h1><?php echo $this->lang->line('Control_Panel'); ?></h1>
 				<div class="account-area">
+					<select onchange="javascript:window.location.href='<?php echo base_url(); ?>LanguageSwitcher/switchLang/'+this.value;" class="form-control">
+						<option value="english" <?php if($this->session->userdata('site_lang') == 'english') echo 'selected="selected"'; ?>>English</option>
+						<option value="danish" <?php if($this->session->userdata('site_lang') == 'danish') echo 'selected="selected"'; ?>>Danish</option>
+						<option value="french" <?php if($this->session->userdata('site_lang') == 'french') echo 'selected="selected"'; ?>>French</option>
+						<option value="german" <?php if($this->session->userdata('site_lang') == 'german') echo 'selected="selected"'; ?>>German</option>
+						<option value="italian" <?php if($this->session->userdata('site_lang') == 'italian') echo 'selected="selected"'; ?>>Italian</option>
+						<option value="dutch" <?php if($this->session->userdata('site_lang') == 'dutch') echo 'selected="selected"'; ?>>Dutch</option>
+						<option value="norwegian" <?php if($this->session->userdata('site_lang') == 'norwegian') echo 'selected="selected"'; ?>>Norwegian</option>
+						<option value="spanish" <?php if($this->session->userdata('site_lang') == 'spanish') echo 'selected="selected"'; ?>>Spanish</option>
+						<option value="swedish" <?php if($this->session->userdata('site_lang') == 'swedish') echo 'selected="selected"'; ?>>Swedish</option>
+					</select>
+				</div>
+				<div class="account-area">
 					<div class="user-account">
 						<div class="account-avataar"><img src="<?php echo base_url(); ?>assets/images/ico-users.svg" alt="User Icon" /></div>
-						<div class="account-name"><?php 
-						/*$logged_query  = 'SELECT * FROM `ci_users` WHERE id = "'.$userData['user_id'].'"';
-						$user_response = $this->db->get($logged_query);
-						$user_data = $user_response->row();
-						
-						echo "<pre>"; print_r($user_data); exit;*/
-						
-						echo $userData['name']; ?></div>
+						<div class="account-name"><?php echo $userData['name']; ?></div>
 					</div>
 					<ul>
 						<li>

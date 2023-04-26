@@ -328,9 +328,9 @@ class Reports extends CI_Controller {
 					if($row['product_code_selection'] == '34'){
 						$product_type = 'PAX Environmental Screening Expanded';
 					}elseif($row['product_code_selection'] == '33'){
-						$product_type = 'Pax Food Screening Expanded';
+						$product_type = 'PAX Food Screening Expanded';
 					}elseif($row['product_code_selection'] == '38'){
-						$product_type = 'PAX Environmental & Food Screening Expanded';
+						$product_type = 'PAX Environmental + Food Screening Expanded';
 					}else{
 						$product_type = !empty($row['product_type']) ? $row['product_type'] : '';
 					}

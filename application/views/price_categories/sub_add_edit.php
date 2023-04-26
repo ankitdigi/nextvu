@@ -107,11 +107,16 @@ $userData = logged_in_user_data();
 												</div>
 											</div>
 											<div class="col-sm-6 col-md-6 col-lg-6" style="padding:0px">
-												<div class="Article_Number" <?php if(isset($id) && $id > 0 && $data['parent_id'] == 32){ echo 'style="display:block;"'; }else{ echo 'style="display:none;"'; } ?>>
+												<div class="Article_Number" <?php if(isset($id) && $id > 0 && ($data['parent_id'] == '32' || $data['parent_id'] == '67' || $data['parent_id'] == '68')){ echo 'style="display:block;"'; }else{ echo 'style="display:none;"'; } ?>>
 													<div class="form-group col-sm-4 col-md-4 col-lg-4">
 														<label>Article Number</label>
 														<input type="text" class="form-control" name="article_number" placeholder="Enter Article Number UK" value="<?php echo set_value('article_number',isset($data['article_number']) ? $data['article_number'] : '');?>">
 														<?php echo form_error('article_number', '<div class="error">', '</div>'); ?>
+													</div>
+													<div class="form-group col-sm-4 col-md-4 col-lg-4">
+														<label>Article Number Austria</label>
+														<input type="text" class="form-control" name="article_number_AT" placeholder="Enter Article Number Austria" value="<?php echo set_value('article_number_AT',isset($data['article_number_AT']) ? $data['article_number_AT'] : '');?>">
+														<?php echo form_error('article_number_AT', '<div class="error">', '</div>'); ?>
 													</div>
 													<div class="form-group col-sm-4 col-md-4 col-lg-4">
 														<label>Article Number Denmark</label>
@@ -152,6 +157,11 @@ $userData = logged_in_user_data();
 														<label>Article Number Sweden</label>
 														<input type="text" class="form-control" name="article_number_SE" placeholder="Enter Article Number Sweden" value="<?php echo set_value('article_number_SE',isset($data['article_number_SE']) ? $data['article_number_SE'] : '');?>">
 														<?php echo form_error('article_number_SE', '<div class="error">', '</div>'); ?>
+													</div>
+													<div class="form-group col-sm-4 col-md-4 col-lg-4">
+														<label>Article Number Switzerland</label>
+														<input type="text" class="form-control" name="article_number_CH" placeholder="Enter Article Number Switzerland" value="<?php echo set_value('article_number_CH',isset($data['article_number_CH']) ? $data['article_number_CH'] : '');?>">
+														<?php echo form_error('article_number_CH', '<div class="error">', '</div>'); ?>
 													</div>
 												</div>
 												<div class="col-sm-12 col-md-12 col-lg-12"><h3 style="margin: 0px;color: #2f5c79;border-bottom: 1px solid;margin-bottom: 5px;">Global and NL Prices</h3></div>
@@ -582,7 +592,7 @@ $userData = logged_in_user_data();
 			$('select[name="parent_id"]').on('change', function() {
 				var filtered_order_type = $(this).val();
 				if(filtered_order_type){
-					if(filtered_order_type == '32'){
+					if(filtered_order_type == '32' || filtered_order_type == '67' || filtered_order_type == '68'){
 						$(".Article_Number").show();
 					} else {
 						$(".Article_Number").hide();

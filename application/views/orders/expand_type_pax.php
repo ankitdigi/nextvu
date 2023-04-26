@@ -2,6 +2,43 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 $this->load->view("header");
 $userData = logged_in_user_data();
+
+if($data['pax_cutoff_version'] == 1){
+	$cutoffs = '30';
+}else{
+	$cutoffs = '28';
+}
+
+$raptorData = $this->OrdersModel->getRaptorData($data['order_number']);
+$getEAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($data['allergens']);
+$envtotal = 0;
+foreach ($getEAllergenParent as $apkey => $apvalue){
+	$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
+	foreach ($subAllergens as $skey => $svalue) {
+		$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+		if(!empty($subVlu->raptor_code)){
+			$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+			if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
+				$envtotal++;
+			}
+		}
+	}
+}
+
+$getFAllergenParent = $this->AllergensModel->getFoodAllergenParentbyName($data['allergens']);
+$foodtotal = 0;
+foreach ($getFAllergenParent as $apkey => $apvalue){
+	$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
+	foreach ($subAllergens as $skey => $svalue) {
+		$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+		if(!empty($subVlu->raptor_code)){
+			$raptrfVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+			if(!empty($raptrfVlu) && floor($raptrfVlu->result_value) >= $cutoffs){
+				$foodtotal++;
+			}
+		}
+	}
+}
 ?>
 			<link rel="stylesheet" href='<?php echo base_url("assets/dist/css/radio_box.css"); ?>' />
 			<!-- Content Wrapper. Contains page content -->
@@ -35,36 +72,35 @@ $userData = logged_in_user_data();
 
 								<!-- form start -->
 								<?php echo form_open('', array('name'=>'orderType', 'id'=>'orderType')); ?>
-									<?php
-									if (!empty($this->_data['data']['is_expanded'])) {
-									?>
-									<input type="hidden" name="is_expanded" value="1" >
-									<?php
-									}
-									?>
 									<!--Order Type-->
 									<div class="box-body">
 										<div class="row">
 											<div class="col-sm-12 col-md-12 col-lg-12">
 												<div class="middle">
+													<?php if($envtotal > 0){ ?>
 													<label>
 														<input type="radio" name="expand_type" value="1"/>
 														<div class="front-end box">
 															<span><?php echo $this->lang->line("pax_env_scr_expanded");?></span>
 														</div>
 													</label>
+													<?php } ?>
+													<?php if($foodtotal > 0){ ?>
 													<label>
 														<input type="radio" name="expand_type" value="2"/>
 														<div class="front-end box">
 															<span><?php echo $this->lang->line("pax_food_scr_expanded");?></span>
 														</div>
 													</label>
+													<?php } ?>
+													<?php if($envtotal > 0 && $foodtotal > 0){ ?>
 													<label>
 														<input type="radio" name="expand_type" value="3"/>
 														<div class="front-end box">
 															<span><?php echo $this->lang->line("pax_env_food_scr_expanded");?></span>
 														</div>
 													</label>
+													<?php } ?>
 												</div>
 											</div><!-- /.col -->
 										</div><!-- /.row -->

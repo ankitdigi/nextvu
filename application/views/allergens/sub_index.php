@@ -63,15 +63,17 @@ $userData = logged_in_user_data();
 													<option value="5">NextLab - Dog - Food</option>
 													<option value="51">NextLab - Cat - Food</option>
 													<option value="7">NextLab - Horse - Food</option>
-													<option value="8">PAX - Environmental</option>
-													<option value="9">PAX - Food</option>
+													<option value="8">PAX - Environmental - Dog</option>
+													<option value="9">PAX - Food - Dog</option>
+													<option value="81">PAX - Environmental - Cat</option>
+													<option value="91">PAX - Food - Cat</option>
+													<option value="82">PAX - Environmental - Horse</option>
+													<option value="92">PAX - Food - Horse</option>
 													<option value="11">PAX - Environmental - US</option>
 													<option value="12">PAX - Food - US</option>
 													<option value="4">Skin Test</option>
 													<option value="13">Vet-Goid</option>
 													<option value="14">Pet SLIT</option>
-													<option value="15">Immucept SLIT</option>
-													<option value="16">Immucept SCIT</option>
 												</select>
 											</div>
 										</div>

@@ -33,7 +33,7 @@ class Interpretation extends REST_Controller {
 			$this->db->where('id',$data_detail['pax_parent_id']);
 			$groupName = $this->db->get()->row()->pax_name;
 
-			$this->db->select('raptor_code,raptor_function,em_allergen,raptor_header,raptor_header_danish,raptor_header_french,raptor_header_german,raptor_header_italian,raptor_header_dutch,raptor_header_norwegian,raptor_header_spanish,raptor_header_swedish');
+			$this->db->select('raptor_code,raptor_function,em_allergen,raptor_header');
 			$this->db->from('ci_allergens_raptor');
 			$this->db->where('allergens_id',$data_detail['id']);
 			$allegrslt = $this->db->get()->result();
@@ -59,126 +59,14 @@ class Interpretation extends REST_Controller {
 						if(!empty($detaildArr)){
 							$i=1;
 							foreach($detaildArr as $row1d){
-								$data["Interpretation_English_Line_".$i] = $row1d;
+								$data["Interpretation_Line_".$i] = $row1d;
 								$i++;
 							}
 						}else{
-							$data["Interpretation_English"] = '';
+							$data["Interpretation"] = '';
 						}
 					}else{
-						$data["Interpretation_English"] = '';
-					}
-					if($row->raptor_header_danish != "" && $row->raptor_header_danish != '[""]'){
-						$detailddArr = json_decode($row->raptor_header_danish);
-						if(!empty($detailddArr)){
-							$d=1;
-							foreach($detailddArr as $row2d){
-								$data["Interpretation_Danish_Line_".$d] = $row2d;
-								$d++;
-							}
-						}else{
-							$data["Interpretation_Danish"] = '';
-						}
-					}else{
-						$data["Interpretation_Danish"] = '';
-					}
-					if($row->raptor_header_french != "" && $row->raptor_header_french != '[""]'){
-						$detaildfArr = json_decode($row->raptor_header_french);
-						if(!empty($detaildfArr)){
-							$f=1;
-							foreach($detaildfArr as $row3d){
-								$data["Interpretation_French_Line_".$f] = $row3d;
-								$f++;
-							}
-						}else{
-							$data["Interpretation_French"] = '';
-						}
-					}else{
-						$data["Interpretation_French"] = '';
-					}
-					if($row->raptor_header_german != "" && $row->raptor_header_german != '[""]'){
-						$detaildgArr = json_decode($row->raptor_header_german);
-						if(!empty($detaildgArr)){
-							$g=1;
-							foreach($detaildgArr as $row4d){
-								$data["Interpretation_German_Line_".$g] = $row4d;
-								$g++;
-							}
-						}else{
-							$data["Interpretation_German"] = '';
-						}
-					}else{
-						$data["Interpretation_German"] = '';
-					}
-					if($row->raptor_header_italian != "" && $row->raptor_header_italian != '[""]'){
-						$detaildiArr = json_decode($row->raptor_header_italian);
-						if(!empty($detaildiArr)){
-							$x=1;
-							foreach($detaildiArr as $row5d){
-								$data["Interpretation_Italian_Line_".$x] = $row5d;
-								$x++;
-							}
-						}else{
-							$data["Interpretation_Italian"] = '';
-						}
-					}else{
-						$data["Interpretation_Italian"] = '';
-					}
-					if($row->raptor_header_dutch != "" && $row->raptor_header_dutch != '[""]'){
-						$detailddArr = json_decode($row->raptor_header_dutch);
-						if(!empty($detailddArr)){
-							$d=1;
-							foreach($detailddArr as $row6d){
-								$data["Interpretation_Dutch_Line_".$d] = $row6d;
-								$d++;
-							}
-						}else{
-							$data["Interpretation_Dutch"] = '';
-						}
-					}else{
-						$data["Interpretation_Dutch"] = '';
-					}
-					if($row->raptor_header_norwegian != "" && $row->raptor_header_norwegian != '[""]'){
-						$detaildnArr = json_decode($row->raptor_header_norwegian);
-						if(!empty($detaildnArr)){
-							$n=1;
-							foreach($detaildnArr as $row7d){
-								$data["Interpretation_Norwegian_Line_".$n] = $row7d;
-								$n++;
-							}
-						}else{
-							$data["Interpretation_Norwegian"] = '';
-						}
-					}else{
-						$data["Interpretation_Norwegian"] = '';
-					}
-					if($row->raptor_header_spanish != "" && $row->raptor_header_spanish != '[""]'){
-						$detaildsArr = json_decode($row->raptor_header_spanish);
-						if(!empty($detaildsArr)){
-							$s=1;
-							foreach($detaildsArr as $row8d){
-								$data["Interpretation_Spanish_Line_".$s] = $row8d;
-								$s++;
-							}
-						}else{
-							$data["Interpretation_Spanish"] = '';
-						}
-					}else{
-						$data["Interpretation_Spanish"] = '';
-					}
-					if($row->raptor_header_swedish != "" && $row->raptor_header_swedish != '[""]'){
-						$detailds1Arr = json_decode($row->raptor_header_swedish);
-						if(!empty($detailds1Arr)){
-							$y=1;
-							foreach($detailds1Arr as $row9d){
-								$data["Interpretation_Swedish_Line_".$y] = $row9d;
-								$y++;
-							}
-						}else{
-							$data["Interpretation_Swedish"] = '';
-						}
-					}else{
-						$data["Interpretation_Swedish"] = '';
+						$data["Interpretation"] = '';
 					}
 					$data_details[] = $data;
 				}
@@ -191,15 +79,7 @@ class Interpretation extends REST_Controller {
 				$data["E_M_Allergen"]			= '';
 				$data["Code"]					= '';
 				$data["Allergen_Family"]		= '';
-				$data["Interpretation_English"] = '';
-				$data["Interpretation_Danish"] = '';
-				$data["Interpretation_French"] = '';
-				$data["Interpretation_German"] = '';
-				$data["Interpretation_Italian"] = '';
-				$data["Interpretation_Dutch"] = '';
-				$data["Interpretation_Norwegian"] = '';
-				$data["Interpretation_Spanish"] = '';
-				$data["Interpretation_Swedish"] = '';
+				$data["Interpretation"] = '';
 				$data_details[] = $data;
 			}
 		}

@@ -128,7 +128,7 @@ $userData = logged_in_user_data();
 										<div class="col-sm-2">
 											<div class="form-group">
 												<label><?php echo $this->lang->line("managed_by");?></label>
-													<select class="form-control selectpicker" data-live-search="true" name="managed_by_id[]" id="managed_by_id" multiple="multiple" required="required">
+												<select class="form-control form-control-sm" name="managed_by_id" id="managed_by_id">
 													<option value="">--Select--</option>
 													<?php
 													$this->db->select("ci_managed_by_members.*");
@@ -236,30 +236,6 @@ $userData = logged_in_user_data();
 			<?php $this->load->view("footer"); ?>
 		</div><!-- ./wrapper -->
 		<?php $this->load->view("script"); ?>
-
-		<!-- Start Change Panel -->
-		<div class="modal fade" id="changePanel">
-			<div class="modal-dialog" style="width:65%">
-				<div class="modal-content">
-					<div class="modal-header">
-						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-						<h4 class="modal-title">Change Panel</h4>
-					</div><!-- /.modal-header -->
-					<?php echo form_open('orders/update_change_panel', array('name' => 'chanePanelForm', 'id' => 'chanePanelForm')); ?>
-					<div class="modal-body">
-						<span id="message" class="text-danger"></span>
-						<input type="hidden" name="order_id" id="change_panel_order_id" value="">
-						<div class="chanePanelFormDetails"></div>
-					</div><!-- /.modal-body -->
-					<div class="modal-footer">
-						<button type="button" class="btn btn-default pull-left" data-dismiss="modal"><?php echo $this->lang->line("close");?></button>
-					</div><!-- /.modal-footer -->
-					<?php echo form_close(); ?>
-				</div><!-- /.modal-content -->
-			</div><!-- /.modal-dialog -->
-		</div>
-		<!-- End Change Panel -->
-
 		<!--Repeat order modal-->
 		<div class="modal fade" id="confirmOrderModal">
 			<div class="modal-dialog" style="width:65%">
@@ -400,10 +376,10 @@ $userData = logged_in_user_data();
 								<?php echo form_error('comment', '<div class="error">', '</div>'); ?>
 							</div>
 							<?php } ?>
-							<div class="form-group cancel_comment_box" >
-								<label>Cancelled Comment</label>
-								<textarea disabled class="form-control" name="cancelComment" id="cancelComment" rows="3" placeholder="<?php echo $this->lang->line("cancel_comment");?>" required=""></textarea>
-								<?php echo form_error('comment', '<div class="error">', '</div>'); ?>
+							<div class="form-group cancel_order_comment" style="display:none">
+								<label>Cancel Order Comment</label>
+								<textarea class="form-control" name="cancel_order_comment" id="cancel_order_comment" rows="3"></textarea>
+								<?php echo form_error('cancel_order_comment', '<div class="error">', '</div>'); ?>
 							</div>
 						</div><!-- /.modal-body -->
 						<div class="modal-footer">
@@ -955,16 +931,21 @@ $userData = logged_in_user_data();
 					{
 						"data": "id",
 						render: function(data, type, row, meta) {
-							if((row.comment==''||row.comment==null||row.comment==undefined) && (row.internal_comment==''||row.internal_comment==null||row.internal_comment==undefined)){
-								var noteColor = 'gray';
-								if (row.cancel_comment != '') {
-									var noteColor = 'red';
+							if(row.is_confirmed==3){
+								if(row.cancel_comment==''||row.cancel_comment==null||row.cancel_comment==undefined){
+									var comment = '<a class="btn btn-sm btn-outline-light ordercommentadd" data-order_id="' + data + '" data-is_cancel="1" data-toggle="modal" data-target="#ordercommentadd" title="Order Comment"><i class="fa fa-sticky-note" style="font-size:initial;color:gray"></i></a>';
+								}else{
+									var comment =  '<a class="btn btn-sm btn-outline-light ordercommentadd" data-order_id="' + data + '" data-is_cancel="1" data-toggle="modal" data-target="#ordercommentadd" title="Order Comment"><i class="fa fa-sticky-note" style="font-size:initial;color:red;"></i></a>';
 								}
-								var comment = '<a class="btn btn-sm btn-outline-light ordercommentadd" data-order_id="' + data + '" data-toggle="modal" data-target="#ordercommentadd" title="Order Comment"><i class="fa fa-sticky-note" style="font-size:initial;color:'+noteColor+'"></i></a>';
 								return comment;
 							}else{
-								var comment =  '<a class="btn btn-sm btn-outline-light ordercommentadd" data-order_id="' + data + '" data-toggle="modal" data-target="#ordercommentadd" title="Order Comment"><i class="fa fa-sticky-note" style="font-size:initial;color:red;"></i></a>';
-								return comment;
+								if((row.comment==''||row.comment==null||row.comment==undefined) && (row.internal_comment==''||row.internal_comment==null||row.internal_comment==undefined)){
+									var comment =  '<a class="btn btn-sm btn-outline-light ordercommentadd" data-order_id="' + data + '" data-is_cancel="0" data-toggle="modal" data-target="#ordercommentadd" title="Order Comment"><i class="fa fa-sticky-note" style="font-size:initial;color:gray"></i></a>';
+									return comment;
+								}else{
+									var comment =  '<a class="btn btn-sm btn-outline-light ordercommentadd" data-order_id="' + data + '" data-is_cancel="0" data-toggle="modal" data-target="#ordercommentadd" title="Order Comment"><i class="fa fa-sticky-note" style="font-size:initial;color:red;"></i></a>';
+									return comment;
+								}
 							}
 						}
 					},
@@ -1005,7 +986,6 @@ $userData = logged_in_user_data();
 							var download_Result_List = '';
 							var authorised_order = '';
 							var invoiced_order = '';
-							var change_panel = '';
 
 							if (user_role == 1 || user_role == 11) {
 								email_customer = '<a class="btn btn-sm btn-outline-light customerMailModal" data-order_id="' + data + '" data-toggle="modal" data-target="#customerMailModal" title="Communicate Order Issue to Customer"><i class="fa fa-envelope-o" style="font-size:initial;"></i>Communicate Order Issue to Customer</a>';
@@ -1071,10 +1051,6 @@ $userData = logged_in_user_data();
 								email_upload = '<a class="btn btn-sm btn-outline-light" href="<?php echo base_url() . EMAIL_UPLOAD_PATH; ?>/' + row.email_upload + '" download title="View Order Email"><i class="fa fa-download" style="font-size:initial;"></i>View Order Email</a>';
 							}
 
-							if (row.order_type_id == '2') {
-								change_panel = '<a onclick="" class="btn btn-sm btn-outline-light change_panel_btn" data-order_id="' + data + '" data-toggle="modal" data-target="#changePanel" title="Change Panel"><i class="fa fa-pencil" style="font-size:initial;"></i>Change Panel</a>';
-							}
-
 							if (user_role != 10) {
 								order_summary = '<a class="btn btn-sm btn-outline-light repeatOrderModal" data-order_id="' + data + '" data-toggle="modal" data-target="#OrderSummary" title="Order Summary"><i class="fa fa-reorder" style="font-size:initial;"></i>Order Summary</a>';
 
@@ -1098,38 +1074,22 @@ $userData = logged_in_user_data();
 							if (row.order_type_id != '2') {
 								repeat_order = '<a class="btn btn-sm btn-outline-light" href="<?php echo base_url('repeatOrder/addEdit/'); ?>' + data + '" title="Repeat Order"><i class="fa fa-repeat" style="font-size:initial;"></i>Repeat Order</a>';
 							}
-							var expandedLabel = '';
+
 							if (row.order_type_id == '2') {
 								if ((user_role == 1 || user_role == 11) && row.serum_type == 2 && row.is_expand == 1 && row.is_order_completed == 1) {
 									if((data > '57338') || (data == '57166') || (data == '57156') || (data == '57152') || (data == '56592') || (data == '56898') || (data == '57293') || (data == '56766') || (data == '57296') || (data == '57144')){
 										if(data == '57459' || data == '57438' || data == '57434' || data == '57428' || data == '57904'){
-											expandedLabel = 'Expand Results';
-											if(row.is_expanded == 1 && row.product_code_selection == 37) {
-												expandedLabel = 'Re-Expand Results';
-											}
-											CEP_after_screening = '<a class="btn btn-sm btn-outline-light" href="<?php echo base_url('expandOldOrder/addEdit/'); ?>' + data + '" title="' + expandedLabel + '"><i class="fa fa-repeat" style="font-size:initial;"></i>' + expandedLabel + '</a>';
+										CEP_after_screening = '<a class="btn btn-sm btn-outline-light" href="<?php echo base_url('expandOldOrder/addEdit/'); ?>' + data + '" title="Expand Results"><i class="fa fa-repeat" style="font-size:initial;"></i>Expand Results</a>';
 										}else{
-											expandedLabel = 'Expand Results';
-											if(row.is_expanded == 1 && row.product_code_selection == 37) {
-												expandedLabel = 'Re-Expand Results';
-											}
-											CEP_after_screening = '<a class="btn btn-sm btn-outline-light" href="<?php echo base_url('expandOrder/addEdit/'); ?>' + data + '" title="' + expandedLabel + '"><i class="fa fa-repeat" style="font-size:initial;"></i>' + expandedLabel + '</a>';
+										CEP_after_screening = '<a class="btn btn-sm btn-outline-light" href="<?php echo base_url('expandOrder/addEdit/'); ?>' + data + '" title="Expand Results"><i class="fa fa-repeat" style="font-size:initial;"></i>Expand Results</a>';
 										}
 									}else{
-										expandedLabel = 'Expand Results';
-										if(row.is_expanded == 1 && row.product_code_selection == 37) {
-											expandedLabel = 'Re-Expand Results';
-										}
-										CEP_after_screening = '<a class="btn btn-sm btn-outline-light" href="<?php echo base_url('expandOldOrder/addEdit/'); ?>' + data + '" title="' + expandedLabel + '"><i class="fa fa-repeat" style="font-size:initial;"></i>' + expandedLabel + '</a>';
+										CEP_after_screening = '<a class="btn btn-sm btn-outline-light" href="<?php echo base_url('expandOldOrder/addEdit/'); ?>' + data + '" title="Expand Results"><i class="fa fa-repeat" style="font-size:initial;"></i>Expand Results</a>';
 									}
 								}
 
 								if ((user_role == 1 || user_role == 11) && row.serum_type == 1 && row.is_expand == 1 && row.cep_id == 0 && row.is_order_completed == 1) {
-									expandedLabel = 'Expand Results';
-									if(row.is_expanded == 1 && row.product_code_selection == 37) {
-										expandedLabel = 'Re-Expand Results';
-									}
-									CEP_after_screening = '<a class="btn btn-sm btn-outline-light" href="<?php echo base_url('expandOrder/expandPAX/'); ?>' + data + '" title="' + expandedLabel + '"><i class="fa fa-repeat" style="font-size:initial;"></i>' + expandedLabel + '</a>';
+									CEP_after_screening = '<a class="btn btn-sm btn-outline-light" href="<?php echo base_url('expandOrder/expandPAX/'); ?>' + data + '" title="Expand Results"><i class="fa fa-repeat" style="font-size:initial;"></i>Expand Results</a>';
 								}
 
 								if ((user_role == 1 || user_role == 11 || user_role == 10 ) && row.serum_type == '2'){
@@ -1185,7 +1145,7 @@ $userData = logged_in_user_data();
 								}
 							}
 
-							let action_dropdown='<div class="btn-group">'+'<button type="button" class="btn btn-secondary action-dropdown dropdown-toggle" data-id="menu'+data+'" data-bs-toggle="dropdown" aria-expanded="true">Action <i class="fa fa-caret-down text-dark" ></i></button>'+'<ul class="dropdown-menu " role="menu" id="menu'+data+'" style="position: absolute; transform: translate3d(0px, 38px, 0px); top: 0px; left: -100px; will-change: transform;">'+'<li>' + repeat_order + '</li><li>' + CEP_after_screening + '</li><li>' + raptor_result + '</li><li>' + download_Result_List + '</li><li>' + result_recommendation + '</li><li>' + treatment_options + '</li><li>' + order_summary + '</li><li>' + order_history + '</li><li>' + confirm_order + '</li><li>' + authorised_order + '</li><li>' + preview_result + '</li><li>' + authorised_confirmed + '</li><li>' + email_customer + '</li><li>' + preview_NL_email + '</li><li>' + email_resend + '</li><li>' + resend_email_customer + '</li><li>' + track_order + '</li><li>' + Add_batch_number + '</li><li>' + Add_Lab_Number + '</li><li>' + email_upload + '</li><li>' + edit_order + ' </li><li>' + hold_order + '</li><li>' + unhold_order + '</li><li>' + cancel_order + '</li><li>' + invoiced_order + '</li></li><li>' + change_panel + '</li>'+'</ul>'+'</div>';
+							let action_dropdown='<div class="btn-group">'+'<button type="button" class="btn btn-secondary action-dropdown dropdown-toggle" data-id="menu'+data+'" data-bs-toggle="dropdown" aria-expanded="true">Action <i class="fa fa-caret-down text-dark" ></i></button>'+'<ul class="dropdown-menu " role="menu" id="menu'+data+'" style="position: absolute; transform: translate3d(0px, 38px, 0px); top: 0px; left: -100px; will-change: transform;">'+'<li>' + repeat_order + '</li><li>' + CEP_after_screening + '</li><li>' + raptor_result + '</li><li>' + download_Result_List + '</li><li>' + result_recommendation + '</li><li>' + treatment_options + '</li><li>' + order_summary + '</li><li>' + order_history + '</li><li>' + confirm_order + '</li><li>' + authorised_order + '</li><li>' + preview_result + '</li><li>' + authorised_confirmed + '</li><li>' + email_customer + '</li><li>' + preview_NL_email + '</li><li>' + email_resend + '</li><li>' + resend_email_customer + '</li><li>' + track_order + '</li><li>' + Add_batch_number + '</li><li>' + Add_Lab_Number + '</li><li>' + email_upload + '</li><li>' + edit_order + ' </li><li>' + hold_order + '</li><li>' + unhold_order + '</li><li>' + cancel_order + '</li><li>' + invoiced_order + '</li>'+'</ul>'+'</div>';
 							return '<div class="btn-group" > ' +action_dropdown+ ' </div>';
 						}
 					}
@@ -1291,7 +1251,7 @@ $userData = logged_in_user_data();
 			$(document).on('click', '.ordercommentadd', function() {
 				var userTypes = "<?php echo $this->session->userdata('user_type'); ?>";
 				var order_id = $(this).data('order_id');
-				$(".cancel_comment_box").hide();
+				var is_cancel = $(this).data('is_cancel');
 				$('#order_id_commnet_modal').val(order_id);
 				$.ajax({
 					url: "<?php echo base_url('Orders/comment_get'); ?>",
@@ -1304,15 +1264,15 @@ $userData = logged_in_user_data();
 						if (data.status == 'faill') {
 							$('#message').text(data.error);
 						} else {
-							if (data.showCancelComment == 0) {
-								data.cancel_comment = '';
-							}
-							if (data.cancel_comment != '') {
-								$(".cancel_comment_box").show();
-							}
-							$('#cancelComment').text(data.cancel_comment);
 							$('#comment').text(data.comment_order);
 							$('#internal_comment').text(data.internal_comment);
+							if(is_cancel == 1){
+								$(".cancel_order_comment").show();
+								$('#cancel_order_comment').text(data.cancel_comment);
+							}else{
+								$(".cancel_order_comment").hide();
+								$('#cancel_order_comment').text('');
+							}
 							if(data.practice_lab_comment!=""){
 								$(".lab_comment").show();
 								$('#practice_lab_comment').text(data.practice_lab_comment);
@@ -1469,28 +1429,6 @@ $userData = logged_in_user_data();
 					},
 				});
 			});
-
-			$(document).on('click', '.change_panel_btn', function() {
-				var order_id = $(this).data('order_id');
-				$('#change_panel_order_id').val(order_id);
-				if (order_id) {
-					$.ajax({
-						url: "<?php echo base_url('Orders/change_panel'); ?>",
-						data: {
-							'order_id': order_id
-						},
-						method: "POST",
-						success: function(data) {
-							if (data != '') {
-								$('.chanePanelFormDetails').html(data);
-							} else {
-								$('.chanePanelFormDetails').html('Something went wrong!');
-							}
-						}, //success
-					}); //ajax
-				}
-			});
-			/* */
 
 			$(document).on('click', '.delOrder', function() {
 				var order_number = $(this).data('order_number');
@@ -1724,7 +1662,7 @@ $userData = logged_in_user_data();
 							$('#message').text(data.error);
 						} else {
 							$('#orderCancelMailModal').modal('hide');
-							//location.reload();
+							location.reload();
 						}
 					}, //success
 				});

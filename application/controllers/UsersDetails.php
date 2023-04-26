@@ -210,6 +210,7 @@ class UsersDetails extends CI_Controller {
                 $postUser['role'] = 2;
 				$postUser['managed_by_id'] = !empty($this->input->post('managed_by_id'))?implode(",",$this->input->post('managed_by_id')):'';
 				$postUser['invoiced_by'] = !empty($this->input->post('invoiced_by'))?$this->input->post('invoiced_by'):'';
+				$postUser['report_by'] = !empty($this->input->post('report_by'))?$this->input->post('report_by'):'';
 
                 $postUserDetails['id'] = $id;
                 $postUserDetails['address_1'] = $this->input->post('address_1');
@@ -384,6 +385,7 @@ class UsersDetails extends CI_Controller {
 			$postUser['role'] = 2;
 			$postUser['managed_by_id'] = !empty($this->input->post('managed_by_id'))?implode(",",$this->input->post('managed_by_id')):'';
 			$postUser['invoiced_by'] = !empty($this->input->post('invoiced_by'))?$this->input->post('invoiced_by'):'';
+			$postUser['report_by'] = !empty($this->input->post('report_by'))?$this->input->post('report_by'):'';
 			$postUserDetails['id'] = '';
 			$postUserDetails['address_1'] = $this->input->post('address_1');
 			$postUserDetails['address_2'] = $this->input->post('address_2');
@@ -796,6 +798,7 @@ class UsersDetails extends CI_Controller {
                 $postUser['role'] = 6;
 				$postUser['managed_by_id'] = !empty($this->input->post('managed_by_id'))?implode(",",$this->input->post('managed_by_id')):'';
 				$postUser['invoiced_by'] = !empty($this->input->post('invoiced_by'))?$this->input->post('invoiced_by'):'';
+				$postUser['report_by'] = !empty($this->input->post('report_by'))?$this->input->post('report_by'):'';
 
                 //user details post data
                 $postUserDetails['id'] = $id;

@@ -53,19 +53,13 @@ class Breeds extends CI_Controller {
             }
 
             //set rules
-            $this->form_validation->set_rules('name', 'name', 'required');
+            $this->form_validation->set_rules('name', 'name', 'required'.$is_name_unique);
             if ($this->form_validation->run() == FALSE){
                 $this->load->view('breeds/add_edit','',TRUE);
             }else{
                 $breedData = $this->input->post();
                 $breedData['id'] = $id;
                 if(is_numeric($id)>0){
-					$uniqueName = $this->unique_name();
-					$uniqueName = !empty($uniqueName) ? $uniqueName['id'] : 0;
-					if ($uniqueName != $data['id'] && !empty($uniqueName)) {
-						$this->session->set_flashdata('error','Breed Name is already available, kindly add different name.');
-						redirect('breeds/edit/'.$id);
-					}
                     $breedData['updated_by'] = $this->user_id;
                     $breedData['updated_at'] = date("Y-m-d H:i:s");
                     if ($id = $this->BreedsModel->add_edit($breedData)>0) {
@@ -75,11 +69,7 @@ class Breeds extends CI_Controller {
                 }else{
                     $breedData['created_by'] = $this->user_id;
                     $breedData['created_at'] = date("Y-m-d H:i:s");
-					if ($this->unique_name()) {
-						$this->session->set_flashdata('error','Breed Name is already available, kindly add different name.');
-						redirect('breeds/add');
-					}
-                    else if ($id = $this->BreedsModel->add_edit($breedData)) {
+                    if ($id = $this->BreedsModel->add_edit($breedData)) {
                         $this->session->set_flashdata('success','Breed data has been added successfully.');
                         redirect('breeds/list');
                     }
@@ -95,22 +85,6 @@ class Breeds extends CI_Controller {
   		}
   		$this->load->view("breeds/add_edit", $this->_data);
     }
-
-	function unique_name() {
-		$speciesId = $this->input->post('species_id');
-		$name = $this->input->post('name');
-		$this->db->select('id');
-		$this->db->from('ci_breeds');
-		$this->db->where('species_id', $speciesId);
-		$this->db->where('name', $name);
-		$data = $this->db->get()->row_array();
-
-		if (!empty($data['id'])) {
-			return $data;
-		} else {
-			return FALSE;
-		}
-	}
 
     function delete($id){
         if ($id != '' && is_numeric($id)) {

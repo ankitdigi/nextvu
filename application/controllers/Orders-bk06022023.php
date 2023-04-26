@@ -13282,6 +13282,23 @@ class Orders extends CI_Controller{
 
 				$this->session->set_flashdata("success", "Email sent successfully.");
 			} else {
+				$orderData['id'] = $orderId;
+				$orderData['is_serum_result_sent'] = 1;
+				$orderData['is_authorised'] = 2;
+				$orderData['is_confirmed'] = 4;
+				$orderData['is_order_completed'] = 1;
+				$orderData['shipping_date'] = date("Y-m-d");
+				if(preg_match('/\bScreening\b/', $respnedn->name)){
+				$orderData['is_expand'] = 1;
+				}
+				$this->OrdersModel->add_edit($orderData);
+
+				$orderhData['text'] = 'Reported';
+				$orderhData['order_id'] = $orderId;
+				$orderhData['created_by'] = $this->user_id;;
+				$orderhData['created_at'] = date("Y-m-d H:i:s");
+				$this->db->insert('ci_order_history', $orderhData);
+
 				$this->session->set_flashdata("error", $this->email->print_debugger());
 			}
 			redirect('orders');

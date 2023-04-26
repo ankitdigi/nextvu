@@ -1737,26 +1737,30 @@ class RepeatOrder extends CI_Controller {
 			$userID = $ordrData->vet_user_id;
 		}
 
-		$this->db->select('managed_by_id,country');
+		$this->db->select('managed_by_id,report_by,country');
 		$this->db->from('ci_users');
 		$this->db->where('id', $userID);
 		$userData = $this->db->get()->row();
-		if($userData->managed_by_id != ''){
-			if(count(explode(",",$userData->managed_by_id)) > 1){
-				$this->db->select('managed_by_id');
-				$this->db->from('ci_staff_countries');
-				$this->db->where('id', $userData->country);
-				$cuntryData = $this->db->get()->row();
-				if($cuntryData->managed_by_id != ''){
-					return explode(",",$cuntryData->managed_by_id);
+		if($userData->report_by != ''){
+			return explode(",",$userData->report_by);
+		}else{
+			if($userData->managed_by_id != ''){
+				if(count(explode(",",$userData->managed_by_id)) > 1){
+					$this->db->select('managed_by_id');
+					$this->db->from('ci_staff_countries');
+					$this->db->where('id', $userData->country);
+					$cuntryData = $this->db->get()->row();
+					if($cuntryData->managed_by_id != ''){
+						return explode(",",$cuntryData->managed_by_id);
+					}else{
+						return '0';
+					}
 				}else{
-					return '0';
+					return explode(",",$userData->managed_by_id);
 				}
 			}else{
-				return explode(",",$userData->managed_by_id);
+				return '0';
 			}
-		}else{
-			return '0';
 		}
 	}
 

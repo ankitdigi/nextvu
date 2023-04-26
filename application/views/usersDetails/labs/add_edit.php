@@ -124,12 +124,12 @@ $userData = logged_in_user_data();
 													<input type="text" class="form-control" name="phone_number" placeholder="<?php echo $this->lang->line("enter_phone_number");?> " value="<?php echo set_value('phone_number',isset($data['phone_number']) ? $data['phone_number'] : '');?>">
 													<?php echo form_error('phone_number', '<div class="error">', '</div>'); ?>
 												</div>
-												<?php if($userData['role'] == 1){ ?>
+												<?php if(($userData['role'] == 1) || ($userData['role'] == 11 && count(explode(",",$this->zones)) > 1)){ ?>
 													<div class="form-group">
-														<label><?php echo $this->lang->line("zones");?> <span class="required">*</span></label>
+														<label><?php echo $this->lang->line("managed_by");?> <span class="required">*</span></label>
 														<select class="form-control selectpicker" data-live-search="true" name="managed_by_id[]" id="managed_by_id" multiple="multiple" required="required">
 															<?php
-															echo '<option value="0">Select Zones</option>';
+															echo '<option value="0">Select '.$this->lang->line("managed_by").'</option>';
 															if(!empty($staff_members)){
 																foreach($staff_members as $row){
 																	if(isset($data['managed_by_id']) && in_array($row['id'],explode(",",$data['managed_by_id']))){
@@ -143,16 +143,6 @@ $userData = logged_in_user_data();
 														</select>
 														<?php echo form_error('managed_by_id', '<div class="error">', '</div>'); ?>
 													</div>
-												<?php }else{ ?> 
-													<div class="form-group">
-														<?php if(isset($id) && $id > 0){ ?>
-														<input type="hidden" name="managed_by_id[]" value="<?php echo isset($data['managed_by_id']) ? $data['managed_by_id'] : ''; ?>">
-														<?php }else{ ?>
-														<input type="hidden" name="managed_by_id[]" value="<?php echo isset($this->zones) ? $this->zones : ''; ?>">
-														<?php } ?>
-													</div>
-												<?php } ?>
-												<?php if(($userData['role'] == 1) || ($userData['role'] == 11 && count(explode(",",$this->zones)) > 1)){ ?>
 													<div class="form-group">
 														<label>Invoiced By <span class="required">*</span></label>
 														<select class="form-control" name="invoiced_by" id="invoiced_by" required="required">
@@ -171,12 +161,34 @@ $userData = logged_in_user_data();
 														</select>
 														<?php echo form_error('invoiced_by', '<div class="error">', '</div>'); ?>
 													</div>
+													<div class="form-group">
+														<label>Report by <span class="required">*</span></label>
+														<select class="form-control" name="report_by" id="report_by" required="required">
+															<?php
+															echo '<option value="">Select Report by</option>';
+															if(!empty($staff_members)){
+																foreach($staff_members as $row){
+																	if(isset($data['report_by']) && ($row['id'] == $data['report_by'])){
+																		echo '<option value="'. $row['id'] .'" selected="selected">'. $row['managed_by_name'] .'</option>';
+																	}else{
+																		echo '<option value="'. $row['id'] .'">'. $row['managed_by_name'] .'</option>';
+																	}
+																}
+															}
+															?>
+														</select>
+														<?php echo form_error('report_by', '<div class="error">', '</div>'); ?>
+													</div>
 												<?php }else{ ?> 
 													<div class="form-group">
 														<?php if(isset($id) && $id > 0){ ?>
+														<input type="hidden" name="managed_by_id[]" value="<?php echo isset($data['managed_by_id']) ? $data['managed_by_id'] : ''; ?>">
 														<input type="hidden" name="invoiced_by" value="<?php echo isset($data['invoiced_by']) ? $data['invoiced_by'] : ''; ?>">
+														<input type="hidden" name="report_by" value="<?php echo isset($data['report_by']) ? $data['report_by'] : ''; ?>">
 														<?php }else{ ?>
+														<input type="hidden" name="managed_by_id[]" value="<?php echo isset($this->zones) ? $this->zones : ''; ?>">
 														<input type="hidden" name="invoiced_by" value="">
+														<input type="hidden" name="report_by" value="">
 														<?php } ?>
 													</div>
 												<?php } ?>

@@ -5499,6 +5499,1317 @@
 		<td></td>
 		<td></td>
 	</tr>
+	
+	<tr>
+		<th colspan="22" valign="bottom" style="color:#366784;font-size:14px;font-weight:bold;padding: 0px;margin: 0px;height: 30px; border-right: 0px"><?php echo $this->lang->line("vetconcept_title");?></th>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_1");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_2");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_3");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_4");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_5");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_6");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_7");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_8");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_9");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_10");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_11");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_12");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_13");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_14");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_15");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_16");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_17");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+</table>
+<div style='page-break-after:always'></div>
+<table class="diets" width="100%" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:0 40px;">
+	<tr>
+		<th style="text-transform:uppercase; color:#366784;font-size:14px;font-weight:bold; width: 200px;" valign="bottom"><?php echo $this->lang->line("vetconcept_title");?></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("wet_dry");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("beef");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("pork");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("lamb");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("duck");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("chicken");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("turkey");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("venison");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("rabbit");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("horse");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("salmon");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("white_fish");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("wheat");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("soya");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("barley");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("rice");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("potato");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("corn");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("oats");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("egg");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("cows_milk");?></span></th>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_18");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_19");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_20");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_21");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_22");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_23");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_24");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_25");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_26");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_27");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_28");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_29");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_30");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("vetconcept_diet_31");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+
+	<tr>
+		<th colspan="22" valign="bottom" style="color:#366784;font-size:14px;font-weight:bold;padding: 0px;margin: 0px;height: 30px; border-right: 0px"><?php echo $this->lang->line("sanimed_title"); ?></th>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_1");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_2");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_3");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/h.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_4");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_5");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_6");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_7");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_8");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/h.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/h.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_9");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/h.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/h.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_10");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_11");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_12");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("wet");?></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_13");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("wet");?></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_14");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("wet");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/h.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/h.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/h.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_15");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("wet");?></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/h.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_16");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("wet");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_17");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("wet");?></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_18");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+	</tr>
+</table>
+<div style='page-break-after:always'></div>
+<table class="diets" width="100%" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:0 40px;">
+	<tr>
+		<th style="text-transform:uppercase; color:#366784;font-size:14px;font-weight:bold; width: 200px;" valign="bottom"><?php echo $this->lang->line("sanimed_title");?></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("wet_dry");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("beef");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("pork");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("lamb");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("duck");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("chicken");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("turkey");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("venison");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("rabbit");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("horse");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("salmon");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("white_fish");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("wheat");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("soya");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("barley");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("rice");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("potato");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("corn");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("oats");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("egg");?></span></th>
+		<th text-rotate="90" style="text-align: center;" valign="bottom"><span class="rotate" style="font-size: 10px;"><?php echo $this->lang->line("cows_milk");?></span></th>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_19");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_20");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="font-size:10px;" class="table-first"><?php echo $this->lang->line("sanimed_diet_21");?></td>
+		<td style="font-size:10px;"><?php echo $this->lang->line("dry");?></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td><img src="<?php echo base_url(); ?>assets/images/blank.png" alt="" style="width: 14px;" width="14"/></td>
+		<td></td>
+	</tr>
+
 </table>
 <table width="100%" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:40px;padding:0px;border:none;">
 	<tr>

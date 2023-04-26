@@ -24,7 +24,7 @@ if(!empty($order_details['product_code_selection'])){
 <!DOCTYPE html>
 <html class="js">
 	<head>
-		<title>Serum Test Result</title>
+		<title><?php echo $this->lang->line('serum_test_result'); ?></title>
 		<link rel="preconnect" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 		<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -44,56 +44,56 @@ if(!empty($order_details['product_code_selection'])){
 						<tr>
 							<td valign="middle" width="430" style="padding:60px 50px 60px 60px;">
 								<img src="<?php echo base_url("/assets/images/nextlab-logo.jpg"); ?>" alt="Logo" style="max-height:100px; max-width:280px; border-radius:4px;" />
-								<h5 style="margin:30px 0 0 0; font-weight:700; font-size:28px; color:#ffffff;">Serum Test results</h5>
+								<h5 style="margin:30px 0 0 0; font-weight:700; font-size:28px; color:#ffffff;"><?php echo $this->lang->line('serum_test_results_2'); ?></h5>
 							</td>
 							<td valign="middle">
 								<table cellspacing="0" cellpadding="0" border="0" width="100%" style="font-size:13px; line-height:20px;">
 									<tr>
-										<th style="color:#1e3743;">Owner name:</th>
+										<th style="color:#1e3743;"><?php echo $this->lang->line('Owner_name'); ?>:</th>
 										<td style="color:#000000;"><?php echo $order_details['pet_owner_name'].''.$order_details['po_last'];?></td>
 									</tr>
 									<tr>
-										<th style="color:#1e3743;">Animal Name:</th>
+										<th style="color:#1e3743;"><?php echo $this->lang->line('Animal_Name'); ?>:</th>
 										<td style="color:#000000;"><?php echo $order_details['pet_name'];?></td>
 									</tr>
 									<tr>
-										<th style="color:#1e3743;">Species:</th>
+										<th style="color:#1e3743;"><?php echo $this->lang->line('Species'); ?>:</th>
 										<td style="color:#000000;"><?php echo $order_details['species_name'];?></td>
 									</tr>
 									<tr>
-										<th style="color:#1e3743;">Veterinary surgeon:</th>
+										<th style="color:#1e3743;"><?php echo $this->lang->line('veterinary_surgeon'); ?>:</th>
 										<td style="color:#000000;"><?php echo $order_details['veterinary_surgeon'];?></td>
 									</tr>
 									<tr>
-										<th style="color:#1e3743;">Veterinary practice:</th>
+										<th style="color:#1e3743;"><?php echo $this->lang->line('Veterinary_practice'); ?>:</th>
 										<td style="color:#000000;"><?php echo $order_details['practice_name'];?></td>
 									</tr>
 									<tr>
-										<th style="color:#1e3743;">Practice details:</th>
+										<th style="color:#1e3743;"><?php echo $this->lang->line('practice_details'); ?>:</th>
 										<td style="color:#000000;"><?php echo $fulladdress;?></td>
 									</tr>
 									<tr>
-										<th style="color:#1e3743;">Phone:</th>
+										<th style="color:#1e3743;"><?php echo $this->lang->line('phone'); ?>:</th>
 										<td style="color:#000000;"><?php echo $order_details['phone_number'];?></td>
 									</tr>
 									<tr>
-										<th style="color:#1e3743;">Email:</th>
+										<th style="color:#1e3743;"><?php echo $this->lang->line('email'); ?>:</th>
 										<td style="color:#000000;"><?php echo $order_details['email'];?></td>
 									</tr>
 									<tr>
-										<th style="color:#1e3743;">Test type:</th>
+										<th style="color:#1e3743;"><?php echo $this->lang->line('Test_type'); ?>:</th>
 										<td style="color:#000000;"><?php echo $ordeType;?></td>
 									</tr>
 									<tr>
-										<th style="color:#1e3743;">Date tested:</th>
+										<th style="color:#1e3743;"><?php echo $this->lang->line('Date_tested'); ?>:</th>
 										<td style="color:#000000;"><?php echo date('d/m/Y', strtotime($order_details['order_date']));?></td>
 									</tr>
 									<tr>
-										<th style="color:#1e3743;">Laboratory number:</th>
+										<th style="color:#1e3743;"><?php echo $this->lang->line('laboratory_number'); ?>:</th>
 										<td style="color:#000000;"><?php echo $order_details['lab_order_number'];?></td>
 									</tr>
 									<tr>
-										<th style="color:#1e3743;">Order number:</th>
+										<th style="color:#1e3743;"><?php echo $this->lang->line('order_number'); ?>:</th>
 										<td style="color:#000000;"><?php echo $order_details['order_number'];?></td>
 									</tr>
 								</table>
@@ -106,8 +106,8 @@ if(!empty($order_details['product_code_selection'])){
 							<td>
 								<table cellpadding="0" cellspacing="0" border="0" width="30%" align="left">
 									<tr>
-										<th align="left" style="background:#326883; border-radius:10px 0 0 0; font-size:14px; color:#ffffff; padding:8px 10px 8px 15px;">Allergen</th>
-										<th align="right" style="background:#326883;font-size:13px; font-weight:400; color:#ffffff; padding:8px 15px 8px 10px;">IgE Level</th>
+										<th align="left" style="background:#326883; border-radius:10px 0 0 0; font-size:14px; color:#ffffff; padding:8px 10px 8px 15px;"><?php echo $this->lang->line('Allergen'); ?></th>
+										<th align="right" style="background:#326883;font-size:13px; font-weight:400; color:#ffffff; padding:8px 15px 8px 10px;"><?php echo $this->lang->line('ige_level'); ?></th>
 										<th align="right" style="background:#326883; border-radius:0 10px 0 0; font-size:13px; font-weight:400; color:#ffffff; padding:8px 15px 8px 10px;"></th>
 									</tr>
 									<tr bgcolor="#eaf6f7">
@@ -116,197 +116,197 @@ if(!empty($order_details['product_code_selection'])){
 										<td align="right" style="padding:5px 15px 0px 10px;"></td>
 									</tr>
 									<tr bgcolor="#d0ebef">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;">Beef</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgE</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">5</td>
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"><?php echo $this->lang->line('beef'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('ige'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('5_0'); ?></td>
 									</tr>
 									<tr bgcolor="#d0ebef">
 										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgG</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">5</td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('igg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('5_0'); ?></td>
 									</tr>
 									<tr bgcolor="#eaf6f7">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;">Chicken</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgE</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
-									</tr>
-									<tr bgcolor="#eaf6f7">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgG</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
-									</tr>
-									<tr bgcolor="#d0ebef">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;">Lamb</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgE</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
-									</tr>
-									<tr bgcolor="#d0ebef">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgG</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
-									</tr>
-									<tr bgcolor="#eaf6f7">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;">Pork</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgE</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"><?php echo $this->lang->line('chicken'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('ige'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
 									</tr>
 									<tr bgcolor="#eaf6f7">
 										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgG</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('igg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
 									</tr>
 									<tr bgcolor="#d0ebef">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;">Turkey</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgE</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
-									</tr>
-									<tr bgcolor="#d0ebef">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgG</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
-									</tr>
-									<tr bgcolor="#eaf6f7">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;">Venison</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgE</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
-									</tr>
-									<tr bgcolor="#eaf6f7">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgG</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
-									</tr>
-									<tr bgcolor="#d0ebef">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;">Duck</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgE</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"><?php echo $this->lang->line('lamb'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('ige'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
 									</tr>
 									<tr bgcolor="#d0ebef">
 										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgG</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('igg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
 									</tr>
 									<tr bgcolor="#eaf6f7">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;">Rabbit</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgE</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"><?php echo $this->lang->line('pork'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('ige'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
 									</tr>
 									<tr bgcolor="#eaf6f7">
 										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgG</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('igg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
 									</tr>
 									<tr bgcolor="#d0ebef">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;">White fish</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgE</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
-									</tr>
-									<tr bgcolor="#d0ebef">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgG</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
-									</tr>
-									<tr bgcolor="#eaf6f7">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;">Sal man</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgE</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
-									</tr>
-									<tr bgcolor="#eaf6f7">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgG</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
-									</tr>
-									<tr bgcolor="#d0ebef">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;">Milk</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgE</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"><?php echo $this->lang->line('turkey'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('ige'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
 									</tr>
 									<tr bgcolor="#d0ebef">
 										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgG</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('igg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
 									</tr>
 									<tr bgcolor="#eaf6f7">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;">Egg</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgE</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"><?php echo $this->lang->line('venison'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('ige'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
 									</tr>
 									<tr bgcolor="#eaf6f7">
 										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgG</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('igg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
 									</tr>
 									<tr bgcolor="#d0ebef">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;">Soyabean</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgE</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
-									</tr>
-									<tr bgcolor="#d0ebef">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgG</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
-									</tr>
-									<tr bgcolor="#eaf6f7">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;">Corn</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgE</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
-									</tr>
-									<tr bgcolor="#eaf6f7">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgG</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
-									</tr>
-									<tr bgcolor="#d0ebef">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;">Potato</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgE</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"><?php echo $this->lang->line('duck'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('ige'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
 									</tr>
 									<tr bgcolor="#d0ebef">
 										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgG</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('igg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
 									</tr>
 									<tr bgcolor="#eaf6f7">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;">Wheat</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgE</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"><?php echo $this->lang->line('rabbit'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('ige'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
 									</tr>
 									<tr bgcolor="#eaf6f7">
 										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgG</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('igg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
 									</tr>
 									<tr bgcolor="#d0ebef">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;">Rice</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgE</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"><?php echo $this->lang->line('white_fish'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('ige'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
 									</tr>
 									<tr bgcolor="#d0ebef">
 										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgG</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('igg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
 									</tr>
 									<tr bgcolor="#eaf6f7">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;">Oats</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgE</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"><?php echo $this->lang->line('sal_man'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('ige'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
 									</tr>
 									<tr bgcolor="#eaf6f7">
 										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgG</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('igg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
 									</tr>
 									<tr bgcolor="#d0ebef">
-										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;">Barley</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgE</td>
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"><?php echo $this->lang->line('milk'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('ige'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
+									</tr>
+									<tr bgcolor="#d0ebef">
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('igg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
+									</tr>
+									<tr bgcolor="#eaf6f7">
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"><?php echo $this->lang->line('egg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('ige'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
+									</tr>
+									<tr bgcolor="#eaf6f7">
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('igg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
+									</tr>
+									<tr bgcolor="#d0ebef">
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"><?php echo $this->lang->line('soyabean'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('ige'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
+									</tr>
+									<tr bgcolor="#d0ebef">
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('igg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
+									</tr>
+									<tr bgcolor="#eaf6f7">
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"><?php echo $this->lang->line('corn'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('ige'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
+									</tr>
+									<tr bgcolor="#eaf6f7">
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('igg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
+									</tr>
+									<tr bgcolor="#d0ebef">
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"><?php echo $this->lang->line('potato'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('ige'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
+									</tr>
+									<tr bgcolor="#d0ebef">
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('igg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
+									</tr>
+									<tr bgcolor="#eaf6f7">
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"><?php echo $this->lang->line('wheat'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('ige'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
+									</tr>
+									<tr bgcolor="#eaf6f7">
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('igg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
+									</tr>
+									<tr bgcolor="#d0ebef">
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"><?php echo $this->lang->line('rice'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('ige'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
+									</tr>
+									<tr bgcolor="#d0ebef">
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('igg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
+									</tr>
+									<tr bgcolor="#eaf6f7">
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"><?php echo $this->lang->line('oats'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('ige'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
+									</tr>
+									<tr bgcolor="#eaf6f7">
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('igg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
+									</tr>
+									<tr bgcolor="#d0ebef">
+										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"><?php echo $this->lang->line('barley'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('ige'); ?></td>
 										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
 									</tr>
 									<tr bgcolor="#d0ebef">
 										<td align="left" style="padding:5px 10px 0px 15px; font-size:12px;"></td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">IgG</td>
-										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;">0</td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('igg'); ?></td>
+										<td align="right" style="padding:5px 15px 0px 10px; font-size:12px;"><?php echo $this->lang->line('0'); ?></td>
 									</tr>
 									<tr>
-										<th align="left" colspan="2" style="background:#326883; border-radius:0 0 10px 10px; font-size:13px; color:#ffffff; padding:8px 10px 8px 15px;">All IgE antibody binding to CCDs has been prevented with our CCD blocker to help eliminate false positives and provide a more reliable test result.</th>
+										<th align="left" colspan="2" style="background:#326883; border-radius:0 0 10px 10px; font-size:13px; color:#ffffff; padding:8px 10px 8px 15px;"><?php echo $this->lang->line('ige_antibody'); ?></th>
 									</tr>
 								</table>
 								<table cellpadding="0" cellspacing="0" border="0" width="70%" align="left">
@@ -315,8 +315,8 @@ if(!empty($order_details['product_code_selection'])){
 											<table cellpadding="0" cellspacing="0" width="100%" border="0">
 												<tr>
 													<th height="35" width="30%"></th>
-													<th width="10%" style="color:#326883; font-size:15px;">5</th>
-													<th width="10%" style="color:#326883; font-size:15px;">10</th>
+													<th width="10%" style="color:#326883; font-size:15px;"><?php echo $this->lang->line('5_0'); ?></th>
+													<th width="10%" style="color:#326883; font-size:15px;"><?php echo $this->lang->line('10_0'); ?></th>
 													<th></th>
 												</tr>
 												<tr bgcolor="#f2fafa" style="background-image:url(<?php echo base_url("/assets/images/watermark.png"); ?>); background-position:center center; background-repeat:no-repeat;">
@@ -376,16 +376,16 @@ if(!empty($order_details['product_code_selection'])){
 					<table class="" cellspacing="0" cellpadding="0" border="0" align="center" width="100%" style="width:100%; padding:0 30px;">
 						<tr>
 							<td width="33.33%" style="background:#eaf6f7; border-radius:10px 0 0 10px; padding:20px 25px;">
-								<p style="font-size:14px; line-height:19px; margin:0 0 5px 0; padding:0;"> <strong>< 5</strong> </p>
-								<p style="font-size:12px; line-height:18px; margin:0; padding:0;">Scores of less than 5 should be considered questionable and only be included if the allergens are found in the pet’s environment and they relate to the clinical history.</p>
+								<p style="font-size:14px; line-height:19px; margin:0 0 5px 0; padding:0;"> <strong><<?php echo $this->lang->line('5_0'); ?> </strong> </p>
+								<p style="font-size:12px; line-height:18px; margin:0; padding:0;"><?php echo $this->lang->line('pets_environment'); ?></p>
 							</td>
 							<td width="33.33%" style="background:#dbf0f3; padding:20px 25px;">
-								<p style="font-size:14px; line-height:19px; margin:0 0 5px 0; padding:0;"> <strong>5-10</strong></p>
-								<p style="font-size:12px; line-height:18px; margin:0; padding:0;">Scores in this range should be considered significant if the allergens are found in the pet’s environment and they relate to the clinical history</p>
+								<p style="font-size:14px; line-height:19px; margin:0 0 5px 0; padding:0;"> <strong><?php echo $this->lang->line('5_10'); ?></strong></p>
+								<p style="font-size:12px; line-height:18px; margin:0; padding:0;"><?php echo $this->lang->line('pets_environment_2'); ?></p>
 							</td>
 							<td width="33.33%" style="background:#cbe9ed; border-radius:0 10px 10px 0; padding:20px 25px;">
-								<p style="font-size:14px; line-height:19px; margin:0 0 5px 0; padding:0;"> <strong>> 10</strong></p>
-								<p style="font-size:12px; line-height:18px; margin:0; padding:0;">Scores of 10 or above are unusually high. These allergens are significant especially if they are found in the pet’s environment and relate to the clinical history.</p>
+								<p style="font-size:14px; line-height:19px; margin:0 0 5px 0; padding:0;"> <strong>> <?php echo $this->lang->line('10_0'); ?></strong></p>
+								<p style="font-size:12px; line-height:18px; margin:0; padding:0;"><?php echo $this->lang->line('pets_environment_3'); ?></p>
 							</td>
 						</tr>
 					</table>
@@ -393,7 +393,7 @@ if(!empty($order_details['product_code_selection'])){
 					<table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding:0 50px 30px 50px;">
 						<tr>
 							<td>
-								<p style="font-size:11px; line-height:16px; margin:0; padding:0;">The magnitude of the signal does not necessarily correlate with the severity of the disease but does reflect the pet’s immune response to allergens.</p>
+								<p style="font-size:11px; line-height:16px; margin:0; padding:0;"><?php echo $this->lang->line('pet_immune_response_allergens'); ?></p>
 							</td>
 						</tr>
 					</table>

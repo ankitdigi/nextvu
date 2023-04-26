@@ -150,7 +150,7 @@ class OrdersModel extends CI_model{
 
 	public function get_comment($id = ''){
 		if (isset($id) && is_numeric($id) > 0) {
-			$this->db->select('comment,internal_comment,practice_lab_comment,comment_by,cancel_comment');
+			$this->db->select('*');
 			$this->db->from($this->_table);
 			$this->db->where('id' , $id);
 			return $this->db->get()->row_array();
@@ -1070,7 +1070,7 @@ class OrdersModel extends CI_model{
 		}else{
 			$raptorhead = "ar.raptor_header";
 		}
-		$sql = "SELECT ar.id, ar.raptor_code, ar.raptor_function, ar.em_allergen, ".$raptorhead.", rr.result_value FROM `ci_allergens_raptor` as ar LEFT JOIN `ci_raptor_result_allergens` as rr ON ar.raptor_code = rr.name WHERE ar.allergens_id = '".$aid."' AND rr.result_id = '".$rid."' AND ar.em_allergen = 3 ORDER BY ar.id ASC";
+		$sql = "SELECT ar.id, ar.allergens_id, ar.raptor_code, ar.raptor_function, ar.em_allergen, ".$raptorhead.", rr.result_value FROM `ci_allergens_raptor` as ar LEFT JOIN `ci_raptor_result_allergens` as rr ON ar.raptor_code = rr.name WHERE ar.allergens_id = '".$aid."' AND rr.result_id = '".$rid."' AND ar.em_allergen = 3 ORDER BY ar.id ASC";
         $responce = $this->db->query($sql);
 		$result = $responce->result();
 
@@ -1083,7 +1083,7 @@ class OrdersModel extends CI_model{
 		}else{
 			$raptorhead = "ar.raptor_header";
 		}
-		$sql = "SELECT ar.id, ar.raptor_code, ar.raptor_function, ar.em_allergen, ".$raptorhead.", rr.result_value FROM `ci_allergens_raptor` as ar LEFT JOIN `ci_raptor_result_allergens` as rr ON ar.raptor_code = rr.name WHERE ar.allergens_id = '".$aid."' AND rr.result_id = '".$rid."' AND ar.em_allergen = 2 ORDER BY ar.id ASC";
+		$sql = "SELECT ar.id, ar.allergens_id, ar.raptor_code, ar.raptor_function, ar.em_allergen, ".$raptorhead.", rr.result_value FROM `ci_allergens_raptor` as ar LEFT JOIN `ci_raptor_result_allergens` as rr ON ar.raptor_code = rr.name WHERE ar.allergens_id = '".$aid."' AND rr.result_id = '".$rid."' AND ar.em_allergen = 2 ORDER BY ar.id ASC";
         $responce = $this->db->query($sql);
 		$result = $responce->result();
 
@@ -1154,30 +1154,26 @@ class OrdersModel extends CI_model{
 			$userID = $ordrData->vet_user_id;
 		}
 
-		$this->db->select('managed_by_id,report_by,country');
+		$this->db->select('managed_by_id,country');
 		$this->db->from('ci_users');
 		$this->db->where('id', $userID);
 		$userData = $this->db->get()->row();
-		if($userData->report_by != ''){
-			return explode(",",$userData->report_by);
-		}else{
-			if($userData->managed_by_id != ''){
-				if(count(explode(",",$userData->managed_by_id)) > 1){
-					$this->db->select('managed_by_id');
-					$this->db->from('ci_staff_countries');
-					$this->db->where('id', $userData->country);
-					$cuntryData = $this->db->get()->row();
-					if($cuntryData->managed_by_id != ''){
-						return explode(",",$cuntryData->managed_by_id);
-					}else{
-						return '0';
-					}
+		if($userData->managed_by_id != ''){
+			if(count(explode(",",$userData->managed_by_id)) > 1){
+				$this->db->select('managed_by_id');
+				$this->db->from('ci_staff_countries');
+				$this->db->where('id', $userData->country);
+				$cuntryData = $this->db->get()->row();
+				if($cuntryData->managed_by_id != ''){
+					return explode(",",$cuntryData->managed_by_id);
 				}else{
-					return explode(",",$userData->managed_by_id);
+					return '0';
 				}
 			}else{
-				return '0';
+				return explode(",",$userData->managed_by_id);
 			}
+		}else{
+			return '0';
 		}
 	}
 

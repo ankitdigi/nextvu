@@ -202,17 +202,6 @@ $userData = logged_in_user_data();
 														<span class="special_note"><?php echo $this->lang->line("note_1");?></span>
 														<?php echo form_error('email', '<div class="error">', '</div>'); ?>
 													</div>
-													<?php
-													if($order_type == '1' || $order_type == '2') {
-													?>
-													<div class="form-group">
-														<label><?php echo $this->lang->line("email_two");?></label>
-														<input type="text" class="form-control" name="email_two" placeholder="Enter <?php echo $this->lang->line("email_two");?>" value="<?php echo set_value('email_two', isset($data['email_two']) ? $data['email_two'] : ''); ?>">
-														<?php echo form_error('email_two', '<div class="error">', '</div>'); ?>
-													</div>
-													<?php
-													}
-													?>
 													<div class="form-group">
 														<label><?php echo $this->lang->line("phone_number");?></label>
 														<input type="text" class="form-control" name="phone_number" placeholder="<?php echo $this->lang->line("enter_phone_number");?>" value="<?php echo set_value('phone_number', isset($data['phone_number']) ? $data['phone_number'] : ''); ?>">

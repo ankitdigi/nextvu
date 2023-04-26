@@ -29,7 +29,7 @@ class UsersDetailsModel extends CI_model{
 
 	public function getRecord($id, $role_id = ""){
 		if ($role_id == 2 || $role_id == 6 || $role_id == 7 || $role_id == 8 || $role_id == 9) {
-			$this->db->select("ci_user_details.*,GROUP_CONCAT(IFNULL(column_field ,'') ORDER BY ci_user_details.id separator '|') AS column_field,ci_users.name,ci_users.last_name,ci_users.email,ci_users.country,ci_users.phone_number,ci_users.managed_by_id,ci_users.invoiced_by");
+			$this->db->select("ci_user_details.*,GROUP_CONCAT(IFNULL(column_field ,'') ORDER BY ci_user_details.id separator '|') AS column_field,ci_users.name,ci_users.last_name,ci_users.email,ci_users.country,ci_users.phone_number,ci_users.managed_by_id,ci_users.invoiced_by,ci_users.report_by");
 			$this->db->from($this->_table);
 			$this->db->join('ci_users', 'ci_user_details.user_id = ci_users.id');
 			$this->db->where('ci_user_details.user_id', $id);

@@ -88,19 +88,11 @@ $userData = logged_in_user_data();
 									}
 
 									$serumdata = $this->OrdersModel->getSerumTestRecord($id);
-									//echo "<pre>";print_r($order_details);die;
 									if(!empty($order_details['product_code_selection'])){
 										$this->db->select('name');
 										$this->db->from('ci_price');
 										$this->db->where('id', $order_details['product_code_selection']);
 										$ordeType = $this->db->get()->row()->name;
-										if ($order_details['is_expanded']) {
-											if (in_array($order_details['product_code_selection'], array(33, 34))) {
-												$ordeType = $ordeType . " Screening Expanded";
-											} elseif ($order_details['product_code_selection'] == 38) {
-												$ordeType = "PAX Environmental & Food Screening Expanded";
-											}
-										}
 									}else{
 										$ordeType = 'Serum Testing';
 									}
@@ -1185,18 +1177,7 @@ $userData = logged_in_user_data();
 										</p>
 										<?php } ?>
 										<p class="pull-right">
-											<?php
-											$reExpanded = $this->input->get('re_expand', TRUE);
-											if($reExpanded) {
-												?>
-												<button type="submit" class="btn btn-primary">Re-Submit Order</button>
-												<?php
-											} else {
-												?>
-												<button type="submit" class="btn btn-primary"><?php echo $this->lang->line('submit_order'); ?></button>
-												<?php
-											}
-											?>
+											<button type="submit" class="btn btn-primary"><?php echo $this->lang->line('submit_order'); ?></button>
 										</p>
 									</div>
 								<?php } ?>

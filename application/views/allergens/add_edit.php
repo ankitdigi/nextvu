@@ -59,7 +59,7 @@ $userData = logged_in_user_data();
 												<div class="form-group">
 													<label>Order Type</label>
 													<?php
-													$options = array('1'=>'Artuvetrin immunotherapy','2'=>'Sublingual immunotherapy (SLIT)','3'=>'NextLab - Dog - Environmental','31'=>'NextLab - Cat - Environmental','6'=>'NextLab - Horse - Environmental','5'=>'NextLab - Dog - Food','51'=>'NextLab - Cat - Food','7'=>'NextLab - Horse - Food','8'=>'PAX - Environmental','9'=>'PAX - Food','11'=>'PAX - Environmental - US','12'=>'PAX - Food - US','4'=>'Skin Test','13'=>'Vet-Goid','14'=>'Pet SLIT','15'=>'Immucept SLIT','16'=>'Immucept SCIT');
+													$options = array('1'=>'Artuvetrin immunotherapy','2'=>'Sublingual immunotherapy (SLIT)','3'=>'NextLab - Dog - Environmental','31'=>'NextLab - Cat - Environmental','6'=>'NextLab - Horse - Environmental','5'=>'NextLab - Dog - Food','51'=>'NextLab - Cat - Food','7'=>'NextLab - Horse - Food','8'=>'PAX - Environmental - Dog','9'=>'PAX - Food - Dog','81'=>'PAX - Environmental - Cat','91'=>'PAX - Food - Cat','82'=>'PAX - Environmental - Horse','92'=>'PAX - Food - Horse','11'=>'PAX - Environmental - US','12'=>'PAX - Food - US','4'=>'Skin Test','13'=>'Vet-Goid','14'=>'Pet SLIT');
 													$attr = 'class="form-control selectpicker" required="" data-live-search="true" multiple="" ';
 													echo form_multiselect('order_type[]', $options, isset($data['order_type']) ? json_decode($data['order_type']) : '', $attr);
 													?>
@@ -229,7 +229,7 @@ $userData = logged_in_user_data();
 			$('select[name="order_type[]"]').on('change', function() {
 				var filtered_order_type = $(this).val();
 				if(filtered_order_type){
-					if((jQuery.inArray("8", filtered_order_type) != -1) || (jQuery.inArray("9", filtered_order_type) != -1) || (jQuery.inArray("11", filtered_order_type) != -1)) {
+					if((jQuery.inArray("8", filtered_order_type) != -1) || (jQuery.inArray("9", filtered_order_type) != -1) || (jQuery.inArray("11", filtered_order_type) != -1) || (jQuery.inArray("81", filtered_order_type) != -1) || (jQuery.inArray("91", filtered_order_type) != -1) || (jQuery.inArray("82", filtered_order_type) != -1) || (jQuery.inArray("92", filtered_order_type) != -1)) {
 						$(".paxName").show();
 					} else {
 						$(".paxName").hide();

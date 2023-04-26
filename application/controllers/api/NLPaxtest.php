@@ -168,6 +168,10 @@ class NLPaxtest extends PAX_API_Controller {
 					$this->db->select('name, article_number_ES as article_number');
 				}elseif($countryCode == 'SE'){
 					$this->db->select('name, article_number_SE as article_number');
+				}elseif($countryCode == 'AU'){
+					$this->db->select('name, article_number_AT as article_number');
+				}elseif($countryCode == 'CH'){
+					$this->db->select('name, article_number_CH as article_number');
 				}else{
 					$this->db->select('name, article_number');
 				}
@@ -176,26 +180,38 @@ class NLPaxtest extends PAX_API_Controller {
 				$respnedn = $this->db->get()->row();
 				$articlecode = "";
 				if($data_detail['is_repeat_order'] == 1 && $data_detail['cep_id'] > 0){
-					if($respnedn->name == 'PAX Environmental'){
+					if($respnedn->name == 'PAX Environmental' || $respnedn->name == 'PAX Environmental Screening Expanded'){
 						if($countryCode == 'FR'){
 							$articlecode = 'PAX4F';
 						}elseif($countryCode == 'DE'){
 							$articlecode = 'PAX4D';
+						}elseif($countryCode == 'AU'){
+							$articlecode = 'PAX4D';
+						}elseif($countryCode == 'CH'){
+							$articlecode = 'PAX4D';
 						}else{
 							$articlecode = 'PAX4';
 						}
-					}elseif($respnedn->name == 'PAX Food'){
+					}elseif($respnedn->name == 'PAX Food' || $respnedn->name == 'Pax Food Screening Expanded'){
 						if($countryCode == 'FR'){
 							$articlecode = 'PAX5F';
 						}elseif($countryCode == 'DE'){
 							$articlecode = 'PAX5D';
+						}elseif($countryCode == 'AU'){
+							$articlecode = 'PAX5D';
+						}elseif($countryCode == 'CH'){
+							$articlecode = 'PAX5D';
 						}else{
 							$articlecode = 'PAX5';
 						}
-					}elseif($respnedn->name == 'PAX Environmental + Food'){
+					}elseif($respnedn->name == 'PAX Environmental + Food' || $respnedn->name == 'PAX Environmental + Food Screening Expanded'){
 						if($countryCode == 'FR'){
 							$articlecode = 'PAX6F';
 						}elseif($countryCode == 'DE'){
+							$articlecode = 'PAX6D';
+						}elseif($countryCode == 'AU'){
+							$articlecode = 'PAX6D';
+						}elseif($countryCode == 'CH'){
 							$articlecode = 'PAX6D';
 						}else{
 							$articlecode = 'PAX6';
@@ -208,11 +224,11 @@ class NLPaxtest extends PAX_API_Controller {
 						$articlecode = $respnedn->article_number;
 					}elseif($respnedn->name == 'PAX Environmental + Food Screening'){
 						$articlecode = $respnedn->article_number;
-					}elseif($respnedn->name == 'PAX Environmental after screening'){
+					}elseif($respnedn->name == 'PAX Environmental Screening Expanded'){
 						$articlecode = $respnedn->article_number;
-					}elseif($respnedn->name == 'PAX Food after screening'){
+					}elseif($respnedn->name == 'Pax Food Screening Expanded'){
 						$articlecode = $respnedn->article_number;
-					}elseif($respnedn->name == 'PAX Environmental + Food after screening'){
+					}elseif($respnedn->name == 'PAX Environmental + Food Screening Expanded'){
 						$articlecode = $respnedn->article_number;
 					}elseif($respnedn->name == 'PAX Environmental'){
 						$articlecode = $respnedn->article_number;
@@ -257,28 +273,6 @@ class NLPaxtest extends PAX_API_Controller {
 				}
 				$data["Reference_Number"] = $sampleCode;
 				$data["Article_Number"] = $articlecode;
-				/* if($country == 'UK'){
-					$data["Article_Number"] = $articlecode;
-					$countryCode = 'UK';
-				}elseif($country == 'Denmark'){
-					$data["Article_Number"] = $articlecode.'DK';
-				}elseif($country == 'France'){
-					$data["Article_Number"] = $articlecode.'F';
-				}elseif($country == 'Germany'){
-					$data["Article_Number"] = $articlecode.'D';
-				}elseif($country == 'Italy'){
-					$data["Article_Number"] = $articlecode.'I';
-				}elseif($country == 'Netherlands'){
-					$data["Article_Number"] = $articlecode;
-				}elseif($country == 'Norway'){
-					$data["Article_Number"] = $articlecode.'No';
-				}elseif($country == 'Spain'){
-					$data["Article_Number"] = $articlecode.'E';
-				}elseif($country == 'Sweden'){
-					$data["Article_Number"] = $articlecode.'S';
-				}else{
-					$data["Article_Number"] = $articlecode;
-				} */
 				$data["Amount"] = 1;
 				//$data["Order is to be sent to"] = $order_send_to;
 				$data_details[] = $data;

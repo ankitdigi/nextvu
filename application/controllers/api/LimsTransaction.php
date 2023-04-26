@@ -45,6 +45,7 @@ class LimsTransaction extends LIMS_API_Controller {
 			$this->db->where('ci_orders.send_lims_sample', '1');
 			$this->db->where('ci_orders.send_lims_transaction', '0');
 			$this->db->where('ci_orders.cep_id', '0');
+			$this->db->where('ci_orders.order_number >', '44053');
 			$datas = $this->db->get()->result_array();
 		}
 
@@ -277,35 +278,36 @@ class LimsTransaction extends LIMS_API_Controller {
 			}
 			/* End Allergens */
 
-			$data["NextVuOrderId"]		= $data_detail['order_number'];
-			$data["Lab_Number"]			= $data_detail['lab_order_number'];
-			$data["PracticeName"]		= $practiceName;
-			$data["CustomerReference"]	= $account_ref;
-			$data["Species"]			= $animalType;
-			$data["Template_Species"]	= $animalTemplate;
-			$data["AnimalName"]			= $petName;
-			$data["OwnerSurname"]		= $petOwnerName;
-			$data["Sex"]				= $petSex;
-			$data["AgeYears"]			= $petAgeYear;
-			$data["AgeMonth"]			= $petAgeMonth;
-			$data["Breed"]				= $breedName;
-			$data["SubmittedVet"]		= $data_detail['veterinary_surgeon'];
-			$data["SampleVolume"]		= $sampleVolume;
-			$data["TestRequested"]		= $testRequested;
-			$data["TestRequestedCode"]	= $testRequestedCode;
-			$data["LIMSTestCode"]		= $limsTestCode;
-			$data["Allergens"]			= $testComponents;
-			if(preg_match('/\bAcute Phase Proteins\b/', $productName)){
-				$data["LIMSAllergensIDs"]	= '1386';
-			}else{
-				if($malasseziaID != ""){
-					$data["LIMSAllergensIDs"]	= $testLIMSComponents.$malasseziaID;
+			if($sampleVolume > 0){
+				$data["NextVuOrderId"]		= $data_detail['order_number'];
+				$data["Lab_Number"]			= $data_detail['lab_order_number'];
+				$data["PracticeName"]		= $practiceName;
+				$data["CustomerReference"]	= $account_ref;
+				$data["Species"]			= $animalType;
+				$data["Template_Species"]	= $animalTemplate;
+				$data["AnimalName"]			= $petName;
+				$data["OwnerSurname"]		= $petOwnerName;
+				$data["Sex"]				= $petSex;
+				$data["AgeYears"]			= $petAgeYear;
+				$data["AgeMonth"]			= $petAgeMonth;
+				$data["Breed"]				= $breedName;
+				$data["SubmittedVet"]		= $data_detail['veterinary_surgeon'];
+				$data["SampleVolume"]		= $sampleVolume;
+				$data["TestRequested"]		= $testRequested;
+				$data["TestRequestedCode"]	= $testRequestedCode;
+				$data["LIMSTestCode"]		= $limsTestCode;
+				$data["Allergens"]			= $testComponents;
+				if(preg_match('/\bAcute Phase Proteins\b/', $productName)){
+					$data["LIMSAllergensIDs"]	= '1386';
 				}else{
-					$data["LIMSAllergensIDs"]	= $testLIMSComponents;
+					if($malasseziaID != ""){
+						$data["LIMSAllergensIDs"]	= $testLIMSComponents.$malasseziaID;
+					}else{
+						$data["LIMSAllergensIDs"]	= $testLIMSComponents;
+					}
 				}
+				$data_details[] = $data;
 			}
-
-			$data_details[] = $data;
 		}
 		$this->response($data_details, LIMS_API_Controller::HTTP_OK);
 	}

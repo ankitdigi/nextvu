@@ -970,4 +970,67 @@ class AllergensModel extends CI_model{
 		return $result;
     }
 
+	public function getPostiveComponents($aid,$rid){
+		$sql = "SELECT ar.id, ar.allergens_id, ar.raptor_code, rr.result_value FROM `ci_allergens_raptor` as ar LEFT JOIN `ci_raptor_result_allergens` as rr ON ar.raptor_code = rr.name WHERE ar.allergens_id = '".$aid."' AND rr.result_id = '".$rid."' AND ar.em_allergen = 3 ORDER BY rr.result_value DESC";
+        $responce = $this->db->query($sql);
+		$result = $responce->result();
+
+		return $result;
+	}
+
+	public function getPostiveExtract($aid,$rid){
+		$sql = "SELECT ar.id, ar.allergens_id, ar.raptor_code, rr.result_value FROM `ci_allergens_raptor` as ar LEFT JOIN `ci_raptor_result_allergens` as rr ON ar.raptor_code = rr.name WHERE ar.allergens_id = '".$aid."' AND rr.result_id = '".$rid."' AND ar.em_allergen = 2 ORDER BY rr.result_value DESC";
+        $responce = $this->db->query($sql);
+		$result = $responce->result();
+
+		return $result;
+	}
+
+	public function getRaptorComponentsGroupBy($aid,$rid){
+		if(!empty($this->session->userdata('site_lang')) && $this->session->userdata('site_lang') != 'english'){
+			$name = "cr.name_".$this->session->userdata('site_lang')." as name";
+		}else{
+			$name = "cr.name";
+		}
+		$sql = "SELECT ar.allergens_id, ".$name.", cr.pax_parent_id, ar.raptor_function, rr.result_value, ar.raptor_code FROM `ci_allergens_raptor` as ar LEFT JOIN `ci_raptor_result_allergens` as rr ON ar.raptor_code = rr.name LEFT JOIN `ci_allergens` as cr ON ar.allergens_id = cr.id WHERE ar.id IN(".implode(",",$aid).") AND rr.result_id = '".$rid."' AND cr.parent_id != '0' AND JSON_CONTAINS(cr.order_type, '[\"1\"]') ORDER BY rr.result_value DESC";
+        $responce = $this->db->query($sql);
+		$result = $responce->result();
+
+		return $result;
+	}
+
+	public function checkforExtract($aid,$rid){
+		$sql = "SELECT ar.id, ar.allergens_id, ar.raptor_code FROM `ci_allergens_raptor` as ar LEFT JOIN `ci_raptor_result_allergens` as rr ON ar.raptor_code = rr.name WHERE ar.id = '".$aid."' AND rr.result_id = '".$rid."' AND ar.em_allergen = 2 ORDER BY rr.result_value DESC";
+        $responce = $this->db->query($sql);
+		$result = $responce->row();
+
+		return $result;
+	}
+
+	public function checkCodeType($rcode){
+		$sql = "SELECT id,em_allergen FROM `ci_allergens_raptor` WHERE raptor_code LIKE '".$rcode."'";
+        $responce = $this->db->query($sql);
+		$result = $responce->row();
+
+		return $result;
+	}
+
+	public function getRaptorSameComponents($rfun,$aid,$rid){
+		$sql = "SELECT rr.result_value FROM `ci_allergens_raptor` as ar LEFT JOIN `ci_raptor_result_allergens` as rr ON ar.raptor_code = rr.name LEFT JOIN `ci_allergens` as cr ON ar.allergens_id = cr.id WHERE ar.raptor_function LIKE '%".$rfun."%' AND ar.id IN(".implode(",",$aid).") AND rr.result_id = '".$rid."' AND cr.parent_id != '0' AND JSON_CONTAINS(cr.order_type, '[\"1\"]') ORDER BY rr.result_value DESC";
+        $responce = $this->db->query($sql);
+		$result = $responce->result();
+
+		return $result;
+	}
+
+	public function getsubAllergensCodeForSecondHigherValue($aid,$rcode){
+		$this->db->select('GROUP_CONCAT(raptor_code ORDER BY raptor_code SEPARATOR ",") AS raptor_code');
+		$this->db->from('ci_allergens_raptor');
+		$this->db->where('allergens_id', $aid);
+		$this->db->where('raptor_code NOT LIKE', $rcode);
+		$this->db->order_by("raptor_code", "ASC");
+		$this->db->order_by("em_allergen", "DESC");
+		return $this->db->get()->row();
+	}
+
 }

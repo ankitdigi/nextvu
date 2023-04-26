@@ -144,11 +144,11 @@ class Paxtest extends PAX_API_Controller {
 				$respnedn = $this->db->get()->row();
 				$articlecode = "";
 				if($data_detail['is_repeat_order'] == 1 && $data_detail['cep_id'] > 0){
-					if($respnedn->name == 'PAX Environmental'){
+					if($respnedn->name == 'PAX Environmental' || $respnedn->name == 'PAX Environmental Screening Expanded'){
 						$articlecode = 'PAX4';
-					}elseif($respnedn->name == 'PAX Food'){
+					}elseif($respnedn->name == 'PAX Food' || $respnedn->name == 'Pax Food Screening Expanded'){
 						$articlecode = 'PAX5';
-					}elseif($respnedn->name == 'PAX Environmental + Food'){
+					}elseif($respnedn->name == 'PAX Environmental + Food' || $respnedn->name == 'PAX Environmental + Food Screening Expanded'){
 						$articlecode = 'PAX6';
 					}
 				}else{
@@ -158,11 +158,11 @@ class Paxtest extends PAX_API_Controller {
 						$articlecode = 'PAX2';
 					}elseif($respnedn->name == 'PAX Environmental + Food Screening'){
 						$articlecode = 'PAX3';
-					}elseif($respnedn->name == 'PAX Environmental after screening'){
+					}elseif($respnedn->name == 'PAX Environmental Screening Expanded'){
 						$articlecode = 'PAX4';
-					}elseif($respnedn->name == 'PAX Food after screening'){
+					}elseif($respnedn->name == 'Pax Food Screening Expanded'){
 						$articlecode = 'PAX5';
-					}elseif($respnedn->name == 'PAX Environmental + Food after screening'){
+					}elseif($respnedn->name == 'PAX Environmental + Food Screening Expanded'){
 						$articlecode = 'PAX6';
 					}elseif($respnedn->name == 'PAX Environmental'){
 						$articlecode = 'PAX7';
