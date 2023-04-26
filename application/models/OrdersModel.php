@@ -101,6 +101,34 @@ class OrdersModel extends CI_model{
 		return $this->db->get()->row_array();
 	}
 
+	public function add_edit_expanded($orderData = []){
+		if (isset($orderData['id']) && is_numeric($orderData['id']) > 0) {
+			$this->db->where('id', $orderData['id']);
+			$update =  $this->db->update($this->_table, $orderData);
+			if ($update) {
+				return $orderData['id'];
+			} else {
+				return false;
+			}
+		} else {
+			if (isset($orderData) && count($orderData) > 0) {
+				$this->db->insert($this->_table, $orderData);
+				return $order_id = $this->db->insert_id();
+			} else {
+				return $order_id = null;
+			}
+		}
+	}
+
+	public function getRecordCepId($id = ""){
+		$this->db->select('*');
+		$this->db->from($this->_table);
+		$this->db->where('cep_id', $id);
+		$this->db->order_by("id", "desc");
+
+		return $this->db->get()->row_array();
+	}
+
 	public function add_edit($orderData = []){
 		if (isset($orderData['id']) && is_numeric($orderData['id']) > 0) {
 			$this->db->where('id', $orderData['id']);

@@ -1177,7 +1177,18 @@ $userData = logged_in_user_data();
 										</p>
 										<?php } ?>
 										<p class="pull-right">
-											<button type="submit" class="btn btn-primary"><?php echo $this->lang->line('submit_order'); ?></button>
+											<?php
+											$reExpanded = $this->input->get('re_expand', TRUE);
+											if($reExpanded) {
+												?>
+												<button type="submit" class="btn btn-primary">Re-Submit Order</button>
+												<?php
+											} else {
+												?>
+												<button type="submit" class="btn btn-primary"><?php echo $this->lang->line('submit_order'); ?></button>
+												<?php
+											}
+											?>
 										</p>
 									</div>
 								<?php } ?>

@@ -1194,6 +1194,7 @@ class ExpandOrder extends CI_Controller {
 			$respnedn = $this->OrdersModel->getProductInfo($data['product_code_selection']);
 			$orderOData['id'] = $id;
 			$orderOData['is_cep_after_screening'] = 1;
+			$orderOData['is_expanded'] = 1;
 			$this->OrdersModel->add_edit($orderOData);
 
 			$orderData = $data;
@@ -1282,10 +1283,22 @@ class ExpandOrder extends CI_Controller {
 					$orderData['is_order_completed'] = '0';
 					$orderData['created_by'] = $this->user_id;
 					$orderData['created_at'] = date("Y-m-d H:i:s");
-					if($ins_id = $this->OrdersModel->add_edit($orderData)) {
+					if ($this->input->post('is_expanded')) {
+						$reExpandedData = $this->OrdersModel->getRecordCepId($id);
+						$reExpanded['id'] = $reExpandedData['id'];
+						$reExpanded['product_code_selection'] = $orderData['product_code_selection'];
+						$reExpanded['allergens'] = $orderData['allergens'];
+						$reExpanded['unit_price'] = $orderData['unit_price'];
+						$orderData = $reExpanded;
+					}
+					if($ins_id = $this->OrdersModel->add_edit_expanded($orderData)) {
 						unset($orderData['save']);
 						unset($orderData['next']);
-						redirect('orders/summary/'.$ins_id);
+						if ($this->input->post('is_expanded')) {
+							redirect('orders/summary/' . $ins_id."?re_expand=1");
+						} else {
+							redirect('orders/summary/' . $ins_id);
+						}
 					}
 				}else{
 					$this->_data['id'] = $id;

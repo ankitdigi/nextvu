@@ -9,6 +9,18 @@ if($data['pax_cutoff_version'] == 1){
 	$cutoffs = '28';
 }
 
+$reExpandedData = $this->OrdersModel->getRecordCepId($this->_data['data']['id']);
+$productCodeSelection = 0;
+if (!empty($reExpandedData)) {
+	if($reExpandedData['product_code_selection'] == 56){
+		$productCodeSelection = 1;
+	}elseif($reExpandedData['product_code_selection'] == 57){
+		$productCodeSelection = 2;
+	}elseif($reExpandedData['product_code_selection'] == 58){
+		$productCodeSelection = 3;
+	}
+}
+
 $raptorData = $this->OrdersModel->getRaptorData($data['order_number']);
 $getEAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($data['allergens']);
 $envtotal = 0;
@@ -72,6 +84,13 @@ foreach ($getFAllergenParent as $apkey => $apvalue){
 
 								<!-- form start -->
 								<?php echo form_open('', array('name'=>'orderType', 'id'=>'orderType')); ?>
+									<?php
+									if (!empty($this->_data['data']['is_expanded'])) {
+										?>
+										<input type="hidden" name="is_expanded" value="1" >
+										<?php
+									}
+									?>
 									<!--Order Type-->
 									<div class="box-body">
 										<div class="row">
@@ -79,7 +98,7 @@ foreach ($getFAllergenParent as $apkey => $apvalue){
 												<div class="middle">
 													<?php if($envtotal > 0){ ?>
 													<label>
-														<input type="radio" name="expand_type" value="1"/>
+														<input type="radio" <?= ($productCodeSelection == 1) ? "checked" : "";  ?> name="expand_type" value="1"/>
 														<div class="front-end box">
 															<span><?php echo $this->lang->line("pax_env_scr_expanded");?></span>
 														</div>
@@ -87,7 +106,7 @@ foreach ($getFAllergenParent as $apkey => $apvalue){
 													<?php } ?>
 													<?php if($foodtotal > 0){ ?>
 													<label>
-														<input type="radio" name="expand_type" value="2"/>
+														<input type="radio" <?= ($productCodeSelection == 2) ? "checked" : "";  ?> name="expand_type" value="2"/>
 														<div class="front-end box">
 															<span><?php echo $this->lang->line("pax_food_scr_expanded");?></span>
 														</div>
@@ -95,7 +114,7 @@ foreach ($getFAllergenParent as $apkey => $apvalue){
 													<?php } ?>
 													<?php if($envtotal > 0 && $foodtotal > 0){ ?>
 													<label>
-														<input type="radio" name="expand_type" value="3"/>
+														<input type="radio" <?= ($productCodeSelection == 3) ? "checked" : "";  ?> name="expand_type" value="3"/>
 														<div class="front-end box">
 															<span><?php echo $this->lang->line("pax_env_food_scr_expanded");?></span>
 														</div>
