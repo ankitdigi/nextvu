@@ -59,7 +59,7 @@ $userData = logged_in_user_data();
 							<div class="box box-primary">
 								<div class="box-header with-border">
 									<!-- <p class="pull-right"> -->
-									<a href="javascript:window.history.go(-1);" class="btn btn-primary ad-click-event"><i class="fa fa-long-arrow-left back-btn-cls" style="font-size:initial;"></i><?php echo $this->lang->line("back");?></a>
+									<a href="<?php echo site_url('orders/addEdit/'.$id) ?>" class="btn btn-primary ad-click-event"><i class="fa fa-long-arrow-left back-btn-cls" style="font-size:initial;"></i><?php echo $this->lang->line("back");?></a>
 									<!-- </p> -->
 									<br><h3 class="box-title"><?php //echo (isset($id) && $id>0) ? 'Edit' : 'Add' ?><br><span style="font-size:smaller;color: #4fb7f3; font-weight:700;"><?php echo $this->lang->line("please_indicate_which_allergens_are_required");?></span></h3>
 									<input class="pull-right" type="text" size="30" 
