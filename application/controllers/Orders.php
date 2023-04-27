@@ -3596,6 +3596,10 @@ class Orders extends CI_Controller{
 		}
 		/***** delivery address details*/
 
+		$discountPercent = 0;
+		$discountPrice = 0;
+		$shippingPrice = 0;
+		$finalPrice = 0;
 		/***** Practice or Lab Name */
 		if ($order_details['lab_id'] > 0) {
 			$final_name = $order_details['lab_name'];
@@ -3661,18 +3665,64 @@ class Orders extends CI_Controller{
 				$this->_data['final_price'] = $final_price - ($single_order_discount + $insects_order_discount);
 				$this->_data['order_discount'] = $single_order_discount + $insects_order_discount;
 				$this->_data['price_currency'] = $skin_test_price[0]['price_currency'];
+				$finalPrice = $this->_data['final_price'];
+				$discountPercent = $this->_data['order_discount'];
 			}
 
-			//Serum Test Pricing 
+			//Serum Test Pricing
 			if ($data['order_type'] == '2') {
 				$order_discount = 0.00;
 				if($data['cep_id'] > 0){
-					$final_price  = $data['unit_price'];
+					if($data['product_code_selection'] == '34' || $data['product_code_selection'] == '56'){
+						$serum_test_price = $this->PriceCategoriesModel->serum_test_price(56, $practice_lab);
+						$final_price = $serum_test_price[0]['uk_price'];
+						$finalPrice = $final_price;
+						/**discount **/
+						$serum_discount = $this->PriceCategoriesModel->get_discount($data['product_code_selection'], $practice_lab);
+						//print_r($serum_discount);
+						if (!empty($serum_discount)) {
+							$order_discount = ($serum_test_price[0]['uk_price'] * $serum_discount['uk_discount']) / 100;
+							$order_discount = sprintf("%.2f", $order_discount);
+							$discountPercent = $serum_discount['uk_discount'];
+						}
+						/**discount **/
+
+					}elseif($data['product_code_selection'] == '33'){
+						$serum_test_price = $this->PriceCategoriesModel->serum_test_price(57, $practice_lab);
+						$final_price = $serum_test_price[0]['uk_price'];
+						$finalPrice = $final_price;
+						/**discount **/
+						$serum_discount = $this->PriceCategoriesModel->get_discount($data['product_code_selection'], $practice_lab);
+						//print_r($serum_discount);
+						if (!empty($serum_discount)) {
+							$order_discount = ($serum_test_price[0]['uk_price'] * $serum_discount['uk_discount']) / 100;
+							$order_discount = sprintf("%.2f", $order_discount);
+							$discountPercent = $serum_discount['uk_discount'];
+						}
+						/**discount **/
+					}elseif($data['product_code_selection'] == '38'){
+						$serum_test_price = $this->PriceCategoriesModel->serum_test_price(58, $practice_lab);
+						$final_price = $serum_test_price[0]['uk_price'];
+						$finalPrice = $final_price;
+						/**discount **/
+						$serum_discount = $this->PriceCategoriesModel->get_discount($data['product_code_selection'], $practice_lab);
+						//print_r($serum_discount);
+						if (!empty($serum_discount)) {
+							$order_discount = ($serum_test_price[0]['uk_price'] * $serum_discount['uk_discount']) / 100;
+							$order_discount = sprintf("%.2f", $order_discount);
+							$discountPercent = $serum_discount['uk_discount'];
+						}
+						/**discount **/
+					} else {
+						$final_price = $data['unit_price'];
+						$finalPrice = $final_price;
+					}
 				}else{
 					$product_code_id = $this->session->userdata('product_code_selection');
 					$serum_test_price = $this->PriceCategoriesModel->serum_test_price($product_code_id, $practice_lab);
 					//$final_price = $total_allergen * ($serum_test_price[0]['uk_price']);
 					$final_price = $serum_test_price[0]['uk_price'];
+					$finalPrice = $final_price;
 
 					/**discount **/
 					$serum_discount = $this->PriceCategoriesModel->get_discount($data['product_code_selection'], $practice_lab);
@@ -3680,6 +3730,7 @@ class Orders extends CI_Controller{
 					if (!empty($serum_discount)) {
 						$order_discount = ($serum_test_price[0]['uk_price'] * $serum_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $serum_discount['uk_discount'];
 					}
 					/**discount **/
 				}
@@ -3701,9 +3752,11 @@ class Orders extends CI_Controller{
 					if (!empty($artuvetrin_discount)) {
 						$order_discount = ($artuvetrin_test_price[0]['uk_price'] * $artuvetrin_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $artuvetrin_discount['uk_discount'];
 					}
 					/**discount **/
 
+					$finalPrice = $artuvetrin_test_price[0]['uk_price'];
 					$this->_data['final_price'] = $artuvetrin_test_price[0]['uk_price'] - $order_discount;
 					$this->_data['order_discount'] = round($order_discount, 2);
 					$this->_data['price_currency'] = $artuvetrin_test_price[0]['price_currency'];
@@ -3716,15 +3769,20 @@ class Orders extends CI_Controller{
 					if (!empty($artuvetrin_discount)) {
 						$order_discount = ($artuvetrin_test_price[1]['uk_price'] * $artuvetrin_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $artuvetrin_discount['uk_discount'];
 					}
 					/**discount **/
-
+					$finalPrice = $artuvetrin_test_price[1]['uk_price'];
 					$this->_data['final_price'] = $artuvetrin_test_price[1]['uk_price'] - $order_discount;
 					$this->_data['order_discount'] = round($order_discount, 2);
 					$this->_data['price_currency'] = $artuvetrin_test_price[1]['price_currency'];
 					//Artuvetrin Therapy more than 8 allergens
 
 				} elseif ($total_allergen > 8) {
+					$finalPrice1 = 0;
+					$finalPrice2 = 0;
+					$discountPercent1 = 0;
+					$discountPercent2 = 0;
 					$final_price = 0.00;
 					$first_range_price = 0.00;
 					$order_first_discount = 0.00;
@@ -3743,9 +3801,11 @@ class Orders extends CI_Controller{
 							$is_update=0;
 							$order_second_discount = ($quotient*($artuvetrin_test_price[1]['uk_price'] * $artuvetrin_second_discount['uk_discount'])) / 100;
 							$order_second_discount = sprintf("%.2f", $order_second_discount);
+							$discountPercent2 = $artuvetrin_second_discount['uk_discount'];
 						} else {
 							$order_second_discount = ($quotient*($artuvetrin_test_price[1]['uk_price'] * $artuvetrin_second_discount['uk_discount'])) / 100;
 							$order_second_discount = sprintf("%.2f", $order_second_discount);
+							$discountPercent2 = $artuvetrin_second_discount['uk_discount'];
 						}
 					}
 
@@ -3755,24 +3815,32 @@ class Orders extends CI_Controller{
 							$quotient++;
 						}
 						$second_range_price = ($quotient * ($artuvetrin_test_price[1]['uk_price'])) - $order_second_discount;
+						$finalPrice2 = ($quotient * ($artuvetrin_test_price[1]['uk_price']));
 					}else{
 						$second_range_price = ($quotient * ($artuvetrin_test_price[1]['uk_price'])) - $order_second_discount;
-					} 
+						$finalPrice2 = ($quotient * ($artuvetrin_test_price[1]['uk_price']));
+					}
 					if($remainder > 0){
-					    /**discount **/
-					    $artuvetrin_first_discount = $this->PriceCategoriesModel->get_discount("16",$practice_lab);
-					    if( !empty($artuvetrin_first_discount) ){
+						/**discount **/
+						$artuvetrin_first_discount = $this->PriceCategoriesModel->get_discount("16",$practice_lab);
+						if( !empty($artuvetrin_first_discount) ){
 							if($_quotients <= 0.50 && $_quotients != 0) {
 								$order_first_discount = ($artuvetrin_test_price[0]['uk_price'] * $artuvetrin_first_discount['uk_discount'] )/100;
-					        	$order_first_discount = sprintf("%.2f", $order_first_discount);
+								$order_first_discount = sprintf("%.2f", $order_first_discount);
+								$discountPercent1 = $artuvetrin_first_discount['uk_discount'];
 							}
-					    }
+						}
 						/**discount **/
 					}
 					if($_quotients <= 0.50 && $_quotients != 0) {
 						$first_range_price = (1 * ($artuvetrin_test_price[0]['uk_price'])) - $order_first_discount;
+						$finalPrice1 = (1 * ($artuvetrin_test_price[0]['uk_price']));
 					}
-					$final_price = $first_range_price + $second_range_price; 
+					$finalPrice = $finalPrice1 + $finalPrice2;
+					$discountPercent = (($finalPrice1 * $discountPercent1) / 100) + (($finalPrice2 * $discountPercent2) / 100);
+					//$finalPrice = $finalPrice - $discountPercent;
+
+					$final_price = $first_range_price + $second_range_price;
 					$this->_data['final_price'] = $final_price;
 					$this->_data['order_discount'] = round($order_first_discount + $order_second_discount, 2);
 					$this->_data['price_currency'] = $artuvetrin_test_price[0]['price_currency'];
@@ -3797,9 +3865,12 @@ class Orders extends CI_Controller{
 					if (!empty($slit_discount)) {
 						$order_discount = ($slit_test_price[0]['uk_price'] * $slit_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $slit_discount['uk_discount']; //Check
+						$discountPrice = $order_discount;
 					}
 					/**discount **/
 					$final_price = $total_allergen * $single_price;
+					$finalPrice = $final_price;
 					$final_price = $final_price - $order_discount;
 				} else if ($data['single_double_selection'] == '2' && $culicoides_allergen == 0) {
 					/**discount **/
@@ -3807,10 +3878,13 @@ class Orders extends CI_Controller{
 					if (!empty($slit_discount)) {
 						$order_discount = ($slit_test_price[1]['uk_price'] * $slit_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $slit_discount['uk_discount']; //Check
+						$discountPrice = $order_discount;
 					}
 
 					/** discount **/
 					$final_price = $total_allergen * $double_price;
+					$finalPrice = $final_price;
 					$final_price = $final_price - $order_discount;
 				} else if ($data['single_double_selection'] == '1' && $culicoides_allergen > 0) {
 					/** discount **/
@@ -3818,10 +3892,13 @@ class Orders extends CI_Controller{
 					if (!empty($slit_discount)) {
 						$order_discount = ($slit_test_price[2]['uk_price'] * $slit_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $slit_discount['uk_discount']; //Check
+						$discountPrice = $order_discount;
 					}
 
 					/** discount **/
 					$final_price = ($single_price * $single_allergen) + ($single_with_culicoides * $culicoides_allergen);
+					$finalPrice = $final_price;
 					$final_price = $final_price - $order_discount;
 				} else if ($data['single_double_selection'] == '2' && $culicoides_allergen > 0) {
 					/**discount **/
@@ -3830,18 +3907,22 @@ class Orders extends CI_Controller{
 					if (!empty($slit_discount)) {
 						$order_discount = ($slit_test_price[3]['uk_price'] * $slit_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
+						$discountPercent = $slit_discount['uk_discount']; //Check
+						$discountPrice = $order_discount;
 					}
 
 					/**discount **/
 					$final_price = ($double_price * $single_allergen) + ($double_with_culicoides * $culicoides_allergen);
+					$finalPrice = $final_price;
 					$final_price = $final_price - $order_discount;
 				}
 				$this->_data['final_price'] = $final_price;
 				$this->_data['order_discount'] = $order_discount;
 				$this->_data['price_currency'] = $slit_test_price[0]['price_currency'];
-			}
+			} //if
 		}
 
+		/* if($data['lab_id'] == '13788' || $data['lab_id'] == '13786'){ */
 		if($data['lab_id'] == '13786'){
 			$this->_data['shipping_cost'] = '0.00';
 		}else{
@@ -3861,16 +3942,18 @@ class Orders extends CI_Controller{
 				if ($data['order_type'] == '3') {
 					$shipUPrice = $this->OrdersModel->getShippingCostbyUser("4", $practice_lab);
 					if(!empty($shipUPrice)){
+						$finalPrice = $this->_data['final_price'];
 						$this->_data['final_price'] = $this->_data['final_price']+$shipUPrice['uk_discount'];
 						$this->_data['shipping_cost'] = $shipUPrice['uk_discount'];
 					}else{
 						$shipDPrice = $this->OrdersModel->getDefaultShippingCost("4");
+						$finalPrice = $this->_data['final_price'];
 						$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
 						$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
 					}
 				}
 
-				//Serum Test Shipping Price 
+				//Serum Test Shipping Price
 				if ($data['order_type'] == '2') {
 					if ($data['species_selection'] == '2') {
 						$shipUPrice = $this->OrdersModel->getShippingCostbyUser("3", $practice_lab);
@@ -3879,30 +3962,35 @@ class Orders extends CI_Controller{
 						$shipUPrice = $this->OrdersModel->getShippingCostbyUser("2", $practice_lab);
 					}
 					if(!empty($shipUPrice)){
+						$finalPrice = $this->_data['final_price'];
 						$this->_data['final_price'] = $this->_data['final_price']+$shipUPrice['uk_discount'];
 						$this->_data['shipping_cost'] = $shipUPrice['uk_discount'];
 					}else{
 						if ($data['species_selection'] == '2') {
 							$shipDPrice = $this->OrdersModel->getDefaultShippingCost("3");
+							//$finalPrice = $this->_data['final_price'];
 							$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
 							$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
 						}
 						if ($data['species_selection'] == '1') {
 							$shipDPrice = $this->OrdersModel->getDefaultShippingCost("2");
+							//$finalPrice = $this->_data['final_price'];
 							$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
 							$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
 						}
 					}
 				}
 
-				//Immunotherapy Shipping Price 
+				//Immunotherapy Shipping Price
 				if ($data['order_type'] == '1') {
 					$shipUPrice = $this->OrdersModel->getShippingCostbyUser("1", $practice_lab);
 					if(!empty($shipUPrice)){
+						$finalPrice = $this->_data['final_price'];
 						$this->_data['final_price'] = $this->_data['final_price']+$shipUPrice['uk_discount'];
 						$this->_data['shipping_cost'] = $shipUPrice['uk_discount'];
 					}else{
 						$shipDPrice = $this->OrdersModel->getDefaultShippingCost("1");
+						$finalPrice = $this->_data['final_price'];
 						$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
 						$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
 					}
@@ -3913,8 +4001,18 @@ class Orders extends CI_Controller{
 			}
 		}
 
+		if ($data['order_type'] == '1' && $data['sub_order_type'] == '2') {
+			$this->_data['final_price'] = ($finalPrice - $discountPrice) + $this->_data['shipping_cost'];
+			$this->_data['order_discount'] = $discountPrice;
+		} else {
+			//$this->_data['order_discount'] = ($finalPrice * $discountPercent) / 100;
+			//$this->_data['final_price'] = ($finalPrice + $this->_data['shipping_cost']) - $this->_data['order_discount'];
+		}
+
+		//echo "<pre>";print_r($this->_data);die;
+
 		$orderData = []; $serumData = [];
-		if(!empty($this->input->post())){
+		if (!empty($this->input->post())) {
 			if ($this->input->post('signaturesubmit') == 1) {
 				$signature = $this->input->post('signature');
 				$signatureFileName = time() . '.png';
@@ -3956,11 +4054,8 @@ class Orders extends CI_Controller{
 							redirect('orders');
 						}
 					}else{
-						/* if(IS_LIVE == 'yes' && ($this->user_role == 1 || $this->user_role == 11) && $order_details['order_type'] != '2'){ */
-						if(IS_LIVE == 'yes' && $order_details['order_type'] != '2'){
+						if (IS_LIVE == 'yes' && ($this->user_role == 1 || $this->user_role == 11) && $order_details['order_type'] != '2') {
 							$this->send_mail($id);
-						}else{
-							redirect('orders');
 						}
 					}
 				}
@@ -4044,11 +4139,8 @@ class Orders extends CI_Controller{
 							redirect('orders');
 						}
 					}else{
-						/* if(IS_LIVE == 'yes' && ($this->user_role == 1 || $this->user_role == 11) && $order_details['order_type'] != '2'){ */
-						if(IS_LIVE == 'yes' && $order_details['order_type'] != '2'){
+						if (IS_LIVE == 'yes' && ($this->user_role == 1 || $this->user_role == 11) && $order_details['order_type'] != '2') {
 							$this->send_mail($id);
-						}else{
-							redirect('orders');
 						}
 					}
 				}
@@ -4084,11 +4176,8 @@ class Orders extends CI_Controller{
 							redirect('orders');
 						}
 					}else{
-						/* if(IS_LIVE == 'yes' && ($this->user_role == 1 || $this->user_role == 11) && $order_details['order_type'] != '2'){ */
-						if(IS_LIVE == 'yes' && $order_details['order_type'] != '2'){
+						if (IS_LIVE == 'yes' && ($this->user_role == 1 || $this->user_role == 11) && $order_details['order_type'] != '2') {
 							$this->send_mail($id);
-						}else{
-							redirect('orders');
 						}
 					}
 				}
