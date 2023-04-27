@@ -27,7 +27,6 @@ class Orders extends CI_Controller{
 		$this->load->model('PriceCategoriesModel');
 		$this->load->model('CountriesModel');
 		$this->load->model('StaffCountriesModel');
-		$this->load->model('ModifyExcelModel');
 		$this->_data['fetch_class'] = $this->router->fetch_class();
 		$this->_data['fetch_method'] = $this->router->fetch_method();
 		$this->_data['countries'] = $this->StaffCountriesModel->getRecordAll();
@@ -95,15 +94,7 @@ class Orders extends CI_Controller{
 					if(!empty($value->product_code_selection)){
 						$this->db->select('name');
 						$this->db->from('ci_price');
-						if($value->serum_type == 1 && $value->is_repeat_order == 1 && $value->cep_id > 0 && $value->product_code_selection == '34'){
-							$this->db->where('id', '56');
-						}elseif($value->serum_type == 1 && $value->is_repeat_order == 1 && $value->cep_id > 0 && $value->product_code_selection == '33'){
-							$this->db->where('id', '57');
-						}elseif($value->serum_type == 1 && $value->is_repeat_order == 1 && $value->cep_id > 0 && $value->product_code_selection == '38'){
-							$this->db->where('id', '58');
-						}else{
-							$this->db->where('id', $value->product_code_selection);
-						}
+						$this->db->where('id', $value->product_code_selection);
 						$ordeType = $this->db->get()->row()->name;
 						$Orders[$key]->order_type = 'Serum Testing <b>('.$ordeType.')</b>';
 					}else{
@@ -2295,7 +2286,7 @@ class Orders extends CI_Controller{
 			$this->email->message($msg_content);
 			$this->email->set_mailtype("html");
 			$this->email->attach($file);
-			if ($data['sic_document'] != '') {
+			if ($sicdoc != '') {
 				$this->email->attach($sicdoc);
 			}
 			$is_send = $this->email->send();
@@ -3596,10 +3587,6 @@ class Orders extends CI_Controller{
 		}
 		/***** delivery address details*/
 
-		$discountPercent = 0;
-		$discountPrice = 0;
-		$shippingPrice = 0;
-		$finalPrice = 0;
 		/***** Practice or Lab Name */
 		if ($order_details['lab_id'] > 0) {
 			$final_name = $order_details['lab_name'];
@@ -3665,64 +3652,18 @@ class Orders extends CI_Controller{
 				$this->_data['final_price'] = $final_price - ($single_order_discount + $insects_order_discount);
 				$this->_data['order_discount'] = $single_order_discount + $insects_order_discount;
 				$this->_data['price_currency'] = $skin_test_price[0]['price_currency'];
-				$finalPrice = $this->_data['final_price'];
-				$discountPercent = $this->_data['order_discount'];
 			}
 
-			//Serum Test Pricing
+			//Serum Test Pricing 
 			if ($data['order_type'] == '2') {
 				$order_discount = 0.00;
 				if($data['cep_id'] > 0){
-					if($data['product_code_selection'] == '34' || $data['product_code_selection'] == '56'){
-						$serum_test_price = $this->PriceCategoriesModel->serum_test_price(56, $practice_lab);
-						$final_price = $serum_test_price[0]['uk_price'];
-						$finalPrice = $final_price;
-						/**discount **/
-						$serum_discount = $this->PriceCategoriesModel->get_discount($data['product_code_selection'], $practice_lab);
-						//print_r($serum_discount);
-						if (!empty($serum_discount)) {
-							$order_discount = ($serum_test_price[0]['uk_price'] * $serum_discount['uk_discount']) / 100;
-							$order_discount = sprintf("%.2f", $order_discount);
-							$discountPercent = $serum_discount['uk_discount'];
-						}
-						/**discount **/
-
-					}elseif($data['product_code_selection'] == '33'){
-						$serum_test_price = $this->PriceCategoriesModel->serum_test_price(57, $practice_lab);
-						$final_price = $serum_test_price[0]['uk_price'];
-						$finalPrice = $final_price;
-						/**discount **/
-						$serum_discount = $this->PriceCategoriesModel->get_discount($data['product_code_selection'], $practice_lab);
-						//print_r($serum_discount);
-						if (!empty($serum_discount)) {
-							$order_discount = ($serum_test_price[0]['uk_price'] * $serum_discount['uk_discount']) / 100;
-							$order_discount = sprintf("%.2f", $order_discount);
-							$discountPercent = $serum_discount['uk_discount'];
-						}
-						/**discount **/
-					}elseif($data['product_code_selection'] == '38'){
-						$serum_test_price = $this->PriceCategoriesModel->serum_test_price(58, $practice_lab);
-						$final_price = $serum_test_price[0]['uk_price'];
-						$finalPrice = $final_price;
-						/**discount **/
-						$serum_discount = $this->PriceCategoriesModel->get_discount($data['product_code_selection'], $practice_lab);
-						//print_r($serum_discount);
-						if (!empty($serum_discount)) {
-							$order_discount = ($serum_test_price[0]['uk_price'] * $serum_discount['uk_discount']) / 100;
-							$order_discount = sprintf("%.2f", $order_discount);
-							$discountPercent = $serum_discount['uk_discount'];
-						}
-						/**discount **/
-					} else {
-						$final_price = $data['unit_price'];
-						$finalPrice = $final_price;
-					}
+					$final_price  = $data['unit_price'];
 				}else{
 					$product_code_id = $this->session->userdata('product_code_selection');
 					$serum_test_price = $this->PriceCategoriesModel->serum_test_price($product_code_id, $practice_lab);
 					//$final_price = $total_allergen * ($serum_test_price[0]['uk_price']);
 					$final_price = $serum_test_price[0]['uk_price'];
-					$finalPrice = $final_price;
 
 					/**discount **/
 					$serum_discount = $this->PriceCategoriesModel->get_discount($data['product_code_selection'], $practice_lab);
@@ -3730,7 +3671,6 @@ class Orders extends CI_Controller{
 					if (!empty($serum_discount)) {
 						$order_discount = ($serum_test_price[0]['uk_price'] * $serum_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
-						$discountPercent = $serum_discount['uk_discount'];
 					}
 					/**discount **/
 				}
@@ -3752,11 +3692,9 @@ class Orders extends CI_Controller{
 					if (!empty($artuvetrin_discount)) {
 						$order_discount = ($artuvetrin_test_price[0]['uk_price'] * $artuvetrin_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
-						$discountPercent = $artuvetrin_discount['uk_discount'];
 					}
 					/**discount **/
 
-					$finalPrice = $artuvetrin_test_price[0]['uk_price'];
 					$this->_data['final_price'] = $artuvetrin_test_price[0]['uk_price'] - $order_discount;
 					$this->_data['order_discount'] = round($order_discount, 2);
 					$this->_data['price_currency'] = $artuvetrin_test_price[0]['price_currency'];
@@ -3769,20 +3707,15 @@ class Orders extends CI_Controller{
 					if (!empty($artuvetrin_discount)) {
 						$order_discount = ($artuvetrin_test_price[1]['uk_price'] * $artuvetrin_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
-						$discountPercent = $artuvetrin_discount['uk_discount'];
 					}
 					/**discount **/
-					$finalPrice = $artuvetrin_test_price[1]['uk_price'];
+
 					$this->_data['final_price'] = $artuvetrin_test_price[1]['uk_price'] - $order_discount;
 					$this->_data['order_discount'] = round($order_discount, 2);
 					$this->_data['price_currency'] = $artuvetrin_test_price[1]['price_currency'];
 					//Artuvetrin Therapy more than 8 allergens
 
 				} elseif ($total_allergen > 8) {
-					$finalPrice1 = 0;
-					$finalPrice2 = 0;
-					$discountPercent1 = 0;
-					$discountPercent2 = 0;
 					$final_price = 0.00;
 					$first_range_price = 0.00;
 					$order_first_discount = 0.00;
@@ -3801,11 +3734,9 @@ class Orders extends CI_Controller{
 							$is_update=0;
 							$order_second_discount = ($quotient*($artuvetrin_test_price[1]['uk_price'] * $artuvetrin_second_discount['uk_discount'])) / 100;
 							$order_second_discount = sprintf("%.2f", $order_second_discount);
-							$discountPercent2 = $artuvetrin_second_discount['uk_discount'];
 						} else {
 							$order_second_discount = ($quotient*($artuvetrin_test_price[1]['uk_price'] * $artuvetrin_second_discount['uk_discount'])) / 100;
 							$order_second_discount = sprintf("%.2f", $order_second_discount);
-							$discountPercent2 = $artuvetrin_second_discount['uk_discount'];
 						}
 					}
 
@@ -3815,31 +3746,23 @@ class Orders extends CI_Controller{
 							$quotient++;
 						}
 						$second_range_price = ($quotient * ($artuvetrin_test_price[1]['uk_price'])) - $order_second_discount;
-						$finalPrice2 = ($quotient * ($artuvetrin_test_price[1]['uk_price']));
 					}else{
 						$second_range_price = ($quotient * ($artuvetrin_test_price[1]['uk_price'])) - $order_second_discount;
-						$finalPrice2 = ($quotient * ($artuvetrin_test_price[1]['uk_price']));
-					}
+					} 
 					if($remainder > 0){
-						/**discount **/
-						$artuvetrin_first_discount = $this->PriceCategoriesModel->get_discount("16",$practice_lab);
-						if( !empty($artuvetrin_first_discount) ){
+					    /**discount **/
+					    $artuvetrin_first_discount = $this->PriceCategoriesModel->get_discount("16",$practice_lab);
+					    if( !empty($artuvetrin_first_discount) ){
 							if($_quotients <= 0.50 && $_quotients != 0) {
 								$order_first_discount = ($artuvetrin_test_price[0]['uk_price'] * $artuvetrin_first_discount['uk_discount'] )/100;
-								$order_first_discount = sprintf("%.2f", $order_first_discount);
-								$discountPercent1 = $artuvetrin_first_discount['uk_discount'];
+					        	$order_first_discount = sprintf("%.2f", $order_first_discount);
 							}
-						}
+					    }
 						/**discount **/
 					}
 					if($_quotients <= 0.50 && $_quotients != 0) {
 						$first_range_price = (1 * ($artuvetrin_test_price[0]['uk_price'])) - $order_first_discount;
-						$finalPrice1 = (1 * ($artuvetrin_test_price[0]['uk_price']));
 					}
-					$finalPrice = $finalPrice1 + $finalPrice2;
-					$discountPercent = (($finalPrice1 * $discountPercent1) / 100) + (($finalPrice2 * $discountPercent2) / 100);
-					//$finalPrice = $finalPrice - $discountPercent;
-
 					$final_price = $first_range_price + $second_range_price;
 					$this->_data['final_price'] = $final_price;
 					$this->_data['order_discount'] = round($order_first_discount + $order_second_discount, 2);
@@ -3865,12 +3788,9 @@ class Orders extends CI_Controller{
 					if (!empty($slit_discount)) {
 						$order_discount = ($slit_test_price[0]['uk_price'] * $slit_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
-						$discountPercent = $slit_discount['uk_discount']; //Check
-						$discountPrice = $order_discount;
 					}
 					/**discount **/
 					$final_price = $total_allergen * $single_price;
-					$finalPrice = $final_price;
 					$final_price = $final_price - $order_discount;
 				} else if ($data['single_double_selection'] == '2' && $culicoides_allergen == 0) {
 					/**discount **/
@@ -3878,13 +3798,10 @@ class Orders extends CI_Controller{
 					if (!empty($slit_discount)) {
 						$order_discount = ($slit_test_price[1]['uk_price'] * $slit_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
-						$discountPercent = $slit_discount['uk_discount']; //Check
-						$discountPrice = $order_discount;
 					}
 
 					/** discount **/
 					$final_price = $total_allergen * $double_price;
-					$finalPrice = $final_price;
 					$final_price = $final_price - $order_discount;
 				} else if ($data['single_double_selection'] == '1' && $culicoides_allergen > 0) {
 					/** discount **/
@@ -3892,13 +3809,10 @@ class Orders extends CI_Controller{
 					if (!empty($slit_discount)) {
 						$order_discount = ($slit_test_price[2]['uk_price'] * $slit_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
-						$discountPercent = $slit_discount['uk_discount']; //Check
-						$discountPrice = $order_discount;
 					}
 
 					/** discount **/
 					$final_price = ($single_price * $single_allergen) + ($single_with_culicoides * $culicoides_allergen);
-					$finalPrice = $final_price;
 					$final_price = $final_price - $order_discount;
 				} else if ($data['single_double_selection'] == '2' && $culicoides_allergen > 0) {
 					/**discount **/
@@ -3907,13 +3821,10 @@ class Orders extends CI_Controller{
 					if (!empty($slit_discount)) {
 						$order_discount = ($slit_test_price[3]['uk_price'] * $slit_discount['uk_discount']) / 100;
 						$order_discount = sprintf("%.2f", $order_discount);
-						$discountPercent = $slit_discount['uk_discount']; //Check
-						$discountPrice = $order_discount;
 					}
 
 					/**discount **/
 					$final_price = ($double_price * $single_allergen) + ($double_with_culicoides * $culicoides_allergen);
-					$finalPrice = $final_price;
 					$final_price = $final_price - $order_discount;
 				}
 				$this->_data['final_price'] = $final_price;
@@ -3942,18 +3853,16 @@ class Orders extends CI_Controller{
 				if ($data['order_type'] == '3') {
 					$shipUPrice = $this->OrdersModel->getShippingCostbyUser("4", $practice_lab);
 					if(!empty($shipUPrice)){
-						$finalPrice = $this->_data['final_price'];
 						$this->_data['final_price'] = $this->_data['final_price']+$shipUPrice['uk_discount'];
 						$this->_data['shipping_cost'] = $shipUPrice['uk_discount'];
 					}else{
 						$shipDPrice = $this->OrdersModel->getDefaultShippingCost("4");
-						$finalPrice = $this->_data['final_price'];
 						$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
 						$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
 					}
 				}
 
-				//Serum Test Shipping Price
+				//Serum Test Shipping Price 
 				if ($data['order_type'] == '2') {
 					if ($data['species_selection'] == '2') {
 						$shipUPrice = $this->OrdersModel->getShippingCostbyUser("3", $practice_lab);
@@ -3962,35 +3871,30 @@ class Orders extends CI_Controller{
 						$shipUPrice = $this->OrdersModel->getShippingCostbyUser("2", $practice_lab);
 					}
 					if(!empty($shipUPrice)){
-						$finalPrice = $this->_data['final_price'];
 						$this->_data['final_price'] = $this->_data['final_price']+$shipUPrice['uk_discount'];
 						$this->_data['shipping_cost'] = $shipUPrice['uk_discount'];
 					}else{
 						if ($data['species_selection'] == '2') {
 							$shipDPrice = $this->OrdersModel->getDefaultShippingCost("3");
-							//$finalPrice = $this->_data['final_price'];
 							$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
 							$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
 						}
 						if ($data['species_selection'] == '1') {
 							$shipDPrice = $this->OrdersModel->getDefaultShippingCost("2");
-							//$finalPrice = $this->_data['final_price'];
 							$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
 							$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
 						}
 					}
 				}
 
-				//Immunotherapy Shipping Price
+				//Immunotherapy Shipping Price 
 				if ($data['order_type'] == '1') {
 					$shipUPrice = $this->OrdersModel->getShippingCostbyUser("1", $practice_lab);
 					if(!empty($shipUPrice)){
-						$finalPrice = $this->_data['final_price'];
 						$this->_data['final_price'] = $this->_data['final_price']+$shipUPrice['uk_discount'];
 						$this->_data['shipping_cost'] = $shipUPrice['uk_discount'];
 					}else{
 						$shipDPrice = $this->OrdersModel->getDefaultShippingCost("1");
-						$finalPrice = $this->_data['final_price'];
 						$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
 						$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
 					}
@@ -4000,16 +3904,6 @@ class Orders extends CI_Controller{
 				$this->_data['shipping_cost'] = !empty($existCost)?$existCost:'0.00';
 			}
 		}
-
-		if ($data['order_type'] == '1' && $data['sub_order_type'] == '2') {
-			$this->_data['final_price'] = ($finalPrice - $discountPrice) + $this->_data['shipping_cost'];
-			$this->_data['order_discount'] = $discountPrice;
-		} else {
-			//$this->_data['order_discount'] = ($finalPrice * $discountPercent) / 100;
-			//$this->_data['final_price'] = ($finalPrice + $this->_data['shipping_cost']) - $this->_data['order_discount'];
-		}
-
-		//echo "<pre>";print_r($this->_data);die;
 
 		$orderData = []; $serumData = [];
 		if (!empty($this->input->post())) {
@@ -4378,10 +4272,6 @@ class Orders extends CI_Controller{
 				$ordercomment['practice_lab_comment'] = $this->input->post('comment');
 				$ordercomment['comment_by'] = $this->user_id;
 			}
-			if(!empty($this->input->post('cancel_order_comment')) && $this->input->post('cancel_order_comment') !=""){
-				$ordercomment['cancel_comment'] = $this->input->post('cancel_order_comment');
-			}
-
 			$ordercomment['updated_by'] = $this->user_id;
 			$ordercomment['updated_at'] = date("Y-m-d H:i:s");
 			$update = $this->OrdersModel->add_comment($ordercomment);
@@ -4407,17 +4297,14 @@ class Orders extends CI_Controller{
 					$ajax["comment_order"] = $update['comment'];
 					$ajax["internal_comment"] = $update['internal_comment'];
 					$ajax["practice_lab_comment"] = $update['practice_lab_comment'];
-					$ajax["cancel_comment"] = $update['cancel_comment'];
 				}elseif($update['comment_by'] == $this->user_id){
 					$ajax["comment_order"] = $update['practice_lab_comment'];
 					$ajax["internal_comment"] = $update['internal_comment'];
 					$ajax["practice_lab_comment"] = '';
-					$ajax["cancel_comment"] = $update['cancel_comment'];
 				}else{
 					$ajax["comment_order"] = '';
 					$ajax["internal_comment"] = '';
 					$ajax["practice_lab_comment"] = '';
-					$ajax["cancel_comment"] = $update['cancel_comment'];
 				}
 				echo json_encode($ajax);
 				exit;
@@ -8028,22 +7915,6 @@ class Orders extends CI_Controller{
 					$sresultIDArr[] = $stype->result_id;
 				}
 			}
-			if($data['cutoff_version'] == 1){
-				$cutaoff = '5';
-				$cutboff = '10';
-				$cutcoff = '60';
-				$cutdoff = '75';
-			}elseif($data['cutoff_version'] == 2){
-				$cutaoff = '100';
-				$cutboff = '200';
-				$cutcoff = '1200';
-				$cutdoff = '1500';
-			}else{
-				$cutaoff = '200';
-				$cutboff = '250';
-				$cutcoff = '1200';
-				$cutdoff = '1500';
-			}
 			$stypeID = implode(",",$stypeIDArr);
 			$sresultID = implode(",",$sresultIDArr);
 			$NextmuneRef = !empty($data['reference_number'])?$data['reference_number']:$data['order_number'];
@@ -10711,30 +10582,26 @@ class Orders extends CI_Controller{
 			$userID = $ordrData->vet_user_id;
 		}
 
-		$this->db->select('managed_by_id,report_by,country');
+		$this->db->select('managed_by_id,country');
 		$this->db->from('ci_users');
 		$this->db->where('id', $userID);
 		$userData = $this->db->get()->row();
-		if($userData->report_by != ''){
-			return explode(",",$userData->report_by);
-		}else{
-			if($userData->managed_by_id != ''){
-				if(count(explode(",",$userData->managed_by_id)) > 1){
-					$this->db->select('managed_by_id');
-					$this->db->from('ci_staff_countries');
-					$this->db->where('id', $userData->country);
-					$cuntryData = $this->db->get()->row();
-					if($cuntryData->managed_by_id != ''){
-						return explode(",",$cuntryData->managed_by_id);
-					}else{
-						return '0';
-					}
+		if($userData->managed_by_id != ''){
+			if(count(explode(",",$userData->managed_by_id)) > 1){
+				$this->db->select('managed_by_id');
+				$this->db->from('ci_staff_countries');
+				$this->db->where('id', $userData->country);
+				$cuntryData = $this->db->get()->row();
+				if($cuntryData->managed_by_id != ''){
+					return explode(",",$cuntryData->managed_by_id);
 				}else{
-					return explode(",",$userData->managed_by_id);
+					return '0';
 				}
 			}else{
-				return '0';
+				return explode(",",$userData->managed_by_id);
 			}
+		}else{
+			return '0';
 		}
 	}
 
@@ -10742,7 +10609,6 @@ class Orders extends CI_Controller{
 		$this->_data['data'] = [];
 		$data = $this->OrdersModel->getRecord($id);
 		$order_details = $this->OrdersModel->allData($data['id'], "");
-
 		/*****delivery address details */
 		$this->_data['delivery_address_details'] = '';
 		if ($order_details['order_can_send_to'] == '1') {
@@ -11151,6 +11017,33 @@ class Orders extends CI_Controller{
 			}
 		}
 
+		$type = $this->input->get('vp', TRUE);
+		if (!empty($type)) {
+			$vetgoidPetslit = $this->PriceCategoriesModel->vetgoid_petslit($type, $this->user_id);
+			if ($data['order_type'] == '2') {
+				if ($data['species_selection'] == '2') {
+					$shipUPrice = $this->OrdersModel->getShippingCostbyUser("3", $practice_lab);
+				}
+				if ($data['species_selection'] == '1') {
+					$shipUPrice = $this->OrdersModel->getShippingCostbyUser("2", $practice_lab);
+				}
+				if(!empty($shipUPrice)){
+					$this->_data['order_discount'] = $shipUPrice['uk_discount'];
+				}else{
+					if ($data['species_selection'] == '2') {
+						$shipDPrice = $this->OrdersModel->getDefaultShippingCost("3");
+						$this->_data['order_discount'] = $shipDPrice['uk_price'];
+					}
+					if ($data['species_selection'] == '1') {
+						$shipDPrice = $this->OrdersModel->getDefaultShippingCost("2");
+						$this->_data['order_discount'] = $shipDPrice['uk_price'];
+					}
+				}
+			}
+			$this->_data['final_price'] = $vetgoidPetslit['uk_price'];
+			$this->_data['price_currency'] = $vetgoidPetslit['price_currency'];
+		}
+
 		if (!empty($data)) {
 			$this->_data['data'] = $data;
 		}
@@ -11158,9 +11051,9 @@ class Orders extends CI_Controller{
 	}
 
 	function interpretation($id = ''){
-		$data = $this->OrdersModel->allData($id, "");
+		$data = $this->OrdersModel->getRecord($id);
 		$interpData = $this->OrdersModel->getOrderInterpretation($id);
-		$this->_data['order_details'] = $data;
+		$this->_data['order_details'] = $this->OrdersModel->allData($data['id'], "");
 		$this->_data['order_details']['interpretation'] = $interpData->interpretation;
 		$this->_data['order_details']['interpretation_food'] = $interpData->interpretation_food;
 		$this->_data['order_details']['vet_interpretation'] = $interpData->vet_interpretation;
@@ -11205,7 +11098,7 @@ class Orders extends CI_Controller{
 				$this->_data['data']['vet_interpretation'] = $interpData->vet_interpretation;
 			}
 		}
-		
+
 		if($this->user_role == '5' && ($this->session->userdata('user_type') == '1' || $this->session->userdata('user_type') == '2' || $this->session->userdata('user_type') == '3')){
 			if($this->_data['order_details']['is_order_completed'] == 1){
 				$this->load->view("orders/vet_dashboard", $this->_data);
@@ -11265,7 +11158,7 @@ class Orders extends CI_Controller{
 			$petownerName = $petOWFName.' '.$petOWLName;
 
 			$respnedn = $this->OrdersModel->getProductInfo($data['product_code_selection']);
-			if(preg_match('/\bScreening\b/', $respnedn->name) && !preg_match('/\bExpanded\b/', $respnedn->name)){
+			if(preg_match('/\bScreening\b/', $respnedn->name)){
 				ob_end_flush();
 				require_once(FCPATH.'vendor_pdf/autoload.php');
 				$mpdf = new Mpdf\Mpdf(['mode' => 'utf-8', 'format' => 'A4',]);
@@ -11311,7 +11204,7 @@ class Orders extends CI_Controller{
 					$removed_treatment_2 = json_decode($removed_treatment_2);
 				}
 
-				if($respnedn->name == 'PAX Environmental' || $respnedn->name == 'PAX Environmental Screening Expanded'){
+				if($respnedn->name == 'PAX Environmental'){
 					$getAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($data['allergens']);
 					$totalGroup0 = count($getAllergenParent);
 					$totalGroup2 = $totalGroup0/2;
@@ -11320,253 +11213,45 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$blocks1 = []; $compgrassIDArr = $extrIDArr = $compIDArr = []; $mitecompIDArr = [];
+					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = []; $block1 = []; $blocks1 = []; $allengesIDsArr = array();
 					foreach ($getAllergenParent as $apkey => $apvalue){
-						if($apvalue['pax_parent_id'] == '1'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$compCount = 0;
-							foreach($subAllergens as $skey => $cvalue){
-								$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu)){
-										if(floor($raptrVlu->result_value) >= $cutoffs){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 3){
-												$compCount++;
-												$compgrassIDArr[] = $cvalue['id'];
-											}
-										}
-									}
-								}
-							}
-							if($compCount > 0){
-								foreach ($subAllergens as $skey => $svalue) {
-									if(in_array($svalue['id'],$compgrassIDArr)){
-										$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-										if(!empty($subVlu->raptor_code)){
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-											if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-												if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-													$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-													if($ctype->em_allergen == 3){
-														$compIDArr[] = $ctype->id;
-													}
-												}else{
-													$blocks1[$svalue['id']] = $svalue['name'];
-												}
-											}
-										}
-									}
-								}
-							}else{
-								foreach ($subAllergens as $skey => $svalue) {
-									$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-									if(!empty($subVlu->raptor_code)){
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-										if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-											if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-												$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-												if($ctype->em_allergen == 2){
-													$extrIDArr[$svalue['id']] = $svalue['name'];
-												}
-											}else{
-												$blocks1[$svalue['id']] = $svalue['name'];
-											}
-										}
-									}
-								}
-							}
-						}elseif($apvalue['pax_parent_id'] == '45958'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$positiveCode = [];
-							foreach ($subAllergens as $skey => $svalue) {
-								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['pax_name'] != "N/A"){
-											$positiveCode[] = $raptrVlu->name;
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrIDArr[$svalue['id']] = $svalue['name'];
-											}
-											if($ctype->em_allergen == 3){
-												$compIDArr[] = $ctype->id;
-											}
-											if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											}else{
-												$blocks1[$svalue['id']] = $svalue['name'];
-											}
-										}
-									}
-								}
-							}
-
-							if(!empty($positiveCode)){
-								if(in_array("Blo t 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Per a 7",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-								}
-								if(in_array("Per a 7",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-									$mitecompIDArr[] = 73;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Per a 7",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 73;
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Per a 7",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-									$mitecompIDArr[] = 73;
-								}
-							}
-						}else{
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							foreach ($subAllergens as $skey => $svalue) {
-								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									if($apvalue['pax_parent_id'] == '45966' && $svalue['id'] == '81'){
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code.', Mala p',$raptorData->result_id);
-									}else{
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									}
-									if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
+						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
+						foreach ($subAllergens as $skey => $svalue) {
+							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+							if(!empty($subVlu->raptor_code)){
+								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+								if(!empty($raptrVlu)){
+									if(floor($raptrVlu->result_value) >= $cutoffs){
 										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrIDArr[$svalue['id']] = $svalue['name'];
+											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+												$allengesID3Arr[] = $svalue['id'];
 											}
-											if($ctype->em_allergen == 3){
-												$compIDArr[] = $ctype->id;
-											}
+											$block1[$svalue['id']] = $svalue['name'];
 										}else{
+											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+												$allengesID4Arr[] = $svalue['id'];
+											}
 											$blocks1[$svalue['id']] = $svalue['name'];
 										}
+										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+											$allengesIDArr[] = $svalue['id'];
+										}
+										$allengesIDsArr[] = $svalue['id'];
+										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 									}
 								}
 							}
 						}
 					}
-					$compPart = [];
-					if(!empty($compIDArr)){
-						$finalTretements = $this->AllergensModel->getRaptorComponentsGroupBy($compIDArr,$raptorData->result_id);
-						$funcArr = [];
-						foreach($finalTretements as $favalue){
-							if(in_array("".strtolower($favalue->raptor_function)."",$funcArr)){
-								$samcomp = $this->AllergensModel->getRaptorSameComponents($favalue->raptor_function,$compIDArr,$raptorData->result_id);
-								$allvaluesArr = array();
-								foreach($samcomp as $srow){
-									$allvaluesArr[] = $srow->result_value;
-								}
-								if(count(array_unique($allvaluesArr)) === 1){
-									if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0 && !in_array($favalue->allergens_id,array_unique($mitecompIDArr))){
-										$compPart[$favalue->allergens_id] = $favalue->name;
-									}
-								}elseif($favalue->pax_parent_id == '1'){
-									$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown(1, $order_details['allergens']);
-									$compCount = 0;
-									foreach($subAllergens as $skey => $cvalue){
-										if($cvalue['id'] != $favalue->allergens_id){
-											$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-											if(!empty($subVlu->raptor_code)){
-												$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-													$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-													if($ctype->em_allergen == 3){
-														$compCount++;
-													}
-												}
-											}
-										}
-									}
-									if($compCount == 0){
-										foreach ($subAllergens as $skey => $svalue) {
-											$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-											if(!empty($subVlu->raptor_code)){
-												$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-													if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-														$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-														if($ctype->em_allergen == 2){
-															$extrIDArr[$svalue['id']] = $svalue['name'];
-														}
-													}else{
-														$blocks1[$svalue['id']] = $svalue['name'];
-													}
-												}
-											}
-										}
-									}
-								}else{
-									$subVlu = $this->AllergensModel->getsubAllergensCodeForSecondHigherValue($favalue->allergens_id,$favalue->raptor_code);
-									if(!empty($subVlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $favalue->allergens_id == '81'){
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-											if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0){
-												$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-												if($ctype->em_allergen == 3){
-													$compPart[$favalue->allergens_id] = $favalue->name;
-												}
-											}else{
-												$blocks1[$favalue->allergens_id] = $favalue->name;
-											}
-										}
-									}
-								}
-							}else{
-								$funcArr[] = strtolower($favalue->raptor_function);
-								if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0 && !in_array($favalue->allergens_id,array_unique($mitecompIDArr))){
-									$compPart[$favalue->allergens_id] = $favalue->name;
-								}
-							}
-						}
-					}
-					if(!empty($extrIDArr)){
-						foreach($extrIDArr as $ekey => $evalue){
-							if($ekey != $compPart[$ekey]){
-								$compPart[$ekey] = $evalue;
-							}
-						}
-					}
-					$block1 = $compPart;
-					$block1IDArr = [];
-					if(!empty($block1)){
-						foreach($block1 as $bkey => $bvalue){
-							$block1IDArr[] = $bkey;
-						}
-					}
-					$block1IDArr = json_encode($block1IDArr);
 					if(array_key_exists("45994",$block1) && array_key_exists("73",$block1)){
 						unset($block1['45994']);
 					}elseif(array_key_exists("45994",$block1)){
 						unset($block1['45994']);
 						$block1['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($order_details['treatment_1'] != "" && $order_details['treatment_1'] != "[]"){
+					if($data['treatment_1'] != "" && $data['treatment_1'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_1']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
@@ -11583,180 +11268,80 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
+					//asort($block1);
 					$this->_data['block1'] = $block1;
 					$this->_data['blocks1'] = $blocks1;
 
-					$block2 = []; $chk_alg_cunt = 0; $mix_cunt = 0;
+					$block2 = []; $chk_alg_cunt = 0;
 					foreach($getAllergenParent as $apvalue){
-						if($apvalue['pax_parent_id'] == '1'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$compCount = 0; $extrCount = 0;
-							foreach($subAllergens as $skey => $cvalue){
-								$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu)){
-										if(floor($raptrVlu->result_value) >= $cutoffs){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrCount++;
-											}
-											if($ctype->em_allergen == 3){
-												$compCount++;
-											}
-										}
-									}
+						$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
+						if(!empty($getGroupMixtures)){
+							$parentIdArr = [];
+							foreach($getGroupMixtures as $mvalue){
+								if($mvalue['mixture_allergens'] != "" && $mvalue['mixture_allergens'] != "null"){
+									$parentIdArr[] = $mvalue['id'];
 								}
 							}
-							if($compCount == 0 && $extrCount >= 3){
-								$mix_cunt += 1;
-								$block2[10] = $this->AllergensModel->getAllergennameById(10);
-							}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-								foreach($sub2Allergens as $s2value){
-									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-									if(!empty($sub2Vlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-											if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-												$block2[$s2value['id']] = $s2value['name'];
-											}
-										}
-									}
-								}
-							}
-						}else{
-							$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
-							if(!empty($getGroupMixtures)){
-								$parentIdArr = [];
-								foreach($getGroupMixtures as $mvalue){
-									if($mvalue['mixture_allergens'] != "" && $mvalue['mixture_allergens'] != "null"){
-										$parentIdArr[] = $mvalue['id'];
-									}
-								}
-								if(!empty($parentIdArr)){
-									if(count($parentIdArr) > 1){
-										$emptyArr = [];
-										foreach($parentIdArr as $makey=>$mavalue){
-											$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
-											$testingArr = [];
-											foreach($allergenArr as $amid){
-												$rmcodes = $this->OrdersModel->getsubAllergensCode($amid);
-												if(!empty($rmcodes->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $mavalue == '81'){
-														$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptrmVlu) && floor($raptrmVlu->result_value) >= $cutoffs){
+
+							if(!empty($parentIdArr)){
+								if(count($parentIdArr) > 1){
+									foreach($parentIdArr as $makey=>$mavalue){
+										$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
+										$testingArr = [];
+										foreach($allergenArr as $amid){
+											$rmcodes = $this->OrdersModel->getsubAllergensCode($amid);
+											if(!empty($rmcodes->raptor_code)){
+												$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
+												if(!empty($raptrmVlu)){
+													if(floor($raptrmVlu->result_value) >= $cutoffs){
 														$testingArr[$mavalue] += 1;
 													}
 												}
 											}
+										}
 
-											if(count($allergenArr) >= 3){
-												$chk_alg_cunt = (count($allergenArr)-1);
-												if($testingArr[$mavalue] >= $chk_alg_cunt){
-													if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-														$mix_cunt += 1;
-														$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-													}
-													foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
-														$emptyArr[$apvalue['parent_id']][] = $emtrow;
-													}
+										if(count($allergenArr) >= 3){
+											$chk_alg_cunt = (count($allergenArr)-1);
+											if($testingArr[$mavalue] >= $chk_alg_cunt){
+												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
 												}
-											}else{
-												if($testingArr[$mavalue] >= 2){
-													if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-														$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-														$mix_cunt += 1;
-													}
-													foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
-														$emptyArr[$apvalue['parent_id']][] = $emtrow;
-													}
+											}
+										}else{
+											if($testingArr[$mavalue] >= 2){
+												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
 												}
 											}
 										}
-										if(!empty($emptyArr[$apvalue['parent_id']]) && !empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-											$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown_empty($apvalue['parent_id'],$block1IDArr, $emptyArr[$apvalue['parent_id']]);
-											foreach($sub1Allergens as $s1value){
-												$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-												if(!empty($sub1Vlu->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-														$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-															$block2[$s1value['id']] = $s1value['name'];
-														}
-													}
-												}
-											}
-										}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-											$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-											foreach($sub2Allergens as $s2value){
-												$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-												if(!empty($sub2Vlu->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-														$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-															$block2[$s2value['id']] = $s2value['name'];
-														}
-													}
-												}
-											}
-										}
-									}else{
-										$allergensArr = json_decode($getGroupMixtures[0]['mixture_allergens']);
-										$tested = 0;
-										foreach($allergensArr as $aid){
-											$rcodes = $this->OrdersModel->getsubAllergensCode($aid);
-											if(!empty($rcodes->raptor_code)){
-												if($apvalue['pax_parent_id'] == '45966' && $aid == '81'){
-													$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code.', Mala p',$raptorData->result_id);
-												}else{
-													$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
-												}
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
+									}
+								}else{
+									$allergensArr = json_decode($getGroupMixtures[0]['mixture_allergens']);
+									$tested = 0;
+									foreach($allergensArr as $aid){
+										$rcodes = $this->OrdersModel->getsubAllergensCode($aid);
+										if(!empty($rcodes->raptor_code)){
+											$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
+											if(!empty($raptrVlu)){
+												if(floor($raptrVlu->result_value) >= $cutoffs){
 													$tested++;
 												}
 											}
 										}
-
+									}
+									
+									if($apvalue['parent_id'] == 1){
+										if($tested >= 3){
+											if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
+												$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+											}
+										}
+									}else{
 										if(count($allergensArr) >= 3){
 											$chk_alg_cunt = (count($allergensArr)-1);
 											if($tested >= $chk_alg_cunt){
 												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
 													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-													$mix_cunt += 1;
-												}
-												if(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-													$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$block1IDArr, $getGroupMixtures[0]['mixture_allergens']);
-													foreach($sub1Allergens as $s1value){
-														$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-														if(!empty($sub1Vlu->raptor_code)){
-															if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-															}else{
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-															}
-															if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-																if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-																	$block2[$s1value['id']] = $s1value['name'];
-																}
-															}
-														}
-													}
 												}
 											}
 										}else{
@@ -11764,38 +11349,18 @@ class Orders extends CI_Controller{
 												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
 													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
 												}
-												if(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-													$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$block1IDArr, $getGroupMixtures[0]['mixture_allergens']);
-													foreach($sub1Allergens as $s1value){
-														$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-														if(!empty($sub1Vlu->raptor_code)){
-															if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code.', Mala p',$raptorData->result_id);
-															}else{
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
-															}
-															if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-																if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-																	$block2[$s1value['id']] = $s1value['name'];
-																}
-															}
-														}
-													}
-												}
 											}
 										}
 									}
-								}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-									$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-									foreach($sub2Allergens as $s2value){
-										$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-										if(!empty($sub2Vlu->raptor_code)){
-											if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-											}else{
-												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-											}
-											if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
+								}
+							}else{
+								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+								foreach($sub2Allergens as $s2value){
+									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+									if(!empty($sub2Vlu->raptor_code)){
+										$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+										if(!empty($raptr2Vlu)){
+											if($raptr2Vlu->result_value >= 30){
 												if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
 													$block2[$s2value['id']] = $s2value['name'];
 												}
@@ -11803,19 +11368,17 @@ class Orders extends CI_Controller{
 										}
 									}
 								}
-							}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-								foreach($sub2Allergens as $s2value){
-									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-									if(!empty($sub2Vlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-											if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-												$block2[$s2value['id']] = $s2value['name'];
+							}
+						}else{
+							$sub3Allergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
+							foreach($sub3Allergens as $s3value){
+								$sub3Vlu = $this->OrdersModel->getsubAllergensCode($s3value['id']);
+								if(!empty($sub3Vlu->raptor_code)){
+									$raptr3Vlu = $this->OrdersModel->getRaptorValue($sub3Vlu->raptor_code,$raptorData->result_id);
+									if(!empty($raptr3Vlu)){
+										if($raptr3Vlu->result_value >= 30){
+											if($s3value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s3value['id']) > 0){
+												$block2[$s3value['id']] = $s3value['name'];
 											}
 										}
 									}
@@ -11823,22 +11386,13 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
-					if(!array_key_exists("81",$block2) && array_key_exists("81",$compPart)){
-						$block2[81] = $this->AllergensModel->getAllergennameById(81);
-					}
-					if(array_key_exists("26",$block2) && array_key_exists("27",$block2)){
-						unset($block2['27']);
-					}
-					if($mix_cunt == 0){
-						$block2 = [];
-					}
 					if(array_key_exists("45994",$block2) && array_key_exists("73",$block2)){
 						unset($block2['45994']);
 					}elseif(array_key_exists("45994",$block2)){
 						unset($block2['45994']);
 						$block2['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($order_details['treatment_2'] != "" && $order_details['treatment_2'] != "[]"){
+					if($data['treatment_2'] != "" && $data['treatment_2'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_2']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
@@ -11855,38 +11409,9 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
+					//asort($block2);
 					$this->_data['block2'] = $block2;
 
-					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = [];$allengesIDsArr = array(); $dummytext = "";
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
-							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-							if(!empty($subVlu->raptor_code)){
-								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID3Arr[] = $svalue['id'];
-											}
-										}else{
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID4Arr[] = $svalue['id'];
-											}
-										}
-										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-											$allengesIDArr[] = $svalue['id'];
-										}
-										$allengesIDsArr[] = $svalue['id'];
-										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
-							}
-						}
-					}
 					if(count($allengesArr) > 1){
 						asort($allengesArr);
 						$lastchnk = end($allengesArr);
@@ -12012,7 +11537,7 @@ class Orders extends CI_Controller{
 						$mpdf->SetHTMLFooter($pageno_footer_pdf);
 						$mpdf->WriteHTML($positive_faq_pdf);
 					}
-				}elseif($respnedn->name == 'PAX Environmental + Food' || $respnedn->name == 'PAX Environmental + Food Screening Expanded'){
+				}elseif($respnedn->name == 'PAX Environmental + Food'){
 					$getAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($order_details['allergens']);
 					$totalGroup0 = count($getAllergenParent);
 					$totalGroup2 = $totalGroup0/2;
@@ -12021,253 +11546,45 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$blocks1 = []; $compgrassIDArr = $extrIDArr = $compIDArr = []; $mitecompIDArr = [];
+					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = []; $block1 = []; $blocks1 = []; $allengesIDsArr = array();
 					foreach ($getAllergenParent as $apkey => $apvalue){
-						if($apvalue['pax_parent_id'] == '1'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$compCount = 0;
-							foreach($subAllergens as $skey => $cvalue){
-								$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu)){
-										if(floor($raptrVlu->result_value) >= $cutoffs){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 3){
-												$compCount++;
-												$compgrassIDArr[] = $cvalue['id'];
-											}
-										}
-									}
-								}
-							}
-							if($compCount > 0){
-								foreach ($subAllergens as $skey => $svalue) {
-									if(in_array($svalue['id'],$compgrassIDArr)){
-										$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-										if(!empty($subVlu->raptor_code)){
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-											if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-												if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-													$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-													if($ctype->em_allergen == 3){
-														$compIDArr[] = $ctype->id;
-													}
-												}else{
-													$blocks1[$svalue['id']] = $svalue['name'];
-												}
-											}
-										}
-									}
-								}
-							}else{
-								foreach ($subAllergens as $skey => $svalue) {
-									$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-									if(!empty($subVlu->raptor_code)){
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-										if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-											if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-												$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-												if($ctype->em_allergen == 2){
-													$extrIDArr[$svalue['id']] = $svalue['name'];
-												}
-											}else{
-												$blocks1[$svalue['id']] = $svalue['name'];
-											}
-										}
-									}
-								}
-							}
-						}elseif($apvalue['pax_parent_id'] == '45958'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$positiveCode = [];
-							foreach ($subAllergens as $skey => $svalue) {
-								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['pax_name'] != "N/A"){
-											$positiveCode[] = $raptrVlu->name;
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrIDArr[$svalue['id']] = $svalue['name'];
-											}
-											if($ctype->em_allergen == 3){
-												$compIDArr[] = $ctype->id;
-											}
-											if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											}else{
-												$blocks1[$svalue['id']] = $svalue['name'];
-											}
-										}
-									}
-								}
-							}
-
-							if(!empty($positiveCode)){
-								if(in_array("Blo t 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Per a 7",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-								}
-								if(in_array("Per a 7",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-									$mitecompIDArr[] = 73;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Per a 7",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 73;
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Per a 7",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-									$mitecompIDArr[] = 73;
-								}
-							}
-						}else{
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							foreach ($subAllergens as $skey => $svalue) {
-								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									if($apvalue['pax_parent_id'] == '45966' && $svalue['id'] == '81'){
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code.', Mala p',$raptorData->result_id);
-									}else{
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									}
-									if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
+						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
+						foreach ($subAllergens as $skey => $svalue) {
+							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+							if(!empty($subVlu->raptor_code)){
+								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+								if(!empty($raptrVlu)){
+									if(floor($raptrVlu->result_value) >= $cutoffs){
 										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrIDArr[$svalue['id']] = $svalue['name'];
+											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+												$allengesID3Arr[] = $svalue['id'];
 											}
-											if($ctype->em_allergen == 3){
-												$compIDArr[] = $ctype->id;
-											}
+											$block1[$svalue['id']] = $svalue['name'];
 										}else{
+											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+												$allengesID4Arr[] = $svalue['id'];
+											}
 											$blocks1[$svalue['id']] = $svalue['name'];
 										}
+										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+											$allengesIDArr[] = $svalue['id'];
+										}
+										$allengesIDsArr[] = $svalue['id'];
+										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 									}
 								}
 							}
 						}
 					}
-					$compPart = [];
-					if(!empty($compIDArr)){
-						$finalTretements = $this->AllergensModel->getRaptorComponentsGroupBy($compIDArr,$raptorData->result_id);
-						$funcArr = [];
-						foreach($finalTretements as $favalue){
-							if(in_array("".strtolower($favalue->raptor_function)."",$funcArr)){
-								$samcomp = $this->AllergensModel->getRaptorSameComponents($favalue->raptor_function,$compIDArr,$raptorData->result_id);
-								$allvaluesArr = array();
-								foreach($samcomp as $srow){
-									$allvaluesArr[] = $srow->result_value;
-								}
-								if(count(array_unique($allvaluesArr)) === 1){
-									if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0 && !in_array($favalue->allergens_id,array_unique($mitecompIDArr))){
-										$compPart[$favalue->allergens_id] = $favalue->name;
-									}
-								}elseif($favalue->pax_parent_id == '1'){
-									$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown(1, $order_details['allergens']);
-									$compCount = 0;
-									foreach($subAllergens as $skey => $cvalue){
-										if($cvalue['id'] != $favalue->allergens_id){
-											$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-											if(!empty($subVlu->raptor_code)){
-												$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-													$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-													if($ctype->em_allergen == 3){
-														$compCount++;
-													}
-												}
-											}
-										}
-									}
-									if($compCount == 0){
-										foreach ($subAllergens as $skey => $svalue) {
-											$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-											if(!empty($subVlu->raptor_code)){
-												$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-													if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-														$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-														if($ctype->em_allergen == 2){
-															$extrIDArr[$svalue['id']] = $svalue['name'];
-														}
-													}else{
-														$blocks1[$svalue['id']] = $svalue['name'];
-													}
-												}
-											}
-										}
-									}
-								}else{
-									$subVlu = $this->AllergensModel->getsubAllergensCodeForSecondHigherValue($favalue->allergens_id,$favalue->raptor_code);
-									if(!empty($subVlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $favalue->allergens_id == '81'){
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-											if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0){
-												$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-												if($ctype->em_allergen == 3){
-													$compPart[$favalue->allergens_id] = $favalue->name;
-												}
-											}else{
-												$blocks1[$favalue->allergens_id] = $favalue->name;
-											}
-										}
-									}
-								}
-							}else{
-								$funcArr[] = strtolower($favalue->raptor_function);
-								if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0 && !in_array($favalue->allergens_id,array_unique($mitecompIDArr))){
-									$compPart[$favalue->allergens_id] = $favalue->name;
-								}
-							}
-						}
-					}
-					if(!empty($extrIDArr)){
-						foreach($extrIDArr as $ekey => $evalue){
-							if($ekey != $compPart[$ekey]){
-								$compPart[$ekey] = $evalue;
-							}
-						}
-					}
-					$block1 = $compPart;
-					$block1IDArr = [];
-					if(!empty($block1)){
-						foreach($block1 as $bkey => $bvalue){
-							$block1IDArr[] = $bkey;
-						}
-					}
-					$block1IDArr = json_encode($block1IDArr);
 					if(array_key_exists("45994",$block1) && array_key_exists("73",$block1)){
 						unset($block1['45994']);
 					}elseif(array_key_exists("45994",$block1)){
 						unset($block1['45994']);
 						$block1['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($order_details['treatment_1'] != "" && $order_details['treatment_1'] != "[]"){
+					if($data['treatment_1'] != "" && $data['treatment_1'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_1']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
@@ -12284,180 +11601,80 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
+					//asort($block1);
 					$this->_data['block1'] = $block1;
 					$this->_data['blocks1'] = $blocks1;
 
-					$block2 = []; $chk_alg_cunt = 0; $mix_cunt = 0;
+					$block2 = []; $chk_alg_cunt = 0;
 					foreach($getAllergenParent as $apvalue){
-						if($apvalue['pax_parent_id'] == '1'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$compCount = 0; $extrCount = 0;
-							foreach($subAllergens as $skey => $cvalue){
-								$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu)){
-										if(floor($raptrVlu->result_value) >= $cutoffs){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrCount++;
-											}
-											if($ctype->em_allergen == 3){
-												$compCount++;
-											}
-										}
-									}
+						$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
+						if(!empty($getGroupMixtures)){
+							$parentIdArr = [];
+							foreach($getGroupMixtures as $mvalue){
+								if($mvalue['mixture_allergens'] != "" && $mvalue['mixture_allergens'] != "null"){
+									$parentIdArr[] = $mvalue['id'];
 								}
 							}
-							if($compCount == 0 && $extrCount >= 3){
-								$mix_cunt += 1;
-								$block2[10] = $this->AllergensModel->getAllergennameById(10);
-							}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-								foreach($sub2Allergens as $s2value){
-									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-									if(!empty($sub2Vlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-											if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-												$block2[$s2value['id']] = $s2value['name'];
-											}
-										}
-									}
-								}
-							}
-						}else{
-							$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
-							if(!empty($getGroupMixtures)){
-								$parentIdArr = [];
-								foreach($getGroupMixtures as $mvalue){
-									if($mvalue['mixture_allergens'] != "" && $mvalue['mixture_allergens'] != "null"){
-										$parentIdArr[] = $mvalue['id'];
-									}
-								}
-								if(!empty($parentIdArr)){
-									if(count($parentIdArr) > 1){
-										$emptyArr = [];
-										foreach($parentIdArr as $makey=>$mavalue){
-											$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
-											$testingArr = [];
-											foreach($allergenArr as $amid){
-												$rmcodes = $this->OrdersModel->getsubAllergensCode($amid);
-												if(!empty($rmcodes->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $mavalue == '81'){
-														$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptrmVlu) && floor($raptrmVlu->result_value) >= $cutoffs){
+
+							if(!empty($parentIdArr)){
+								if(count($parentIdArr) > 1){
+									foreach($parentIdArr as $makey=>$mavalue){
+										$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
+										$testingArr = [];
+										foreach($allergenArr as $amid){
+											$rmcodes = $this->OrdersModel->getsubAllergensCode($amid);
+											if(!empty($rmcodes->raptor_code)){
+												$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
+												if(!empty($raptrmVlu)){
+													if(floor($raptrmVlu->result_value) >= $cutoffs){
 														$testingArr[$mavalue] += 1;
 													}
 												}
 											}
+										}
 
-											if(count($allergenArr) >= 3){
-												$chk_alg_cunt = (count($allergenArr)-1);
-												if($testingArr[$mavalue] >= $chk_alg_cunt){
-													if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-														$mix_cunt += 1;
-														$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-													}
-													foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
-														$emptyArr[$apvalue['parent_id']][] = $emtrow;
-													}
+										if(count($allergenArr) >= 3){
+											$chk_alg_cunt = (count($allergenArr)-1);
+											if($testingArr[$mavalue] >= $chk_alg_cunt){
+												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
 												}
-											}else{
-												if($testingArr[$mavalue] >= 2){
-													if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-														$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-														$mix_cunt += 1;
-													}
-													foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
-														$emptyArr[$apvalue['parent_id']][] = $emtrow;
-													}
+											}
+										}else{
+											if($testingArr[$mavalue] >= 2){
+												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
 												}
 											}
 										}
-										if(!empty($emptyArr[$apvalue['parent_id']]) && !empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-											$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown_empty($apvalue['parent_id'],$block1IDArr, $emptyArr[$apvalue['parent_id']]);
-											foreach($sub1Allergens as $s1value){
-												$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-												if(!empty($sub1Vlu->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-														$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-															$block2[$s1value['id']] = $s1value['name'];
-														}
-													}
-												}
-											}
-										}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-											$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-											foreach($sub2Allergens as $s2value){
-												$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-												if(!empty($sub2Vlu->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-														$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-															$block2[$s2value['id']] = $s2value['name'];
-														}
-													}
-												}
-											}
-										}
-									}else{
-										$allergensArr = json_decode($getGroupMixtures[0]['mixture_allergens']);
-										$tested = 0;
-										foreach($allergensArr as $aid){
-											$rcodes = $this->OrdersModel->getsubAllergensCode($aid);
-											if(!empty($rcodes->raptor_code)){
-												if($apvalue['pax_parent_id'] == '45966' && $aid == '81'){
-													$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code.', Mala p',$raptorData->result_id);
-												}else{
-													$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
-												}
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
+									}
+								}else{
+									$allergensArr = json_decode($getGroupMixtures[0]['mixture_allergens']);
+									$tested = 0;
+									foreach($allergensArr as $aid){
+										$rcodes = $this->OrdersModel->getsubAllergensCode($aid);
+										if(!empty($rcodes->raptor_code)){
+											$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
+											if(!empty($raptrVlu)){
+												if(floor($raptrVlu->result_value) >= $cutoffs){
 													$tested++;
 												}
 											}
 										}
-
+									}
+									
+									if($apvalue['parent_id'] == 1){
+										if($tested >= 3){
+											if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
+												$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+											}
+										}
+									}else{
 										if(count($allergensArr) >= 3){
 											$chk_alg_cunt = (count($allergensArr)-1);
 											if($tested >= $chk_alg_cunt){
 												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
 													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-													$mix_cunt += 1;
-												}
-												if(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-													$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$block1IDArr, $getGroupMixtures[0]['mixture_allergens']);
-													foreach($sub1Allergens as $s1value){
-														$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-														if(!empty($sub1Vlu->raptor_code)){
-															if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-															}else{
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-															}
-															if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-																if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-																	$block2[$s1value['id']] = $s1value['name'];
-																}
-															}
-														}
-													}
 												}
 											}
 										}else{
@@ -12465,38 +11682,18 @@ class Orders extends CI_Controller{
 												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
 													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
 												}
-												if(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-													$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$block1IDArr, $getGroupMixtures[0]['mixture_allergens']);
-													foreach($sub1Allergens as $s1value){
-														$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-														if(!empty($sub1Vlu->raptor_code)){
-															if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code.', Mala p',$raptorData->result_id);
-															}else{
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
-															}
-															if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-																if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-																	$block2[$s1value['id']] = $s1value['name'];
-																}
-															}
-														}
-													}
-												}
 											}
 										}
 									}
-								}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-									$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-									foreach($sub2Allergens as $s2value){
-										$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-										if(!empty($sub2Vlu->raptor_code)){
-											if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-											}else{
-												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-											}
-											if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
+								}
+							}else{
+								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+								foreach($sub2Allergens as $s2value){
+									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+									if(!empty($sub2Vlu->raptor_code)){
+										$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+										if(!empty($raptr2Vlu)){
+											if($raptr2Vlu->result_value >= 30){
 												if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
 													$block2[$s2value['id']] = $s2value['name'];
 												}
@@ -12504,19 +11701,17 @@ class Orders extends CI_Controller{
 										}
 									}
 								}
-							}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-								foreach($sub2Allergens as $s2value){
-									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-									if(!empty($sub2Vlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-											if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-												$block2[$s2value['id']] = $s2value['name'];
+							}
+						}else{
+							$sub3Allergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
+							foreach($sub3Allergens as $s3value){
+								$sub3Vlu = $this->OrdersModel->getsubAllergensCode($s3value['id']);
+								if(!empty($sub3Vlu->raptor_code)){
+									$raptr3Vlu = $this->OrdersModel->getRaptorValue($sub3Vlu->raptor_code,$raptorData->result_id);
+									if(!empty($raptr3Vlu)){
+										if($raptr3Vlu->result_value >= 30){
+											if($s3value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s3value['id']) > 0){
+												$block2[$s3value['id']] = $s3value['name'];
 											}
 										}
 									}
@@ -12524,22 +11719,13 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
-					if(!array_key_exists("81",$block2) && array_key_exists("81",$compPart)){
-						$block2[81] = $this->AllergensModel->getAllergennameById(81);
-					}
-					if(array_key_exists("26",$block2) && array_key_exists("27",$block2)){
-						unset($block2['27']);
-					}
-					if($mix_cunt == 0){
-						$block2 = [];
-					}
 					if(array_key_exists("45994",$block2) && array_key_exists("73",$block2)){
 						unset($block2['45994']);
 					}elseif(array_key_exists("45994",$block2)){
 						unset($block2['45994']);
 						$block2['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($order_details['treatment_2'] != "" && $order_details['treatment_2'] != "[]"){
+					if($data['treatment_2'] != "" && $data['treatment_2'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_2']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
@@ -12556,38 +11742,8 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
+					//asort($block2);
 					$this->_data['block2'] = $block2;
-
-					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = [];$allengesIDsArr = array(); $dummytext = "";
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
-							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-							if(!empty($subVlu->raptor_code)){
-								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID3Arr[] = $svalue['id'];
-											}
-										}else{
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID4Arr[] = $svalue['id'];
-											}
-										}
-										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-											$allengesIDArr[] = $svalue['id'];
-										}
-										$allengesIDsArr[] = $svalue['id'];
-										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
-							}
-						}
-					}
 
 					if(count($allengesArr) > 1){
 						asort($allengesArr);
@@ -12752,7 +11908,7 @@ class Orders extends CI_Controller{
 			$petownerName = $petOWFName.' '.$petOWLName;
 
 			$respnedn = $this->OrdersModel->getProductInfo($data['product_code_selection']);
-			if(preg_match('/\bScreening\b/', $respnedn->name) && !preg_match('/\bExpanded\b/', $respnedn->name)){
+			if(preg_match('/\bScreening\b/', $respnedn->name)){
 				ob_end_flush();
 				require_once(FCPATH.'vendor_pdf/autoload.php');
 				$mpdf = new Mpdf\Mpdf(['mode' => 'utf-8', 'format' => 'A4',]);
@@ -12784,7 +11940,7 @@ class Orders extends CI_Controller{
 				$this->_data['ordeType'] = $respnedn->name;
 				$this->_data['ordeTypeID'] = $respnedn->id;
 
-				if($respnedn->name == 'PAX Food' || $respnedn->name == 'PAX Food Screening Expanded'){
+				if($respnedn->name == 'PAX Food'){
 					$getAllergenParent = $this->AllergensModel->getFoodAllergenParentbyName($data['allergens']);
 					$totalGroup0 = count($getAllergenParent);
 					$totalGroup2 = $totalGroup0/2;
@@ -12928,7 +12084,7 @@ class Orders extends CI_Controller{
 						$mpdf->SetHTMLFooter($diet_chart_footer_pdf);
 						$mpdf->WriteHTML($diet_chart_pdf);
 					}
-				}elseif($respnedn->name == 'PAX Environmental + Food' || $respnedn->name == 'PAX Environmental + Food Screening Expanded'){
+				}elseif($respnedn->name == 'PAX Environmental + Food'){
 					$getAllergenParent = [];
 					$getAllergenParent = $this->AllergensModel->getFoodAllergenParentbyName($order_details['allergens']);
 					$totalGroup0 = count($getAllergenParent);
@@ -13126,7 +12282,7 @@ class Orders extends CI_Controller{
 			$petOWLName = !empty($data['po_last'])?$data['po_last']:'';
 			$petownerName = $petOWFName.' '.$petOWLName;
 			$respnedn = $this->OrdersModel->getProductInfo($data['product_code_selection']);
-			if(preg_match('/\bScreening\b/', $respnedn->name) && !preg_match('/\bExpanded\b/', $respnedn->name)){
+			if(preg_match('/\bScreening\b/', $respnedn->name)){
 				$pdfNameEnv = seo_friendly_url('PAX_Environmental_Screening_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
 				$pdfNameFood = seo_friendly_url('PAX_Food_Screening_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
 				$file_name = FCPATH . SERUM_REQUEST_PDF_PATH . $pdfNameEnv .".pdf";
@@ -13175,11 +12331,7 @@ class Orders extends CI_Controller{
 					}
 					$mpdf->SetHTMLFooter($raptor_footer_pdf);
 					$mpdf->WriteHTML($screening_header);
-					if($respnedn->name == 'PAX Food Screening'){
-						$mpdf->Output($file_name_food,'F');
-					}else{
-						$mpdf->Output($file_name,'F');
-					}
+					$mpdf->Output($file_name,'F');
 				}
 			}else{
 				$pdfNameEnv = seo_friendly_url('PAX_Environmental_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
@@ -13220,7 +12372,7 @@ class Orders extends CI_Controller{
 					$removed_treatment_2 = json_decode($removed_treatment_2);
 				}
 
-				if($respnedn->name == 'PAX Environmental' || $respnedn->name == 'PAX Environmental Screening Expanded'){
+				if($respnedn->name == 'PAX Environmental'){
 					$getAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($order_details['allergens']);
 					$totalGroup0 = count($getAllergenParent);
 					$totalGroup2 = $totalGroup0/2;
@@ -13229,253 +12381,45 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$blocks1 = []; $compgrassIDArr = $extrIDArr = $compIDArr = []; $mitecompIDArr = [];
+					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = []; $block1 = []; $blocks1 = []; $allengesIDsArr = array();
 					foreach ($getAllergenParent as $apkey => $apvalue){
-						if($apvalue['pax_parent_id'] == '1'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$compCount = 0;
-							foreach($subAllergens as $skey => $cvalue){
-								$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu)){
-										if(floor($raptrVlu->result_value) >= $cutoffs){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 3){
-												$compCount++;
-												$compgrassIDArr[] = $cvalue['id'];
-											}
-										}
-									}
-								}
-							}
-							if($compCount > 0){
-								foreach ($subAllergens as $skey => $svalue) {
-									if(in_array($svalue['id'],$compgrassIDArr)){
-										$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-										if(!empty($subVlu->raptor_code)){
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-											if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-												if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-													$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-													if($ctype->em_allergen == 3){
-														$compIDArr[] = $ctype->id;
-													}
-												}else{
-													$blocks1[$svalue['id']] = $svalue['name'];
-												}
-											}
-										}
-									}
-								}
-							}else{
-								foreach ($subAllergens as $skey => $svalue) {
-									$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-									if(!empty($subVlu->raptor_code)){
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-										if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-											if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-												$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-												if($ctype->em_allergen == 2){
-													$extrIDArr[$svalue['id']] = $svalue['name'];
-												}
-											}else{
-												$blocks1[$svalue['id']] = $svalue['name'];
-											}
-										}
-									}
-								}
-							}
-						}elseif($apvalue['pax_parent_id'] == '45958'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$positiveCode = [];
-							foreach ($subAllergens as $skey => $svalue) {
-								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['pax_name'] != "N/A"){
-											$positiveCode[] = $raptrVlu->name;
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrIDArr[$svalue['id']] = $svalue['name'];
-											}
-											if($ctype->em_allergen == 3){
-												$compIDArr[] = $ctype->id;
-											}
-											if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											}else{
-												$blocks1[$svalue['id']] = $svalue['name'];
-											}
-										}
-									}
-								}
-							}
-
-							if(!empty($positiveCode)){
-								if(in_array("Blo t 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Per a 7",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-								}
-								if(in_array("Per a 7",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-									$mitecompIDArr[] = 73;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Per a 7",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 73;
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Per a 7",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-									$mitecompIDArr[] = 73;
-								}
-							}
-						}else{
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							foreach ($subAllergens as $skey => $svalue) {
-								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									if($apvalue['pax_parent_id'] == '45966' && $svalue['id'] == '81'){
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code.', Mala p',$raptorData->result_id);
-									}else{
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									}
-									if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
+						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
+						foreach ($subAllergens as $skey => $svalue) {
+							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+							if(!empty($subVlu->raptor_code)){
+								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+								if(!empty($raptrVlu)){
+									if(floor($raptrVlu->result_value) >= $cutoffs){
 										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrIDArr[$svalue['id']] = $svalue['name'];
+											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+												$allengesID3Arr[] = $svalue['id'];
 											}
-											if($ctype->em_allergen == 3){
-												$compIDArr[] = $ctype->id;
-											}
+											$block1[$svalue['id']] = $svalue['name'];
 										}else{
+											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+												$allengesID4Arr[] = $svalue['id'];
+											}
 											$blocks1[$svalue['id']] = $svalue['name'];
 										}
+										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+											$allengesIDArr[] = $svalue['id'];
+										}
+										$allengesIDsArr[] = $svalue['id'];
+										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 									}
 								}
 							}
 						}
 					}
-					$compPart = [];
-					if(!empty($compIDArr)){
-						$finalTretements = $this->AllergensModel->getRaptorComponentsGroupBy($compIDArr,$raptorData->result_id);
-						$funcArr = [];
-						foreach($finalTretements as $favalue){
-							if(in_array("".strtolower($favalue->raptor_function)."",$funcArr)){
-								$samcomp = $this->AllergensModel->getRaptorSameComponents($favalue->raptor_function,$compIDArr,$raptorData->result_id);
-								$allvaluesArr = array();
-								foreach($samcomp as $srow){
-									$allvaluesArr[] = $srow->result_value;
-								}
-								if(count(array_unique($allvaluesArr)) === 1){
-									if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0 && !in_array($favalue->allergens_id,array_unique($mitecompIDArr))){
-										$compPart[$favalue->allergens_id] = $favalue->name;
-									}
-								}elseif($favalue->pax_parent_id == '1'){
-									$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown(1, $order_details['allergens']);
-									$compCount = 0;
-									foreach($subAllergens as $skey => $cvalue){
-										if($cvalue['id'] != $favalue->allergens_id){
-											$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-											if(!empty($subVlu->raptor_code)){
-												$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-													$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-													if($ctype->em_allergen == 3){
-														$compCount++;
-													}
-												}
-											}
-										}
-									}
-									if($compCount == 0){
-										foreach ($subAllergens as $skey => $svalue) {
-											$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-											if(!empty($subVlu->raptor_code)){
-												$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-													if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-														$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-														if($ctype->em_allergen == 2){
-															$extrIDArr[$svalue['id']] = $svalue['name'];
-														}
-													}else{
-														$blocks1[$svalue['id']] = $svalue['name'];
-													}
-												}
-											}
-										}
-									}
-								}else{
-									$subVlu = $this->AllergensModel->getsubAllergensCodeForSecondHigherValue($favalue->allergens_id,$favalue->raptor_code);
-									if(!empty($subVlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $favalue->allergens_id == '81'){
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-											if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0){
-												$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-												if($ctype->em_allergen == 3){
-													$compPart[$favalue->allergens_id] = $favalue->name;
-												}
-											}else{
-												$blocks1[$favalue->allergens_id] = $favalue->name;
-											}
-										}
-									}
-								}
-							}else{
-								$funcArr[] = strtolower($favalue->raptor_function);
-								if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0 && !in_array($favalue->allergens_id,array_unique($mitecompIDArr))){
-									$compPart[$favalue->allergens_id] = $favalue->name;
-								}
-							}
-						}
-					}
-					if(!empty($extrIDArr)){
-						foreach($extrIDArr as $ekey => $evalue){
-							if($ekey != $compPart[$ekey]){
-								$compPart[$ekey] = $evalue;
-							}
-						}
-					}
-					$block1 = $compPart;
-					$block1IDArr = [];
-					if(!empty($block1)){
-						foreach($block1 as $bkey => $bvalue){
-							$block1IDArr[] = $bkey;
-						}
-					}
-					$block1IDArr = json_encode($block1IDArr);
 					if(array_key_exists("45994",$block1) && array_key_exists("73",$block1)){
 						unset($block1['45994']);
 					}elseif(array_key_exists("45994",$block1)){
 						unset($block1['45994']);
 						$block1['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($order_details['treatment_1'] != "" && $order_details['treatment_1'] != "[]"){
+					if($data['treatment_1'] != "" && $data['treatment_1'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_1']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
@@ -13492,180 +12436,80 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
+					//asort($block1);
 					$this->_data['block1'] = $block1;
 					$this->_data['blocks1'] = $blocks1;
 
-					$block2 = []; $chk_alg_cunt = 0; $mix_cunt = 0;
+					$block2 = []; $chk_alg_cunt = 0;
 					foreach($getAllergenParent as $apvalue){
-						if($apvalue['pax_parent_id'] == '1'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$compCount = 0; $extrCount = 0;
-							foreach($subAllergens as $skey => $cvalue){
-								$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu)){
-										if(floor($raptrVlu->result_value) >= $cutoffs){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrCount++;
-											}
-											if($ctype->em_allergen == 3){
-												$compCount++;
-											}
-										}
-									}
+						$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
+						if(!empty($getGroupMixtures)){
+							$parentIdArr = [];
+							foreach($getGroupMixtures as $mvalue){
+								if($mvalue['mixture_allergens'] != "" && $mvalue['mixture_allergens'] != "null"){
+									$parentIdArr[] = $mvalue['id'];
 								}
 							}
-							if($compCount == 0 && $extrCount >= 3){
-								$mix_cunt += 1;
-								$block2[10] = $this->AllergensModel->getAllergennameById(10);
-							}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-								foreach($sub2Allergens as $s2value){
-									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-									if(!empty($sub2Vlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-											if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-												$block2[$s2value['id']] = $s2value['name'];
-											}
-										}
-									}
-								}
-							}
-						}else{
-							$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
-							if(!empty($getGroupMixtures)){
-								$parentIdArr = [];
-								foreach($getGroupMixtures as $mvalue){
-									if($mvalue['mixture_allergens'] != "" && $mvalue['mixture_allergens'] != "null"){
-										$parentIdArr[] = $mvalue['id'];
-									}
-								}
-								if(!empty($parentIdArr)){
-									if(count($parentIdArr) > 1){
-										$emptyArr = [];
-										foreach($parentIdArr as $makey=>$mavalue){
-											$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
-											$testingArr = [];
-											foreach($allergenArr as $amid){
-												$rmcodes = $this->OrdersModel->getsubAllergensCode($amid);
-												if(!empty($rmcodes->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $mavalue == '81'){
-														$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptrmVlu) && floor($raptrmVlu->result_value) >= $cutoffs){
+
+							if(!empty($parentIdArr)){
+								if(count($parentIdArr) > 1){
+									foreach($parentIdArr as $makey=>$mavalue){
+										$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
+										$testingArr = [];
+										foreach($allergenArr as $amid){
+											$rmcodes = $this->OrdersModel->getsubAllergensCode($amid);
+											if(!empty($rmcodes->raptor_code)){
+												$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
+												if(!empty($raptrmVlu)){
+													if(floor($raptrmVlu->result_value) >= $cutoffs){
 														$testingArr[$mavalue] += 1;
 													}
 												}
 											}
+										}
 
-											if(count($allergenArr) >= 3){
-												$chk_alg_cunt = (count($allergenArr)-1);
-												if($testingArr[$mavalue] >= $chk_alg_cunt){
-													if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-														$mix_cunt += 1;
-														$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-													}
-													foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
-														$emptyArr[$apvalue['parent_id']][] = $emtrow;
-													}
+										if(count($allergenArr) >= 3){
+											$chk_alg_cunt = (count($allergenArr)-1);
+											if($testingArr[$mavalue] >= $chk_alg_cunt){
+												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
 												}
-											}else{
-												if($testingArr[$mavalue] >= 2){
-													if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-														$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-														$mix_cunt += 1;
-													}
-													foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
-														$emptyArr[$apvalue['parent_id']][] = $emtrow;
-													}
+											}
+										}else{
+											if($testingArr[$mavalue] >= 2){
+												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
 												}
 											}
 										}
-										if(!empty($emptyArr[$apvalue['parent_id']]) && !empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-											$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown_empty($apvalue['parent_id'],$block1IDArr, $emptyArr[$apvalue['parent_id']]);
-											foreach($sub1Allergens as $s1value){
-												$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-												if(!empty($sub1Vlu->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-														$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-															$block2[$s1value['id']] = $s1value['name'];
-														}
-													}
-												}
-											}
-										}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-											$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-											foreach($sub2Allergens as $s2value){
-												$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-												if(!empty($sub2Vlu->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-														$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-															$block2[$s2value['id']] = $s2value['name'];
-														}
-													}
-												}
-											}
-										}
-									}else{
-										$allergensArr = json_decode($getGroupMixtures[0]['mixture_allergens']);
-										$tested = 0;
-										foreach($allergensArr as $aid){
-											$rcodes = $this->OrdersModel->getsubAllergensCode($aid);
-											if(!empty($rcodes->raptor_code)){
-												if($apvalue['pax_parent_id'] == '45966' && $aid == '81'){
-													$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code.', Mala p',$raptorData->result_id);
-												}else{
-													$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
-												}
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
+									}
+								}else{
+									$allergensArr = json_decode($getGroupMixtures[0]['mixture_allergens']);
+									$tested = 0;
+									foreach($allergensArr as $aid){
+										$rcodes = $this->OrdersModel->getsubAllergensCode($aid);
+										if(!empty($rcodes->raptor_code)){
+											$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
+											if(!empty($raptrVlu)){
+												if(floor($raptrVlu->result_value) >= $cutoffs){
 													$tested++;
 												}
 											}
 										}
-
+									}
+									
+									if($apvalue['parent_id'] == 1){
+										if($tested >= 3){
+											if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
+												$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+											}
+										}
+									}else{
 										if(count($allergensArr) >= 3){
 											$chk_alg_cunt = (count($allergensArr)-1);
 											if($tested >= $chk_alg_cunt){
 												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
 													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-													$mix_cunt += 1;
-												}
-												if(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-													$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$block1IDArr, $getGroupMixtures[0]['mixture_allergens']);
-													foreach($sub1Allergens as $s1value){
-														$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-														if(!empty($sub1Vlu->raptor_code)){
-															if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-															}else{
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-															}
-															if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-																if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-																	$block2[$s1value['id']] = $s1value['name'];
-																}
-															}
-														}
-													}
 												}
 											}
 										}else{
@@ -13673,38 +12517,18 @@ class Orders extends CI_Controller{
 												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
 													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
 												}
-												if(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-													$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$block1IDArr, $getGroupMixtures[0]['mixture_allergens']);
-													foreach($sub1Allergens as $s1value){
-														$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-														if(!empty($sub1Vlu->raptor_code)){
-															if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code.', Mala p',$raptorData->result_id);
-															}else{
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
-															}
-															if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-																if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-																	$block2[$s1value['id']] = $s1value['name'];
-																}
-															}
-														}
-													}
-												}
 											}
 										}
 									}
-								}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-									$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-									foreach($sub2Allergens as $s2value){
-										$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-										if(!empty($sub2Vlu->raptor_code)){
-											if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-											}else{
-												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-											}
-											if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
+								}
+							}else{
+								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+								foreach($sub2Allergens as $s2value){
+									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+									if(!empty($sub2Vlu->raptor_code)){
+										$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+										if(!empty($raptr2Vlu)){
+											if($raptr2Vlu->result_value >= 30){
 												if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
 													$block2[$s2value['id']] = $s2value['name'];
 												}
@@ -13712,19 +12536,17 @@ class Orders extends CI_Controller{
 										}
 									}
 								}
-							}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-								foreach($sub2Allergens as $s2value){
-									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-									if(!empty($sub2Vlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-											if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-												$block2[$s2value['id']] = $s2value['name'];
+							}
+						}else{
+							$sub3Allergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
+							foreach($sub3Allergens as $s3value){
+								$sub3Vlu = $this->OrdersModel->getsubAllergensCode($s3value['id']);
+								if(!empty($sub3Vlu->raptor_code)){
+									$raptr3Vlu = $this->OrdersModel->getRaptorValue($sub3Vlu->raptor_code,$raptorData->result_id);
+									if(!empty($raptr3Vlu)){
+										if($raptr3Vlu->result_value >= 30){
+											if($s3value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s3value['id']) > 0){
+												$block2[$s3value['id']] = $s3value['name'];
 											}
 										}
 									}
@@ -13732,22 +12554,13 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
-					if(!array_key_exists("81",$block2) && array_key_exists("81",$compPart)){
-						$block2[81] = $this->AllergensModel->getAllergennameById(81);
-					}
-					if(array_key_exists("26",$block2) && array_key_exists("27",$block2)){
-						unset($block2['27']);
-					}
-					if($mix_cunt == 0){
-						$block2 = [];
-					}
 					if(array_key_exists("45994",$block2) && array_key_exists("73",$block2)){
 						unset($block2['45994']);
 					}elseif(array_key_exists("45994",$block2)){
 						unset($block2['45994']);
 						$block2['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($order_details['treatment_2'] != "" && $order_details['treatment_2'] != "[]"){
+					if($data['treatment_2'] != "" && $data['treatment_2'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_2']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
@@ -13764,38 +12577,8 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
+					//asort($block2);
 					$this->_data['block2'] = $block2;
-
-					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = [];$allengesIDsArr = array(); $dummytext = "";
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
-							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-							if(!empty($subVlu->raptor_code)){
-								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID3Arr[] = $svalue['id'];
-											}
-										}else{
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID4Arr[] = $svalue['id'];
-											}
-										}
-										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-											$allengesIDArr[] = $svalue['id'];
-										}
-										$allengesIDsArr[] = $svalue['id'];
-										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
-							}
-						}
-					}
 
 					if(count($allengesArr) > 1){
 						asort($allengesArr);
@@ -13923,7 +12706,7 @@ class Orders extends CI_Controller{
 						$mpdf->WriteHTML($positive_faq_pdf);
 					}
 					$mpdf->Output($file_name,'F');
-				}elseif($respnedn->name == 'PAX Food' || $respnedn->name == 'PAX Food Screening Expanded'){
+				}elseif($respnedn->name == 'PAX Food'){
 					$getAllergenParent = $this->AllergensModel->getFoodAllergenParentbyName($order_details['allergens']);
 					$totalGroup0 = count($getAllergenParent);
 					$totalGroup2 = $totalGroup0/2;
@@ -14068,7 +12851,7 @@ class Orders extends CI_Controller{
 						$mpdf->WriteHTML($diet_chart_pdf);
 					}
 					$mpdf->Output($file_name_food,'F');
-				}elseif($respnedn->name == 'PAX Environmental + Food' || $respnedn->name == 'PAX Environmental + Food Screening Expanded'){
+				}elseif($respnedn->name == 'PAX Environmental + Food'){
 					$getAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($order_details['allergens']);
 					$totalGroup0 = count($getAllergenParent);
 					$totalGroup2 = $totalGroup0/2;
@@ -14077,253 +12860,45 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$blocks1 = []; $compgrassIDArr = $extrIDArr = $compIDArr = []; $mitecompIDArr = [];
+					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = []; $block1 = []; $blocks1 = []; $allengesIDsArr = array();
 					foreach ($getAllergenParent as $apkey => $apvalue){
-						if($apvalue['pax_parent_id'] == '1'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$compCount = 0;
-							foreach($subAllergens as $skey => $cvalue){
-								$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu)){
-										if(floor($raptrVlu->result_value) >= $cutoffs){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 3){
-												$compCount++;
-												$compgrassIDArr[] = $cvalue['id'];
-											}
-										}
-									}
-								}
-							}
-							if($compCount > 0){
-								foreach ($subAllergens as $skey => $svalue) {
-									if(in_array($svalue['id'],$compgrassIDArr)){
-										$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-										if(!empty($subVlu->raptor_code)){
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-											if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-												if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-													$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-													if($ctype->em_allergen == 3){
-														$compIDArr[] = $ctype->id;
-													}
-												}else{
-													$blocks1[$svalue['id']] = $svalue['name'];
-												}
-											}
-										}
-									}
-								}
-							}else{
-								foreach ($subAllergens as $skey => $svalue) {
-									$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-									if(!empty($subVlu->raptor_code)){
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-										if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-											if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-												$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-												if($ctype->em_allergen == 2){
-													$extrIDArr[$svalue['id']] = $svalue['name'];
-												}
-											}else{
-												$blocks1[$svalue['id']] = $svalue['name'];
-											}
-										}
-									}
-								}
-							}
-						}elseif($apvalue['pax_parent_id'] == '45958'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$positiveCode = [];
-							foreach ($subAllergens as $skey => $svalue) {
-								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['pax_name'] != "N/A"){
-											$positiveCode[] = $raptrVlu->name;
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrIDArr[$svalue['id']] = $svalue['name'];
-											}
-											if($ctype->em_allergen == 3){
-												$compIDArr[] = $ctype->id;
-											}
-											if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											}else{
-												$blocks1[$svalue['id']] = $svalue['name'];
-											}
-										}
-									}
-								}
-							}
-
-							if(!empty($positiveCode)){
-								if(in_array("Blo t 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Per a 7",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-								}
-								if(in_array("Per a 7",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-									$mitecompIDArr[] = 73;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Per a 7",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 73;
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Per a 7",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-									$mitecompIDArr[] = 73;
-								}
-							}
-						}else{
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							foreach ($subAllergens as $skey => $svalue) {
-								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									if($apvalue['pax_parent_id'] == '45966' && $svalue['id'] == '81'){
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code.', Mala p',$raptorData->result_id);
-									}else{
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									}
-									if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
+						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
+						foreach ($subAllergens as $skey => $svalue) {
+							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+							if(!empty($subVlu->raptor_code)){
+								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+								if(!empty($raptrVlu)){
+									if(floor($raptrVlu->result_value) >= $cutoffs){
 										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrIDArr[$svalue['id']] = $svalue['name'];
+											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+												$allengesID3Arr[] = $svalue['id'];
 											}
-											if($ctype->em_allergen == 3){
-												$compIDArr[] = $ctype->id;
-											}
+											$block1[$svalue['id']] = $svalue['name'];
 										}else{
+											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+												$allengesID4Arr[] = $svalue['id'];
+											}
 											$blocks1[$svalue['id']] = $svalue['name'];
 										}
+										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+											$allengesIDArr[] = $svalue['id'];
+										}
+										$allengesIDsArr[] = $svalue['id'];
+										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 									}
 								}
 							}
 						}
 					}
-					$compPart = [];
-					if(!empty($compIDArr)){
-						$finalTretements = $this->AllergensModel->getRaptorComponentsGroupBy($compIDArr,$raptorData->result_id);
-						$funcArr = [];
-						foreach($finalTretements as $favalue){
-							if(in_array("".strtolower($favalue->raptor_function)."",$funcArr)){
-								$samcomp = $this->AllergensModel->getRaptorSameComponents($favalue->raptor_function,$compIDArr,$raptorData->result_id);
-								$allvaluesArr = array();
-								foreach($samcomp as $srow){
-									$allvaluesArr[] = $srow->result_value;
-								}
-								if(count(array_unique($allvaluesArr)) === 1){
-									if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0 && !in_array($favalue->allergens_id,array_unique($mitecompIDArr))){
-										$compPart[$favalue->allergens_id] = $favalue->name;
-									}
-								}elseif($favalue->pax_parent_id == '1'){
-									$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown(1, $order_details['allergens']);
-									$compCount = 0;
-									foreach($subAllergens as $skey => $cvalue){
-										if($cvalue['id'] != $favalue->allergens_id){
-											$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-											if(!empty($subVlu->raptor_code)){
-												$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-													$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-													if($ctype->em_allergen == 3){
-														$compCount++;
-													}
-												}
-											}
-										}
-									}
-									if($compCount == 0){
-										foreach ($subAllergens as $skey => $svalue) {
-											$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-											if(!empty($subVlu->raptor_code)){
-												$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-													if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-														$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-														if($ctype->em_allergen == 2){
-															$extrIDArr[$svalue['id']] = $svalue['name'];
-														}
-													}else{
-														$blocks1[$svalue['id']] = $svalue['name'];
-													}
-												}
-											}
-										}
-									}
-								}else{
-									$subVlu = $this->AllergensModel->getsubAllergensCodeForSecondHigherValue($favalue->allergens_id,$favalue->raptor_code);
-									if(!empty($subVlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $favalue->allergens_id == '81'){
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-											if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0){
-												$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-												if($ctype->em_allergen == 3){
-													$compPart[$favalue->allergens_id] = $favalue->name;
-												}
-											}else{
-												$blocks1[$favalue->allergens_id] = $favalue->name;
-											}
-										}
-									}
-								}
-							}else{
-								$funcArr[] = strtolower($favalue->raptor_function);
-								if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0 && !in_array($favalue->allergens_id,array_unique($mitecompIDArr))){
-									$compPart[$favalue->allergens_id] = $favalue->name;
-								}
-							}
-						}
-					}
-					if(!empty($extrIDArr)){
-						foreach($extrIDArr as $ekey => $evalue){
-							if($ekey != $compPart[$ekey]){
-								$compPart[$ekey] = $evalue;
-							}
-						}
-					}
-					$block1 = $compPart;
-					$block1IDArr = [];
-					if(!empty($block1)){
-						foreach($block1 as $bkey => $bvalue){
-							$block1IDArr[] = $bkey;
-						}
-					}
-					$block1IDArr = json_encode($block1IDArr);
 					if(array_key_exists("45994",$block1) && array_key_exists("73",$block1)){
 						unset($block1['45994']);
 					}elseif(array_key_exists("45994",$block1)){
 						unset($block1['45994']);
 						$block1['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($order_details['treatment_1'] != "" && $order_details['treatment_1'] != "[]"){
+					if($data['treatment_1'] != "" && $data['treatment_1'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_1']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
@@ -14340,180 +12915,80 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
+					//asort($block1);
 					$this->_data['block1'] = $block1;
 					$this->_data['blocks1'] = $blocks1;
 
-					$block2 = []; $chk_alg_cunt = 0; $mix_cunt = 0;
+					$block2 = []; $chk_alg_cunt = 0;
 					foreach($getAllergenParent as $apvalue){
-						if($apvalue['pax_parent_id'] == '1'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$compCount = 0; $extrCount = 0;
-							foreach($subAllergens as $skey => $cvalue){
-								$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu)){
-										if(floor($raptrVlu->result_value) >= $cutoffs){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrCount++;
-											}
-											if($ctype->em_allergen == 3){
-												$compCount++;
-											}
-										}
-									}
+						$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
+						if(!empty($getGroupMixtures)){
+							$parentIdArr = [];
+							foreach($getGroupMixtures as $mvalue){
+								if($mvalue['mixture_allergens'] != "" && $mvalue['mixture_allergens'] != "null"){
+									$parentIdArr[] = $mvalue['id'];
 								}
 							}
-							if($compCount == 0 && $extrCount >= 3){
-								$mix_cunt += 1;
-								$block2[10] = $this->AllergensModel->getAllergennameById(10);
-							}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-								foreach($sub2Allergens as $s2value){
-									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-									if(!empty($sub2Vlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-											if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-												$block2[$s2value['id']] = $s2value['name'];
-											}
-										}
-									}
-								}
-							}
-						}else{
-							$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
-							if(!empty($getGroupMixtures)){
-								$parentIdArr = [];
-								foreach($getGroupMixtures as $mvalue){
-									if($mvalue['mixture_allergens'] != "" && $mvalue['mixture_allergens'] != "null"){
-										$parentIdArr[] = $mvalue['id'];
-									}
-								}
-								if(!empty($parentIdArr)){
-									if(count($parentIdArr) > 1){
-										$emptyArr = [];
-										foreach($parentIdArr as $makey=>$mavalue){
-											$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
-											$testingArr = [];
-											foreach($allergenArr as $amid){
-												$rmcodes = $this->OrdersModel->getsubAllergensCode($amid);
-												if(!empty($rmcodes->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $mavalue == '81'){
-														$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptrmVlu) && floor($raptrmVlu->result_value) >= $cutoffs){
+
+							if(!empty($parentIdArr)){
+								if(count($parentIdArr) > 1){
+									foreach($parentIdArr as $makey=>$mavalue){
+										$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
+										$testingArr = [];
+										foreach($allergenArr as $amid){
+											$rmcodes = $this->OrdersModel->getsubAllergensCode($amid);
+											if(!empty($rmcodes->raptor_code)){
+												$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
+												if(!empty($raptrmVlu)){
+													if(floor($raptrmVlu->result_value) >= $cutoffs){
 														$testingArr[$mavalue] += 1;
 													}
 												}
 											}
+										}
 
-											if(count($allergenArr) >= 3){
-												$chk_alg_cunt = (count($allergenArr)-1);
-												if($testingArr[$mavalue] >= $chk_alg_cunt){
-													if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-														$mix_cunt += 1;
-														$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-													}
-													foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
-														$emptyArr[$apvalue['parent_id']][] = $emtrow;
-													}
+										if(count($allergenArr) >= 3){
+											$chk_alg_cunt = (count($allergenArr)-1);
+											if($testingArr[$mavalue] >= $chk_alg_cunt){
+												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
 												}
-											}else{
-												if($testingArr[$mavalue] >= 2){
-													if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-														$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-														$mix_cunt += 1;
-													}
-													foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
-														$emptyArr[$apvalue['parent_id']][] = $emtrow;
-													}
+											}
+										}else{
+											if($testingArr[$mavalue] >= 2){
+												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
 												}
 											}
 										}
-										if(!empty($emptyArr[$apvalue['parent_id']]) && !empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-											$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown_empty($apvalue['parent_id'],$block1IDArr, $emptyArr[$apvalue['parent_id']]);
-											foreach($sub1Allergens as $s1value){
-												$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-												if(!empty($sub1Vlu->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-														$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-															$block2[$s1value['id']] = $s1value['name'];
-														}
-													}
-												}
-											}
-										}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-											$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-											foreach($sub2Allergens as $s2value){
-												$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-												if(!empty($sub2Vlu->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-														$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-															$block2[$s2value['id']] = $s2value['name'];
-														}
-													}
-												}
-											}
-										}
-									}else{
-										$allergensArr = json_decode($getGroupMixtures[0]['mixture_allergens']);
-										$tested = 0;
-										foreach($allergensArr as $aid){
-											$rcodes = $this->OrdersModel->getsubAllergensCode($aid);
-											if(!empty($rcodes->raptor_code)){
-												if($apvalue['pax_parent_id'] == '45966' && $aid == '81'){
-													$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code.', Mala p',$raptorData->result_id);
-												}else{
-													$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
-												}
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
+									}
+								}else{
+									$allergensArr = json_decode($getGroupMixtures[0]['mixture_allergens']);
+									$tested = 0;
+									foreach($allergensArr as $aid){
+										$rcodes = $this->OrdersModel->getsubAllergensCode($aid);
+										if(!empty($rcodes->raptor_code)){
+											$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
+											if(!empty($raptrVlu)){
+												if(floor($raptrVlu->result_value) >= $cutoffs){
 													$tested++;
 												}
 											}
 										}
-
+									}
+									
+									if($apvalue['parent_id'] == 1){
+										if($tested >= 3){
+											if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
+												$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+											}
+										}
+									}else{
 										if(count($allergensArr) >= 3){
 											$chk_alg_cunt = (count($allergensArr)-1);
 											if($tested >= $chk_alg_cunt){
 												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
 													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-													$mix_cunt += 1;
-												}
-												if(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-													$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$block1IDArr, $getGroupMixtures[0]['mixture_allergens']);
-													foreach($sub1Allergens as $s1value){
-														$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-														if(!empty($sub1Vlu->raptor_code)){
-															if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-															}else{
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-															}
-															if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-																if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-																	$block2[$s1value['id']] = $s1value['name'];
-																}
-															}
-														}
-													}
 												}
 											}
 										}else{
@@ -14521,38 +12996,18 @@ class Orders extends CI_Controller{
 												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
 													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
 												}
-												if(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-													$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$block1IDArr, $getGroupMixtures[0]['mixture_allergens']);
-													foreach($sub1Allergens as $s1value){
-														$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-														if(!empty($sub1Vlu->raptor_code)){
-															if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code.', Mala p',$raptorData->result_id);
-															}else{
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
-															}
-															if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-																if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-																	$block2[$s1value['id']] = $s1value['name'];
-																}
-															}
-														}
-													}
-												}
 											}
 										}
 									}
-								}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-									$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-									foreach($sub2Allergens as $s2value){
-										$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-										if(!empty($sub2Vlu->raptor_code)){
-											if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-											}else{
-												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-											}
-											if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
+								}
+							}else{
+								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+								foreach($sub2Allergens as $s2value){
+									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+									if(!empty($sub2Vlu->raptor_code)){
+										$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+										if(!empty($raptr2Vlu)){
+											if($raptr2Vlu->result_value >= 30){
 												if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
 													$block2[$s2value['id']] = $s2value['name'];
 												}
@@ -14560,19 +13015,17 @@ class Orders extends CI_Controller{
 										}
 									}
 								}
-							}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-								foreach($sub2Allergens as $s2value){
-									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-									if(!empty($sub2Vlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-											if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-												$block2[$s2value['id']] = $s2value['name'];
+							}
+						}else{
+							$sub3Allergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
+							foreach($sub3Allergens as $s3value){
+								$sub3Vlu = $this->OrdersModel->getsubAllergensCode($s3value['id']);
+								if(!empty($sub3Vlu->raptor_code)){
+									$raptr3Vlu = $this->OrdersModel->getRaptorValue($sub3Vlu->raptor_code,$raptorData->result_id);
+									if(!empty($raptr3Vlu)){
+										if($raptr3Vlu->result_value >= 30){
+											if($s3value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s3value['id']) > 0){
+												$block2[$s3value['id']] = $s3value['name'];
 											}
 										}
 									}
@@ -14580,22 +13033,13 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
-					if(!array_key_exists("81",$block2) && array_key_exists("81",$compPart)){
-						$block2[81] = $this->AllergensModel->getAllergennameById(81);
-					}
-					if(array_key_exists("26",$block2) && array_key_exists("27",$block2)){
-						unset($block2['27']);
-					}
-					if($mix_cunt == 0){
-						$block2 = [];
-					}
 					if(array_key_exists("45994",$block2) && array_key_exists("73",$block2)){
 						unset($block2['45994']);
 					}elseif(array_key_exists("45994",$block2)){
 						unset($block2['45994']);
 						$block2['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($order_details['treatment_2'] != "" && $order_details['treatment_2'] != "[]"){
+					if($data['treatment_2'] != "" && $data['treatment_2'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_2']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
@@ -14612,38 +13056,8 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
+					//asort($block2);
 					$this->_data['block2'] = $block2;
-
-					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = [];$allengesIDsArr = array(); $dummytext = "";
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
-							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-							if(!empty($subVlu->raptor_code)){
-								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID3Arr[] = $svalue['id'];
-											}
-										}else{
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID4Arr[] = $svalue['id'];
-											}
-										}
-										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-											$allengesIDArr[] = $svalue['id'];
-										}
-										$allengesIDsArr[] = $svalue['id'];
-										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
-							}
-						}
-					}
 
 					if(count($allengesArr) > 1){
 						asort($allengesArr);
@@ -15051,7 +13465,7 @@ class Orders extends CI_Controller{
 			$petOWLName = !empty($data['po_last'])?$data['po_last']:'';
 			$petownerName = $petOWFName.' '.$petOWLName;
 			$respnedn = $this->OrdersModel->getProductInfo($data['product_code_selection']);
-			if(preg_match('/\bScreening\b/', $respnedn->name) && !preg_match('/\bExpanded\b/', $respnedn->name)){
+			if(preg_match('/\bScreening\b/', $respnedn->name)){
 				$pdfNameEnv = seo_friendly_url('PAX_Environmental_Screening_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
 				$pdfNameFood = seo_friendly_url('PAX_Food_Screening_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
 				$file_name = FCPATH . SERUM_REQUEST_PDF_PATH . $pdfNameEnv .".pdf";
@@ -15100,11 +13514,7 @@ class Orders extends CI_Controller{
 					}
 					$mpdf->SetHTMLFooter($raptor_footer_pdf);
 					$mpdf->WriteHTML($screening_header);
-					if($respnedn->name == 'PAX Food Screening'){
-						$mpdf->Output($file_name_food,'F');
-					}else{
-						$mpdf->Output($file_name,'F');
-					}
+					$mpdf->Output($file_name,'F');
 				}
 			}else{
 				$pdfNameEnv = seo_friendly_url('PAX_Environmental_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
@@ -15145,7 +13555,7 @@ class Orders extends CI_Controller{
 					$removed_treatment_2 = json_decode($removed_treatment_2);
 				}
 
-				if($respnedn->name == 'PAX Environmental' || $respnedn->name == 'PAX Environmental Screening Expanded'){
+				if($respnedn->name == 'PAX Environmental'){
 					$getAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($order_details['allergens']);
 					$totalGroup0 = count($getAllergenParent);
 					$totalGroup2 = $totalGroup0/2;
@@ -15154,253 +13564,45 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$blocks1 = []; $compgrassIDArr = $extrIDArr = $compIDArr = []; $mitecompIDArr = [];
+					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = []; $block1 = []; $blocks1 = []; $allengesIDsArr = array();
 					foreach ($getAllergenParent as $apkey => $apvalue){
-						if($apvalue['pax_parent_id'] == '1'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$compCount = 0;
-							foreach($subAllergens as $skey => $cvalue){
-								$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu)){
-										if(floor($raptrVlu->result_value) >= $cutoffs){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 3){
-												$compCount++;
-												$compgrassIDArr[] = $cvalue['id'];
-											}
-										}
-									}
-								}
-							}
-							if($compCount > 0){
-								foreach ($subAllergens as $skey => $svalue) {
-									if(in_array($svalue['id'],$compgrassIDArr)){
-										$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-										if(!empty($subVlu->raptor_code)){
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-											if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-												if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-													$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-													if($ctype->em_allergen == 3){
-														$compIDArr[] = $ctype->id;
-													}
-												}else{
-													$blocks1[$svalue['id']] = $svalue['name'];
-												}
-											}
-										}
-									}
-								}
-							}else{
-								foreach ($subAllergens as $skey => $svalue) {
-									$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-									if(!empty($subVlu->raptor_code)){
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-										if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-											if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-												$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-												if($ctype->em_allergen == 2){
-													$extrIDArr[$svalue['id']] = $svalue['name'];
-												}
-											}else{
-												$blocks1[$svalue['id']] = $svalue['name'];
-											}
-										}
-									}
-								}
-							}
-						}elseif($apvalue['pax_parent_id'] == '45958'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$positiveCode = [];
-							foreach ($subAllergens as $skey => $svalue) {
-								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['pax_name'] != "N/A"){
-											$positiveCode[] = $raptrVlu->name;
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrIDArr[$svalue['id']] = $svalue['name'];
-											}
-											if($ctype->em_allergen == 3){
-												$compIDArr[] = $ctype->id;
-											}
-											if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											}else{
-												$blocks1[$svalue['id']] = $svalue['name'];
-											}
-										}
-									}
-								}
-							}
-
-							if(!empty($positiveCode)){
-								if(in_array("Blo t 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Per a 7",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-								}
-								if(in_array("Per a 7",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-									$mitecompIDArr[] = 73;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Per a 7",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 73;
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Per a 7",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-									$mitecompIDArr[] = 73;
-								}
-							}
-						}else{
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							foreach ($subAllergens as $skey => $svalue) {
-								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									if($apvalue['pax_parent_id'] == '45966' && $svalue['id'] == '81'){
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code.', Mala p',$raptorData->result_id);
-									}else{
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									}
-									if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
+						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
+						foreach ($subAllergens as $skey => $svalue) {
+							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+							if(!empty($subVlu->raptor_code)){
+								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+								if(!empty($raptrVlu)){
+									if(floor($raptrVlu->result_value) >= $cutoffs){
 										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrIDArr[$svalue['id']] = $svalue['name'];
+											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+												$allengesID3Arr[] = $svalue['id'];
 											}
-											if($ctype->em_allergen == 3){
-												$compIDArr[] = $ctype->id;
-											}
+											$block1[$svalue['id']] = $svalue['name'];
 										}else{
+											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+												$allengesID4Arr[] = $svalue['id'];
+											}
 											$blocks1[$svalue['id']] = $svalue['name'];
 										}
+										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+											$allengesIDArr[] = $svalue['id'];
+										}
+										$allengesIDsArr[] = $svalue['id'];
+										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 									}
 								}
 							}
 						}
 					}
-					$compPart = [];
-					if(!empty($compIDArr)){
-						$finalTretements = $this->AllergensModel->getRaptorComponentsGroupBy($compIDArr,$raptorData->result_id);
-						$funcArr = [];
-						foreach($finalTretements as $favalue){
-							if(in_array("".strtolower($favalue->raptor_function)."",$funcArr)){
-								$samcomp = $this->AllergensModel->getRaptorSameComponents($favalue->raptor_function,$compIDArr,$raptorData->result_id);
-								$allvaluesArr = array();
-								foreach($samcomp as $srow){
-									$allvaluesArr[] = $srow->result_value;
-								}
-								if(count(array_unique($allvaluesArr)) === 1){
-									if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0 && !in_array($favalue->allergens_id,array_unique($mitecompIDArr))){
-										$compPart[$favalue->allergens_id] = $favalue->name;
-									}
-								}elseif($favalue->pax_parent_id == '1'){
-									$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown(1, $order_details['allergens']);
-									$compCount = 0;
-									foreach($subAllergens as $skey => $cvalue){
-										if($cvalue['id'] != $favalue->allergens_id){
-											$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-											if(!empty($subVlu->raptor_code)){
-												$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-													$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-													if($ctype->em_allergen == 3){
-														$compCount++;
-													}
-												}
-											}
-										}
-									}
-									if($compCount == 0){
-										foreach ($subAllergens as $skey => $svalue) {
-											$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-											if(!empty($subVlu->raptor_code)){
-												$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-													if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-														$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-														if($ctype->em_allergen == 2){
-															$extrIDArr[$svalue['id']] = $svalue['name'];
-														}
-													}else{
-														$blocks1[$svalue['id']] = $svalue['name'];
-													}
-												}
-											}
-										}
-									}
-								}else{
-									$subVlu = $this->AllergensModel->getsubAllergensCodeForSecondHigherValue($favalue->allergens_id,$favalue->raptor_code);
-									if(!empty($subVlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $favalue->allergens_id == '81'){
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-											if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0){
-												$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-												if($ctype->em_allergen == 3){
-													$compPart[$favalue->allergens_id] = $favalue->name;
-												}
-											}else{
-												$blocks1[$favalue->allergens_id] = $favalue->name;
-											}
-										}
-									}
-								}
-							}else{
-								$funcArr[] = strtolower($favalue->raptor_function);
-								if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0 && !in_array($favalue->allergens_id,array_unique($mitecompIDArr))){
-									$compPart[$favalue->allergens_id] = $favalue->name;
-								}
-							}
-						}
-					}
-					if(!empty($extrIDArr)){
-						foreach($extrIDArr as $ekey => $evalue){
-							if($ekey != $compPart[$ekey]){
-								$compPart[$ekey] = $evalue;
-							}
-						}
-					}
-					$block1 = $compPart;
-					$block1IDArr = [];
-					if(!empty($block1)){
-						foreach($block1 as $bkey => $bvalue){
-							$block1IDArr[] = $bkey;
-						}
-					}
-					$block1IDArr = json_encode($block1IDArr);
 					if(array_key_exists("45994",$block1) && array_key_exists("73",$block1)){
 						unset($block1['45994']);
 					}elseif(array_key_exists("45994",$block1)){
 						unset($block1['45994']);
 						$block1['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($order_details['treatment_1'] != "" && $order_details['treatment_1'] != "[]"){
+					if($data['treatment_1'] != "" && $data['treatment_1'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_1']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
@@ -15417,180 +13619,80 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
+					//asort($block1);
 					$this->_data['block1'] = $block1;
 					$this->_data['blocks1'] = $blocks1;
 
-					$block2 = []; $chk_alg_cunt = 0; $mix_cunt = 0;
+					$block2 = []; $chk_alg_cunt = 0;
 					foreach($getAllergenParent as $apvalue){
-						if($apvalue['pax_parent_id'] == '1'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$compCount = 0; $extrCount = 0;
-							foreach($subAllergens as $skey => $cvalue){
-								$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu)){
-										if(floor($raptrVlu->result_value) >= $cutoffs){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrCount++;
-											}
-											if($ctype->em_allergen == 3){
-												$compCount++;
-											}
-										}
-									}
+						$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
+						if(!empty($getGroupMixtures)){
+							$parentIdArr = [];
+							foreach($getGroupMixtures as $mvalue){
+								if($mvalue['mixture_allergens'] != "" && $mvalue['mixture_allergens'] != "null"){
+									$parentIdArr[] = $mvalue['id'];
 								}
 							}
-							if($compCount == 0 && $extrCount >= 3){
-								$mix_cunt += 1;
-								$block2[10] = $this->AllergensModel->getAllergennameById(10);
-							}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-								foreach($sub2Allergens as $s2value){
-									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-									if(!empty($sub2Vlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-											if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-												$block2[$s2value['id']] = $s2value['name'];
-											}
-										}
-									}
-								}
-							}
-						}else{
-							$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
-							if(!empty($getGroupMixtures)){
-								$parentIdArr = [];
-								foreach($getGroupMixtures as $mvalue){
-									if($mvalue['mixture_allergens'] != "" && $mvalue['mixture_allergens'] != "null"){
-										$parentIdArr[] = $mvalue['id'];
-									}
-								}
-								if(!empty($parentIdArr)){
-									if(count($parentIdArr) > 1){
-										$emptyArr = [];
-										foreach($parentIdArr as $makey=>$mavalue){
-											$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
-											$testingArr = [];
-											foreach($allergenArr as $amid){
-												$rmcodes = $this->OrdersModel->getsubAllergensCode($amid);
-												if(!empty($rmcodes->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $mavalue == '81'){
-														$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptrmVlu) && floor($raptrmVlu->result_value) >= $cutoffs){
+
+							if(!empty($parentIdArr)){
+								if(count($parentIdArr) > 1){
+									foreach($parentIdArr as $makey=>$mavalue){
+										$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
+										$testingArr = [];
+										foreach($allergenArr as $amid){
+											$rmcodes = $this->OrdersModel->getsubAllergensCode($amid);
+											if(!empty($rmcodes->raptor_code)){
+												$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
+												if(!empty($raptrmVlu)){
+													if(floor($raptrmVlu->result_value) >= $cutoffs){
 														$testingArr[$mavalue] += 1;
 													}
 												}
 											}
+										}
 
-											if(count($allergenArr) >= 3){
-												$chk_alg_cunt = (count($allergenArr)-1);
-												if($testingArr[$mavalue] >= $chk_alg_cunt){
-													if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-														$mix_cunt += 1;
-														$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-													}
-													foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
-														$emptyArr[$apvalue['parent_id']][] = $emtrow;
-													}
+										if(count($allergenArr) >= 3){
+											$chk_alg_cunt = (count($allergenArr)-1);
+											if($testingArr[$mavalue] >= $chk_alg_cunt){
+												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
 												}
-											}else{
-												if($testingArr[$mavalue] >= 2){
-													if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-														$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-														$mix_cunt += 1;
-													}
-													foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
-														$emptyArr[$apvalue['parent_id']][] = $emtrow;
-													}
+											}
+										}else{
+											if($testingArr[$mavalue] >= 2){
+												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
 												}
 											}
 										}
-										if(!empty($emptyArr[$apvalue['parent_id']]) && !empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-											$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown_empty($apvalue['parent_id'],$block1IDArr, $emptyArr[$apvalue['parent_id']]);
-											foreach($sub1Allergens as $s1value){
-												$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-												if(!empty($sub1Vlu->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-														$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-															$block2[$s1value['id']] = $s1value['name'];
-														}
-													}
-												}
-											}
-										}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-											$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-											foreach($sub2Allergens as $s2value){
-												$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-												if(!empty($sub2Vlu->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-														$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-															$block2[$s2value['id']] = $s2value['name'];
-														}
-													}
-												}
-											}
-										}
-									}else{
-										$allergensArr = json_decode($getGroupMixtures[0]['mixture_allergens']);
-										$tested = 0;
-										foreach($allergensArr as $aid){
-											$rcodes = $this->OrdersModel->getsubAllergensCode($aid);
-											if(!empty($rcodes->raptor_code)){
-												if($apvalue['pax_parent_id'] == '45966' && $aid == '81'){
-													$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code.', Mala p',$raptorData->result_id);
-												}else{
-													$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
-												}
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
+									}
+								}else{
+									$allergensArr = json_decode($getGroupMixtures[0]['mixture_allergens']);
+									$tested = 0;
+									foreach($allergensArr as $aid){
+										$rcodes = $this->OrdersModel->getsubAllergensCode($aid);
+										if(!empty($rcodes->raptor_code)){
+											$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
+											if(!empty($raptrVlu)){
+												if(floor($raptrVlu->result_value) >= $cutoffs){
 													$tested++;
 												}
 											}
 										}
-
+									}
+									
+									if($apvalue['parent_id'] == 1){
+										if($tested >= 3){
+											if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
+												$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+											}
+										}
+									}else{
 										if(count($allergensArr) >= 3){
 											$chk_alg_cunt = (count($allergensArr)-1);
 											if($tested >= $chk_alg_cunt){
 												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
 													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-													$mix_cunt += 1;
-												}
-												if(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-													$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$block1IDArr, $getGroupMixtures[0]['mixture_allergens']);
-													foreach($sub1Allergens as $s1value){
-														$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-														if(!empty($sub1Vlu->raptor_code)){
-															if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-															}else{
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-															}
-															if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-																if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-																	$block2[$s1value['id']] = $s1value['name'];
-																}
-															}
-														}
-													}
 												}
 											}
 										}else{
@@ -15598,38 +13700,18 @@ class Orders extends CI_Controller{
 												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
 													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
 												}
-												if(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-													$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$block1IDArr, $getGroupMixtures[0]['mixture_allergens']);
-													foreach($sub1Allergens as $s1value){
-														$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-														if(!empty($sub1Vlu->raptor_code)){
-															if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code.', Mala p',$raptorData->result_id);
-															}else{
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
-															}
-															if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-																if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-																	$block2[$s1value['id']] = $s1value['name'];
-																}
-															}
-														}
-													}
-												}
 											}
 										}
 									}
-								}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-									$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-									foreach($sub2Allergens as $s2value){
-										$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-										if(!empty($sub2Vlu->raptor_code)){
-											if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-											}else{
-												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-											}
-											if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
+								}
+							}else{
+								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+								foreach($sub2Allergens as $s2value){
+									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+									if(!empty($sub2Vlu->raptor_code)){
+										$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+										if(!empty($raptr2Vlu)){
+											if($raptr2Vlu->result_value >= 30){
 												if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
 													$block2[$s2value['id']] = $s2value['name'];
 												}
@@ -15637,19 +13719,17 @@ class Orders extends CI_Controller{
 										}
 									}
 								}
-							}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-								foreach($sub2Allergens as $s2value){
-									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-									if(!empty($sub2Vlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-											if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-												$block2[$s2value['id']] = $s2value['name'];
+							}
+						}else{
+							$sub3Allergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
+							foreach($sub3Allergens as $s3value){
+								$sub3Vlu = $this->OrdersModel->getsubAllergensCode($s3value['id']);
+								if(!empty($sub3Vlu->raptor_code)){
+									$raptr3Vlu = $this->OrdersModel->getRaptorValue($sub3Vlu->raptor_code,$raptorData->result_id);
+									if(!empty($raptr3Vlu)){
+										if($raptr3Vlu->result_value >= 30){
+											if($s3value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s3value['id']) > 0){
+												$block2[$s3value['id']] = $s3value['name'];
 											}
 										}
 									}
@@ -15657,22 +13737,13 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
-					if(!array_key_exists("81",$block2) && array_key_exists("81",$compPart)){
-						$block2[81] = $this->AllergensModel->getAllergennameById(81);
-					}
-					if(array_key_exists("26",$block2) && array_key_exists("27",$block2)){
-						unset($block2['27']);
-					}
-					if($mix_cunt == 0){
-						$block2 = [];
-					}
 					if(array_key_exists("45994",$block2) && array_key_exists("73",$block2)){
 						unset($block2['45994']);
 					}elseif(array_key_exists("45994",$block2)){
 						unset($block2['45994']);
 						$block2['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($order_details['treatment_2'] != "" && $order_details['treatment_2'] != "[]"){
+					if($data['treatment_2'] != "" && $data['treatment_2'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_2']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
@@ -15689,38 +13760,8 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
+					//asort($block2);
 					$this->_data['block2'] = $block2;
-
-					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = [];$allengesIDsArr = array(); $dummytext = "";
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
-							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-							if(!empty($subVlu->raptor_code)){
-								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID3Arr[] = $svalue['id'];
-											}
-										}else{
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID4Arr[] = $svalue['id'];
-											}
-										}
-										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-											$allengesIDArr[] = $svalue['id'];
-										}
-										$allengesIDsArr[] = $svalue['id'];
-										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
-							}
-						}
-					}
 
 					if(count($allengesArr) > 1){
 						asort($allengesArr);
@@ -15848,7 +13889,7 @@ class Orders extends CI_Controller{
 						$mpdf->WriteHTML($positive_faq_pdf);
 					}
 					$mpdf->Output($file_name,'F');
-				}elseif($respnedn->name == 'PAX Food' || $respnedn->name == 'PAX Food Screening Expanded'){
+				}elseif($respnedn->name == 'PAX Food'){
 					$getAllergenParent = $this->AllergensModel->getFoodAllergenParentbyName($order_details['allergens']);
 					$totalGroup0 = count($getAllergenParent);
 					$totalGroup2 = $totalGroup0/2;
@@ -15993,7 +14034,7 @@ class Orders extends CI_Controller{
 						$mpdf->WriteHTML($diet_chart_pdf);
 					}
 					$mpdf->Output($file_name_food,'F');
-				}elseif($respnedn->name == 'PAX Environmental + Food' || $respnedn->name == 'PAX Environmental + Food Screening Expanded'){
+				}elseif($respnedn->name == 'PAX Environmental + Food'){
 					$getAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($order_details['allergens']);
 					$totalGroup0 = count($getAllergenParent);
 					$totalGroup2 = $totalGroup0/2;
@@ -16002,253 +14043,45 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$blocks1 = []; $compgrassIDArr = $extrIDArr = $compIDArr = []; $mitecompIDArr = [];
+					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = []; $block1 = []; $blocks1 = []; $allengesIDsArr = array();
 					foreach ($getAllergenParent as $apkey => $apvalue){
-						if($apvalue['pax_parent_id'] == '1'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$compCount = 0;
-							foreach($subAllergens as $skey => $cvalue){
-								$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu)){
-										if(floor($raptrVlu->result_value) >= $cutoffs){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 3){
-												$compCount++;
-												$compgrassIDArr[] = $cvalue['id'];
-											}
-										}
-									}
-								}
-							}
-							if($compCount > 0){
-								foreach ($subAllergens as $skey => $svalue) {
-									if(in_array($svalue['id'],$compgrassIDArr)){
-										$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-										if(!empty($subVlu->raptor_code)){
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-											if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-												if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-													$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-													if($ctype->em_allergen == 3){
-														$compIDArr[] = $ctype->id;
-													}
-												}else{
-													$blocks1[$svalue['id']] = $svalue['name'];
-												}
-											}
-										}
-									}
-								}
-							}else{
-								foreach ($subAllergens as $skey => $svalue) {
-									$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-									if(!empty($subVlu->raptor_code)){
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-										if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-											if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-												$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-												if($ctype->em_allergen == 2){
-													$extrIDArr[$svalue['id']] = $svalue['name'];
-												}
-											}else{
-												$blocks1[$svalue['id']] = $svalue['name'];
-											}
-										}
-									}
-								}
-							}
-						}elseif($apvalue['pax_parent_id'] == '45958'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$positiveCode = [];
-							foreach ($subAllergens as $skey => $svalue) {
-								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['pax_name'] != "N/A"){
-											$positiveCode[] = $raptrVlu->name;
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrIDArr[$svalue['id']] = $svalue['name'];
-											}
-											if($ctype->em_allergen == 3){
-												$compIDArr[] = $ctype->id;
-											}
-											if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											}else{
-												$blocks1[$svalue['id']] = $svalue['name'];
-											}
-										}
-									}
-								}
-							}
-
-							if(!empty($positiveCode)){
-								if(in_array("Blo t 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Per a 7",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-								}
-								if(in_array("Per a 7",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-									$mitecompIDArr[] = 73;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Per a 7",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 73;
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Per a 7",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-									$mitecompIDArr[] = 73;
-								}
-							}
-						}else{
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							foreach ($subAllergens as $skey => $svalue) {
-								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									if($apvalue['pax_parent_id'] == '45966' && $svalue['id'] == '81'){
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code.', Mala p',$raptorData->result_id);
-									}else{
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									}
-									if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
+						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
+						foreach ($subAllergens as $skey => $svalue) {
+							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+							if(!empty($subVlu->raptor_code)){
+								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+								if(!empty($raptrVlu)){
+									if(floor($raptrVlu->result_value) >= $cutoffs){
 										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrIDArr[$svalue['id']] = $svalue['name'];
+											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+												$allengesID3Arr[] = $svalue['id'];
 											}
-											if($ctype->em_allergen == 3){
-												$compIDArr[] = $ctype->id;
-											}
+											$block1[$svalue['id']] = $svalue['name'];
 										}else{
+											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+												$allengesID4Arr[] = $svalue['id'];
+											}
 											$blocks1[$svalue['id']] = $svalue['name'];
 										}
+										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+											$allengesIDArr[] = $svalue['id'];
+										}
+										$allengesIDsArr[] = $svalue['id'];
+										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 									}
 								}
 							}
 						}
 					}
-					$compPart = [];
-					if(!empty($compIDArr)){
-						$finalTretements = $this->AllergensModel->getRaptorComponentsGroupBy($compIDArr,$raptorData->result_id);
-						$funcArr = [];
-						foreach($finalTretements as $favalue){
-							if(in_array("".strtolower($favalue->raptor_function)."",$funcArr)){
-								$samcomp = $this->AllergensModel->getRaptorSameComponents($favalue->raptor_function,$compIDArr,$raptorData->result_id);
-								$allvaluesArr = array();
-								foreach($samcomp as $srow){
-									$allvaluesArr[] = $srow->result_value;
-								}
-								if(count(array_unique($allvaluesArr)) === 1){
-									if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0 && !in_array($favalue->allergens_id,array_unique($mitecompIDArr))){
-										$compPart[$favalue->allergens_id] = $favalue->name;
-									}
-								}elseif($favalue->pax_parent_id == '1'){
-									$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown(1, $order_details['allergens']);
-									$compCount = 0;
-									foreach($subAllergens as $skey => $cvalue){
-										if($cvalue['id'] != $favalue->allergens_id){
-											$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-											if(!empty($subVlu->raptor_code)){
-												$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-													$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-													if($ctype->em_allergen == 3){
-														$compCount++;
-													}
-												}
-											}
-										}
-									}
-									if($compCount == 0){
-										foreach ($subAllergens as $skey => $svalue) {
-											$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-											if(!empty($subVlu->raptor_code)){
-												$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-													if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-														$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-														if($ctype->em_allergen == 2){
-															$extrIDArr[$svalue['id']] = $svalue['name'];
-														}
-													}else{
-														$blocks1[$svalue['id']] = $svalue['name'];
-													}
-												}
-											}
-										}
-									}
-								}else{
-									$subVlu = $this->AllergensModel->getsubAllergensCodeForSecondHigherValue($favalue->allergens_id,$favalue->raptor_code);
-									if(!empty($subVlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $favalue->allergens_id == '81'){
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-											if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0){
-												$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-												if($ctype->em_allergen == 3){
-													$compPart[$favalue->allergens_id] = $favalue->name;
-												}
-											}else{
-												$blocks1[$favalue->allergens_id] = $favalue->name;
-											}
-										}
-									}
-								}
-							}else{
-								$funcArr[] = strtolower($favalue->raptor_function);
-								if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0 && !in_array($favalue->allergens_id,array_unique($mitecompIDArr))){
-									$compPart[$favalue->allergens_id] = $favalue->name;
-								}
-							}
-						}
-					}
-					if(!empty($extrIDArr)){
-						foreach($extrIDArr as $ekey => $evalue){
-							if($ekey != $compPart[$ekey]){
-								$compPart[$ekey] = $evalue;
-							}
-						}
-					}
-					$block1 = $compPart;
-					$block1IDArr = [];
-					if(!empty($block1)){
-						foreach($block1 as $bkey => $bvalue){
-							$block1IDArr[] = $bkey;
-						}
-					}
-					$block1IDArr = json_encode($block1IDArr);
 					if(array_key_exists("45994",$block1) && array_key_exists("73",$block1)){
 						unset($block1['45994']);
 					}elseif(array_key_exists("45994",$block1)){
 						unset($block1['45994']);
 						$block1['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($order_details['treatment_1'] != "" && $order_details['treatment_1'] != "[]"){
+					if($data['treatment_1'] != "" && $data['treatment_1'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_1']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
@@ -16265,180 +14098,80 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
+					//asort($block1);
 					$this->_data['block1'] = $block1;
 					$this->_data['blocks1'] = $blocks1;
 
-					$block2 = []; $chk_alg_cunt = 0; $mix_cunt = 0;
+					$block2 = []; $chk_alg_cunt = 0;
 					foreach($getAllergenParent as $apvalue){
-						if($apvalue['pax_parent_id'] == '1'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$compCount = 0; $extrCount = 0;
-							foreach($subAllergens as $skey => $cvalue){
-								$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu)){
-										if(floor($raptrVlu->result_value) >= $cutoffs){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrCount++;
-											}
-											if($ctype->em_allergen == 3){
-												$compCount++;
-											}
-										}
-									}
+						$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
+						if(!empty($getGroupMixtures)){
+							$parentIdArr = [];
+							foreach($getGroupMixtures as $mvalue){
+								if($mvalue['mixture_allergens'] != "" && $mvalue['mixture_allergens'] != "null"){
+									$parentIdArr[] = $mvalue['id'];
 								}
 							}
-							if($compCount == 0 && $extrCount >= 3){
-								$mix_cunt += 1;
-								$block2[10] = $this->AllergensModel->getAllergennameById(10);
-							}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-								foreach($sub2Allergens as $s2value){
-									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-									if(!empty($sub2Vlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-											if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-												$block2[$s2value['id']] = $s2value['name'];
-											}
-										}
-									}
-								}
-							}
-						}else{
-							$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
-							if(!empty($getGroupMixtures)){
-								$parentIdArr = [];
-								foreach($getGroupMixtures as $mvalue){
-									if($mvalue['mixture_allergens'] != "" && $mvalue['mixture_allergens'] != "null"){
-										$parentIdArr[] = $mvalue['id'];
-									}
-								}
-								if(!empty($parentIdArr)){
-									if(count($parentIdArr) > 1){
-										$emptyArr = [];
-										foreach($parentIdArr as $makey=>$mavalue){
-											$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
-											$testingArr = [];
-											foreach($allergenArr as $amid){
-												$rmcodes = $this->OrdersModel->getsubAllergensCode($amid);
-												if(!empty($rmcodes->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $mavalue == '81'){
-														$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptrmVlu) && floor($raptrmVlu->result_value) >= $cutoffs){
+
+							if(!empty($parentIdArr)){
+								if(count($parentIdArr) > 1){
+									foreach($parentIdArr as $makey=>$mavalue){
+										$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
+										$testingArr = [];
+										foreach($allergenArr as $amid){
+											$rmcodes = $this->OrdersModel->getsubAllergensCode($amid);
+											if(!empty($rmcodes->raptor_code)){
+												$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
+												if(!empty($raptrmVlu)){
+													if(floor($raptrmVlu->result_value) >= $cutoffs){
 														$testingArr[$mavalue] += 1;
 													}
 												}
 											}
+										}
 
-											if(count($allergenArr) >= 3){
-												$chk_alg_cunt = (count($allergenArr)-1);
-												if($testingArr[$mavalue] >= $chk_alg_cunt){
-													if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-														$mix_cunt += 1;
-														$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-													}
-													foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
-														$emptyArr[$apvalue['parent_id']][] = $emtrow;
-													}
+										if(count($allergenArr) >= 3){
+											$chk_alg_cunt = (count($allergenArr)-1);
+											if($testingArr[$mavalue] >= $chk_alg_cunt){
+												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
 												}
-											}else{
-												if($testingArr[$mavalue] >= 2){
-													if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-														$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-														$mix_cunt += 1;
-													}
-													foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
-														$emptyArr[$apvalue['parent_id']][] = $emtrow;
-													}
+											}
+										}else{
+											if($testingArr[$mavalue] >= 2){
+												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
 												}
 											}
 										}
-										if(!empty($emptyArr[$apvalue['parent_id']]) && !empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-											$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown_empty($apvalue['parent_id'],$block1IDArr, $emptyArr[$apvalue['parent_id']]);
-											foreach($sub1Allergens as $s1value){
-												$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-												if(!empty($sub1Vlu->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-														$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-															$block2[$s1value['id']] = $s1value['name'];
-														}
-													}
-												}
-											}
-										}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-											$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-											foreach($sub2Allergens as $s2value){
-												$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-												if(!empty($sub2Vlu->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-														$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-															$block2[$s2value['id']] = $s2value['name'];
-														}
-													}
-												}
-											}
-										}
-									}else{
-										$allergensArr = json_decode($getGroupMixtures[0]['mixture_allergens']);
-										$tested = 0;
-										foreach($allergensArr as $aid){
-											$rcodes = $this->OrdersModel->getsubAllergensCode($aid);
-											if(!empty($rcodes->raptor_code)){
-												if($apvalue['pax_parent_id'] == '45966' && $aid == '81'){
-													$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code.', Mala p',$raptorData->result_id);
-												}else{
-													$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
-												}
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
+									}
+								}else{
+									$allergensArr = json_decode($getGroupMixtures[0]['mixture_allergens']);
+									$tested = 0;
+									foreach($allergensArr as $aid){
+										$rcodes = $this->OrdersModel->getsubAllergensCode($aid);
+										if(!empty($rcodes->raptor_code)){
+											$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
+											if(!empty($raptrVlu)){
+												if(floor($raptrVlu->result_value) >= $cutoffs){
 													$tested++;
 												}
 											}
 										}
-
+									}
+									
+									if($apvalue['parent_id'] == 1){
+										if($tested >= 3){
+											if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
+												$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+											}
+										}
+									}else{
 										if(count($allergensArr) >= 3){
 											$chk_alg_cunt = (count($allergensArr)-1);
 											if($tested >= $chk_alg_cunt){
 												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
 													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-													$mix_cunt += 1;
-												}
-												if(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-													$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$block1IDArr, $getGroupMixtures[0]['mixture_allergens']);
-													foreach($sub1Allergens as $s1value){
-														$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-														if(!empty($sub1Vlu->raptor_code)){
-															if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-															}else{
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-															}
-															if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-																if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-																	$block2[$s1value['id']] = $s1value['name'];
-																}
-															}
-														}
-													}
 												}
 											}
 										}else{
@@ -16446,38 +14179,18 @@ class Orders extends CI_Controller{
 												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
 													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
 												}
-												if(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-													$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$block1IDArr, $getGroupMixtures[0]['mixture_allergens']);
-													foreach($sub1Allergens as $s1value){
-														$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-														if(!empty($sub1Vlu->raptor_code)){
-															if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code.', Mala p',$raptorData->result_id);
-															}else{
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
-															}
-															if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-																if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-																	$block2[$s1value['id']] = $s1value['name'];
-																}
-															}
-														}
-													}
-												}
 											}
 										}
 									}
-								}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-									$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-									foreach($sub2Allergens as $s2value){
-										$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-										if(!empty($sub2Vlu->raptor_code)){
-											if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-											}else{
-												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-											}
-											if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
+								}
+							}else{
+								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+								foreach($sub2Allergens as $s2value){
+									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+									if(!empty($sub2Vlu->raptor_code)){
+										$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+										if(!empty($raptr2Vlu)){
+											if($raptr2Vlu->result_value >= 30){
 												if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
 													$block2[$s2value['id']] = $s2value['name'];
 												}
@@ -16485,19 +14198,17 @@ class Orders extends CI_Controller{
 										}
 									}
 								}
-							}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-								foreach($sub2Allergens as $s2value){
-									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-									if(!empty($sub2Vlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-											if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-												$block2[$s2value['id']] = $s2value['name'];
+							}
+						}else{
+							$sub3Allergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
+							foreach($sub3Allergens as $s3value){
+								$sub3Vlu = $this->OrdersModel->getsubAllergensCode($s3value['id']);
+								if(!empty($sub3Vlu->raptor_code)){
+									$raptr3Vlu = $this->OrdersModel->getRaptorValue($sub3Vlu->raptor_code,$raptorData->result_id);
+									if(!empty($raptr3Vlu)){
+										if($raptr3Vlu->result_value >= 30){
+											if($s3value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s3value['id']) > 0){
+												$block2[$s3value['id']] = $s3value['name'];
 											}
 										}
 									}
@@ -16505,22 +14216,13 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
-					if(!array_key_exists("81",$block2) && array_key_exists("81",$compPart)){
-						$block2[81] = $this->AllergensModel->getAllergennameById(81);
-					}
-					if(array_key_exists("26",$block2) && array_key_exists("27",$block2)){
-						unset($block2['27']);
-					}
-					if($mix_cunt == 0){
-						$block2 = [];
-					}
 					if(array_key_exists("45994",$block2) && array_key_exists("73",$block2)){
 						unset($block2['45994']);
 					}elseif(array_key_exists("45994",$block2)){
 						unset($block2['45994']);
 						$block2['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($order_details['treatment_2'] != "" && $order_details['treatment_2'] != "[]"){
+					if($data['treatment_2'] != "" && $data['treatment_2'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_2']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
@@ -16537,38 +14239,8 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
+					//asort($block2);
 					$this->_data['block2'] = $block2;
-
-					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = [];$allengesIDsArr = array(); $dummytext = "";
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
-							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-							if(!empty($subVlu->raptor_code)){
-								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID3Arr[] = $svalue['id'];
-											}
-										}else{
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID4Arr[] = $svalue['id'];
-											}
-										}
-										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-											$allengesIDArr[] = $svalue['id'];
-										}
-										$allengesIDsArr[] = $svalue['id'];
-										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
-							}
-						}
-					}
 
 					if(count($allengesArr) > 1){
 						asort($allengesArr);
@@ -16938,16 +14610,16 @@ class Orders extends CI_Controller{
 			$slectedTreatment = $this->input->post('slected_treatment');
 			$newAllergens = $this->input->post('allergens');
 			if(!empty($newAllergens)){
-				/* $resAllergens = array();
+				$resAllergens = array();
 				foreach ($newAllergens as $key => $value){
 					if(!in_array($value, $allergenArr)){
 						$resAllergens[] = $value;
 					}
-				} */
+				}
 
 				$orderData['id'] = $id;
 				if($slectedTreatment == 1){
-					$orderData['treatment_1'] = json_encode($newAllergens);
+					$orderData['treatment_1'] = json_encode($resAllergens);
 					$removed_allergens = $this->input->post('removed_allergens');
 					if(!empty($removed_allergens)){
 						$orderData['removed_treatment_1'] = json_encode($removed_allergens);
@@ -16956,7 +14628,7 @@ class Orders extends CI_Controller{
 						$orderData['removed_treatment_1'] = '';
 					}
 				}elseif($slectedTreatment == 2){
-					$orderData['treatment_2'] = json_encode($newAllergens);
+					$orderData['treatment_2'] = json_encode($resAllergens);
 					$removed_allergens = $this->input->post('removed_allergens');
 					if(!empty($removed_allergens)){
 						$orderData['removed_treatment_2'] = json_encode($removed_allergens);
@@ -16965,7 +14637,7 @@ class Orders extends CI_Controller{
 						$orderData['removed_treatment_2'] = '';
 					}
 				}else{
-					$orderData['treatment_3'] = json_encode($newAllergens);
+					$orderData['treatment_3'] = json_encode($resAllergens);
 				}
 
 				$this->OrdersModel->add_edit($orderData);
@@ -17067,21 +14739,21 @@ class Orders extends CI_Controller{
 						$pc_selection = '6';
 					}
 					$orderProcess = array(
-						'order_type'    => $data['order_type'],
-						'sub_order_type' => $data['sub_order_type'],
-						'plc_selection' => $data['plc_selection'],
-						'species_selection' => $data['species_selection'],
-						'product_code_selection' => $pc_selection,
-						'single_double_selection' => $data['single_double_selection']  
+							'order_type'    => $data['order_type'],
+							'sub_order_type' => $data['sub_order_type'],
+							'plc_selection' => $data['plc_selection'],
+							'species_selection' => $data['species_selection'],
+							'product_code_selection' => $pc_selection,
+							'single_double_selection' => $data['single_double_selection']
 					);
 				}else{
 					$orderProcess = array(
-						'order_type'    => $data['order_type'],
-						'sub_order_type' => $data['sub_order_type'],
-						'plc_selection' => $data['plc_selection'],
-						'species_selection' => $data['species_selection'],
-						'product_code_selection' => $data['product_code_selection'],
-						'single_double_selection' => $data['single_double_selection']  
+							'order_type'    => $data['order_type'],
+							'sub_order_type' => $data['sub_order_type'],
+							'plc_selection' => $data['plc_selection'],
+							'species_selection' => $data['species_selection'],
+							'product_code_selection' => $data['product_code_selection'],
+							'single_double_selection' => $data['single_double_selection']
 					);
 				}
 				$this->session->set_userdata($orderProcess);
@@ -17104,7 +14776,11 @@ class Orders extends CI_Controller{
 					$orderData['updated_by'] = $this->user_id;
 					$orderData['updated_at'] = date("Y-m-d H:i:s");
 					$this->OrdersModel->add_edit($orderData);
-					redirect('orders/immmuno_summary/'. $newData['id']);
+					if(!empty($postData['OrderRecommendationsBtns'])) {
+						redirect('orders/immmuno_summary/' . $newData['id']."?vp=".$postData['OrderRecommendationsBtns']);
+					} else {
+						redirect('orders/immmuno_summary/' . $newData['id']);
+					}
 				}
 			}else{
 				$this->session->set_flashdata('error', 'Sorry! Immunotherpathy Order have an error.');
@@ -17981,98 +15657,6 @@ class Orders extends CI_Controller{
 		redirect('orders');
 	}
 
-	function downloadModifiedExcel($orderId){
-		ini_set('memory_limit', '256M');
-		$data['data'] = $this->ModifyExcelModel->getRecordByOrderId($orderId);
-		$data['orderId'] = $orderId;
-		$order = $this->OrdersModel->allData($orderId, "");
-		$respnedn = $this->OrdersModel->getProductInfo($order['product_code_selection']);
-		if($respnedn->name == 'PAX Environmental' || $respnedn->name == 'PAX Environmental Screening Expanded'){
-			$fileName = seo_friendly_url('PAX_Complete_Environmental_Result_'.$order['order_number'].'_'.$order['pet_name'].'_'.$order['reference_number'].'');
-		}elseif($respnedn->name == 'PAX Food' || $respnedn->name == 'PAX Food Screening Expanded'){
-			$fileName = seo_friendly_url('PAX_Complete_Food_Result_'.$order['order_number'].'_'.$order['pet_name'].'_'.$order['reference_number'].'');
-		}elseif($respnedn->name == 'PAX Environmental + Food' || $respnedn->name == 'PAX Environmental + Food Screening Expanded'){
-			$fileName = seo_friendly_url('PAX_Complete_Environmental_+_Food_Result_'.$order['order_number'].'_'.$order['pet_name'].'_'.$order['reference_number'].'');
-		} else {
-			$fileName = seo_friendly_url('PAX_Result_'.$order['order_number'].'_'.$order['pet_name'].'_'.$order['reference_number'].'');
-		}
-		$modified = $data['data'];
-		$this->load->library('excel');
-		$objPHPExcel = new PHPExcel();
-		$objPHPExcel->setActiveSheetIndex(0);
-		$row = 1;
-		foreach($modified as $key=>$val) {
-			$objPHPExcel->getActiveSheet()->SetCellValue('A'.$row, $val['column1']);
-			$objPHPExcel->getActiveSheet()->SetCellValue('B'.$row, $val['column2']);
-			$objPHPExcel->getActiveSheet()->SetCellValue('C'.$row, $val['column3']);
-			$objPHPExcel->getActiveSheet()->SetCellValue('D'.$row, $val['column4']);
-			$row++;
-		}
-
-		$fileName = $fileName.'.csv';
-		header('Content-Type: application/vnd.ms-excel');
-		header('Content-Disposition: attachment;filename="'.$fileName.'"');
-		header('Cache-Control: max-age=0');
-		$objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'CSV');
-		$objWriter->save('php://output');
-		exit;
-	}
-
-	function modifyExcel($orderId){
-		ini_set('memory_limit', '256M');
-		$data['data'] = $this->ModifyExcelModel->getRecordByOrderId($orderId);
-		$data['orderId'] = $orderId;
-
-		if(!empty($this->input->post())){
-			$post = $this->input->post();
-			$order = $this->OrdersModel->allData($orderId, "");
-			$respnedn = $this->OrdersModel->getProductInfo($order['product_code_selection']);
-			if($respnedn->name == 'PAX Environmental' || $respnedn->name == 'PAX Environmental Screening Expanded'){
-				$fileName = seo_friendly_url('PAX_Complete_Environmental_Result_'.$order['order_number'].'_'.$order['pet_name'].'_'.$order['reference_number'].'');
-			}elseif($respnedn->name == 'PAX Food' || $respnedn->name == 'PAX Food Screening Expanded'){
-				$fileName = seo_friendly_url('PAX_Complete_Food_Result_'.$order['order_number'].'_'.$order['pet_name'].'_'.$order['reference_number'].'');
-			}elseif($respnedn->name == 'PAX Environmental + Food' || $respnedn->name == 'PAX Environmental + Food Screening Expanded'){
-				$fileName = seo_friendly_url('PAX_Complete_Environmental_+_Food_Result_'.$order['order_number'].'_'.$order['pet_name'].'_'.$order['reference_number'].'');
-			} else {
-				$fileName = seo_friendly_url('PAX_Result_'.$order['order_number'].'_'.$order['pet_name'].'_'.$order['reference_number'].'');
-			}
-			$updateData = [];
-			foreach($post['column2'] as $key2=>$val2) {
-				$updateData['id'] = $key2;
-				$updateData['column2'] = $val2;
-				$this->ModifyExcelModel->add_edit($updateData);
-			}
-			$updateData = [];
-			foreach($post['column4'] as $key=>$val) {
-				$updateData['id'] = $key;
-				$updateData['column4'] = $val;
-				$this->ModifyExcelModel->add_edit($updateData);
-			}
-			$modified = $this->ModifyExcelModel->getRecordByOrderId($orderId);
-			$this->load->library('excel');
-			$objPHPExcel = new PHPExcel();
-			$objPHPExcel->setActiveSheetIndex(0);
-			$row = 1;
-			foreach($modified as $key=>$val) {
-				$objPHPExcel->getActiveSheet()->SetCellValue('A'.$row, $val['column1']);
-				$objPHPExcel->getActiveSheet()->SetCellValue('B'.$row, $val['column2']);
-				$objPHPExcel->getActiveSheet()->SetCellValue('C'.$row, $val['column3']);
-				$objPHPExcel->getActiveSheet()->SetCellValue('D'.$row, $val['column4']);
-				$row++;
-			}
-
-			$fileName = $fileName.'.csv';
-			header('Content-Type: application/vnd.ms-excel');
-			header('Content-Disposition: attachment;filename="'.$fileName.'"');
-			header('Cache-Control: max-age=0');
-			$objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'CSV');
-			$objWriter->save('php://output');
-			exit;
-			redirect("orders/modify-excel/".$orderId);
-		}
-		$this->load->view("orders/modify_excel", $data);
-	}
-
 	function getSerumResultExcel($orderId){
 		ini_set('memory_limit', '256M');
 		if($orderId > 0){
@@ -18080,11 +15664,10 @@ class Orders extends CI_Controller{
 			$objPHPExcel = new PHPExcel();
 			$objPHPExcel->setActiveSheetIndex(0);
 
-			$modify = $this->input->get('modify', TRUE);
-			$modifyExcelData = [];
 			$data = $this->OrdersModel->allData($orderId, "");
 			$respnedn = $this->OrdersModel->getProductInfo($data['product_code_selection']);
 			$order_number = $data['order_number'];
+			$NextmuneRef = !empty($data['reference_number'])?$data['reference_number']:$data['order_number'];
 			if($data['serum_type']=='1'){
 				if($data['pax_cutoff_version'] == 1){
 					$cutoffs = '30';
@@ -18092,68 +15675,36 @@ class Orders extends CI_Controller{
 					$cutoffs = '28';
 				}
 				$raptorData = $this->OrdersModel->getRaptorData($data['order_number']);
-				if($respnedn->name == 'PAX Environmental' || $respnedn->name == 'PAX Environmental Screening Expanded'){
-					$fileName = seo_friendly_url('PAX_Complete_Environmental_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$data['reference_number'].'');
-					$modifyExcelData['column1'][] = 'REF. NEXTMUNE';
-					$modifyExcelData['column2'][] = $order_number;
-					$modifyExcelData['column3'][] = '';
-					$modifyExcelData['column4'][] = '';
+				if($respnedn->name == 'PAX Environmental'){
+					$fileName = 'PAX_Complete_Environmental_Result_'.$NextmuneRef;
 					$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B1', $order_number);
+					$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
 					$objPHPExcel->getActiveSheet()->SetCellValue('C1', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D1', '');
-					$modifyExcelData['column1'][] = 'REF. CUSTOMER';
-					$modifyExcelData['column2'][] = $data['reference_number'];
-					$modifyExcelData['column3'][] = '';
-					$modifyExcelData['column4'][] = '';
-					$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. CUSTOMER');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['reference_number']);
+					$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. VETLAB');
+					$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['lab_order_number']);
 					$objPHPExcel->getActiveSheet()->SetCellValue('C2', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D2', '');
-					$modifyExcelData['column1'][] = 'DATE';
-					$modifyExcelData['column2'][] = date('d-m-Y', strtotime($data['order_date']));
-					$modifyExcelData['column3'][] = '';
-					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A3', 'DATE');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B3', date('d-m-Y', strtotime($data['order_date'])));
 					$objPHPExcel->getActiveSheet()->SetCellValue('C3', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D3', '');
-					$modifyExcelData['column1'][] = 'ANIMAL';
-					$modifyExcelData['column2'][] = $data['pet_name'];
-					$modifyExcelData['column3'][] = '';
-					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A4', 'ANIMAL');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B4', $data['pet_name']);
 					$objPHPExcel->getActiveSheet()->SetCellValue('C4', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D4', '');
-					$modifyExcelData['column1'][] = 'IMMUNOTHERAPY RECOMMENDED';
-					$modifyExcelData['column2'][] = 'ARTUVETRIN';
-					$modifyExcelData['column3'][] = '';
-					$modifyExcelData['column4'][] = 'ALLERGENS TO BE INCLUDED IN IMMUNOTHERAPY';
-					$objPHPExcel->getActiveSheet()->SetCellValue('A5', 'IMMUNOTHERAPY RECOMMENDED');
+					$objPHPExcel->getActiveSheet()->SetCellValue('A5', 'INMUNOTHERAPY RECOMMENDED');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B5', 'ARTUVETRIN');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C5', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D5', 'ALLERGENS TO BE INCLUDED IN IMMUNOTHERAPY');
-					$modifyExcelData['column1'][] = '';
-					$modifyExcelData['column2'][] = '';
-					$modifyExcelData['column3'][] = '';
-					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A6', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B6', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C6', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D6', '');
-					$modifyExcelData['column1'][] = 'ANALYSIS';
-					$modifyExcelData['column2'][] = 'ng/mL';
-					$modifyExcelData['column3'][] = 'RESULT';
-					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A7', 'ANALYSIS');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B7', 'ng/mL');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C7', 'RESULT');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D7', '');
-					$modifyExcelData['column1'][] = '';
-					$modifyExcelData['column2'][] = '';
-					$modifyExcelData['column3'][] = '';
-					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A8', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B8', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C8', '');
@@ -18164,84 +15715,35 @@ class Orders extends CI_Controller{
 					foreach($getEAllergenParent as $apkey => $apvalue){
 						$subAllergndArr = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
 						if(!empty($subAllergndArr)){
-							$pax1name = []; $paxname = ''; $pax_latin_name = '';
+							$pax1name = []; $paxname = '';
 							foreach ($subAllergndArr as $rpvalue){
-								if($rpvalue['pax_latin_name'] != ""){
-									$pax_latin_name = '('.$rpvalue['pax_latin_name'].')';
-								}
-								if($rpvalue['id'] == '56'){
-									$paxname = $rpvalue['pax_name'].$pax_latin_name;
+								if($rpvalue['name'] != "N/A"){
+									$pax1name = explode("(",$rpvalue['name']);
+									$paxname = !empty($pax1name[0])?$pax1name[0].' ('.$rpvalue['pax_latin_name'].')':$rpvalue['name'];
 									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $paxname);
-									$modifyExcelData['column1'][] = $paxname;
-								}elseif($rpvalue['id'] == '60'){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['pax_name']);
-									$modifyExcelData['column1'][] = $rpvalue['pax_name'];
-								}elseif($rpvalue['id'] == '61'){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'Dermatophagoides pteronyssinus');
-									$modifyExcelData['column1'][] = 'Dermatophagoides pteronyssinus';
-								}elseif($rpvalue['id'] == '62'){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'Dermatophagoides farinae');
-									$modifyExcelData['column1'][] = 'Dermatophagoides farinae';
-								}elseif($rpvalue['id'] == '63'){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'Lepidoglyphus destructor');
-									$modifyExcelData['column1'][] = 'Lepidoglyphus destructor';
-								}elseif($rpvalue['id'] == '64'){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['pax_name']);
-									$modifyExcelData['column1'][] = $rpvalue['pax_name'];
-								}elseif($rpvalue['id'] == '45904'){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['pax_name']);
-									$modifyExcelData['column1'][] = $rpvalue['pax_name'];
-								}elseif($rpvalue['id'] == '81'){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['pax_name']);
-									$modifyExcelData['column1'][] = $rpvalue['pax_name'];
-								}elseif($rpvalue['id'] == '46019'){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['pax_name']);
-									$modifyExcelData['column1'][] = $rpvalue['pax_name'];
 								}else{
-									if($rpvalue['name'] != "N/A"){
-										$pax1name = explode("(",$rpvalue['name']);
-										$paxname = !empty($pax1name[0])?$pax1name[0].$pax_latin_name:$rpvalue['name'];
-										$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $paxname);
-										$modifyExcelData['column1'][] = $paxname;
-									}else{
-										$pax1name = explode("(",$rpvalue['pax_name']);
-										$paxname = !empty($pax1name[0])?$pax1name[0].$pax_latin_name:$rpvalue['pax_name'];
-										$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $paxname);
-										$modifyExcelData['column1'][] = $paxname;
-									}
+									$pax1name = explode("(",$rpvalue['pax_name']);
+									$paxname = !empty($pax1name[0])?$pax1name[0].' ('.$rpvalue['pax_latin_name'].')':$rpvalue['pax_name'];
+									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $paxname);
 								}
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-								$modifyExcelData['column2'][] = '';
-								$modifyExcelData['column3'][] = '';
-								$modifyExcelData['column4'][] = '';
 								if($rpvalue['id'] == '81'){
 									$submVluArr = $this->OrdersModel->getsubAllergensforPanel('459674',$raptorData->result_id);
 									if(!empty($submVluArr)){
 										$rowCount = $rowCount+1;
 										foreach ($submVluArr as $mrow){
-											$modifyExcelData['column1'][] = $mrow->raptor_code;
-											$modifyExcelData['column2'][] = $mrow->result_value;
 											if(floor($mrow->result_value) >= $cutoffs){
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $mrow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $mrow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-												$modifyExcelData['column3'][] = 'POSITIVE';
-												if($this->AllergensModel->checkforArtuveterinallergen($rpvalue['id']) > 0){
-													$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-													$modifyExcelData['column4'][] = 'A';
-												}else{
-													$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-													$modifyExcelData['column4'][] = '';
-												}
+												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
 											}else{
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $mrow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $mrow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
 												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-												$modifyExcelData['column3'][] = 'NEGATIVE';
-												$modifyExcelData['column4'][] = '';
 											}
 											$rowCount++;
 										}
@@ -18251,27 +15753,16 @@ class Orders extends CI_Controller{
 									if(!empty($subpVluArr)){
 										$rowCount = $rowCount;
 										foreach ($subpVluArr as $srow){
-											$modifyExcelData['column1'][] = $srow->raptor_code;
-											$modifyExcelData['column2'][] = $srow->result_value;
 											if(floor($srow->result_value) >= $cutoffs){
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-												$modifyExcelData['column3'][] = 'POSITIVE';
-												if($this->AllergensModel->checkforArtuveterinallergen($rpvalue['id']) > 0){
-													$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-													$modifyExcelData['column4'][] = 'A';
-												}else{
-													$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-													$modifyExcelData['column4'][] = '';
-												}
+												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
 											}else{
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
 												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-												$modifyExcelData['column3'][] = 'NEGATIVE';
-												$modifyExcelData['column4'][] = '';
 											}
 											$rowCount++;
 										}
@@ -18281,27 +15772,16 @@ class Orders extends CI_Controller{
 									if(!empty($subpVluArr)){
 										$rowCount = $rowCount+1;
 										foreach ($subpVluArr as $srow){
-											$modifyExcelData['column1'][] = $srow->raptor_code;
-											$modifyExcelData['column2'][] = $srow->result_value;
 											if(floor($srow->result_value) >= $cutoffs){
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-												$modifyExcelData['column3'][] = 'POSITIVE';
-												if($this->AllergensModel->checkforArtuveterinallergen($rpvalue['id']) > 0){
-													$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-													$modifyExcelData['column4'][] = 'A';
-												}else{
-													$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-													$modifyExcelData['column4'][] = '';
-												}
+												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
 											}else{
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
 												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-												$modifyExcelData['column3'][] = 'NEGATIVE';
-												$modifyExcelData['column4'][] = '';
 											}
 											$rowCount++;
 										}
@@ -18312,42 +15792,17 @@ class Orders extends CI_Controller{
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-								$modifyExcelData['column1'][] = '';
-								$modifyExcelData['column2'][] = '';
-								$modifyExcelData['column3'][] = '';
-								$modifyExcelData['column4'][] = '';
 							}
 						}
 					}
-					if(!empty($modify)) {
-						$i = 0;
-						$checkRecord = $this->ModifyExcelModel->getOneRecordByOrderId($orderId);
-						if (empty($checkRecord)) {
-							foreach ($modifyExcelData['column1'] as $key => $val) {
-								$insertData['order_id'] = $orderId;
-								$insertData['column1'] = $modifyExcelData['column1'][$i];
-								$insertData['column2'] = $modifyExcelData['column2'][$i];
-								$insertData['column3'] = $modifyExcelData['column3'][$i];
-								$insertData['column4'] = $modifyExcelData['column4'][$i];
-								$this->ModifyExcelModel->add_edit($insertData);
-								$i++;
-							}
-						}
-						redirect('orders/modify-excel/'.$orderId);
-					} else {
-						$checkRecord = $this->ModifyExcelModel->getOneRecordByOrderId($orderId);
-						if (!empty($checkRecord)) {
-							$this->downloadModifiedExcel($orderId);
-						}
-					}
-				}elseif($respnedn->name == 'PAX Food' || $respnedn->name == 'PAX Food Screening Expanded'){
-					$fileName = seo_friendly_url('PAX_Complete_Food_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$data['reference_number'].'');
+				}elseif($respnedn->name == 'PAX Food'){
+					$fileName = 'PAX_Complete_Food_Result_'.$NextmuneRef;
 					$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B1', $order_number);
+					$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
 					$objPHPExcel->getActiveSheet()->SetCellValue('C1', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D1', '');
-					$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. CUSTOMER');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['reference_number']);
+					$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. VETLAB');
+					$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['lab_order_number']);
 					$objPHPExcel->getActiveSheet()->SetCellValue('C2', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D2', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('A3', 'DATE');
@@ -18359,7 +15814,7 @@ class Orders extends CI_Controller{
 					$objPHPExcel->getActiveSheet()->SetCellValue('C4', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D4', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('A5', '');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B5', '');
+					$objPHPExcel->getActiveSheet()->SetCellValue('B5', 'ARTUVETRIN');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C5', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D5', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('A6', '');
@@ -18380,15 +15835,11 @@ class Orders extends CI_Controller{
 					foreach($getFAllergenParent as $apkey => $apvalue){
 						$subAllergndArr = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
 						if(!empty($subAllergndArr)){
-							$pax_latin_name = '';
 							foreach ($subAllergndArr as $rpvalue){
-								if($rpvalue['pax_latin_name'] != ""){
-									$pax_latin_name = '('.$rpvalue['pax_latin_name'].')';
-								}
 								if($rpvalue['name'] != "N/A"){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['name'].$pax_latin_name);
+									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['name'].' ('.$rpvalue['pax_latin_name'].')');
 								}else{
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['pax_name'].$pax_latin_name);
+									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['pax_name'].' ('.$rpvalue['pax_latin_name'].')');
 								}
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
@@ -18401,7 +15852,7 @@ class Orders extends CI_Controller{
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
+											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
 										}else{
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
@@ -18419,68 +15870,36 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
-				}elseif($respnedn->name == 'PAX Environmental + Food' || $respnedn->name == 'PAX Environmental + Food Screening Expanded'){
-					$fileName = seo_friendly_url('PAX_Complete_Environmental_+_Food_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$data['reference_number'].'');
-					$modifyExcelData['column1'][] = 'REF. NEXTMUNE';
-					$modifyExcelData['column2'][] = $order_number;
-					$modifyExcelData['column3'][] = '';
-					$modifyExcelData['column4'][] = '';
+				}elseif($respnedn->name == 'PAX Environmental + Food'){
+					$fileName = 'PAX_Complete_Environmental_+_Food_Result_'.$NextmuneRef;
 					$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B1', $order_number);
+					$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
 					$objPHPExcel->getActiveSheet()->SetCellValue('C1', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D1', '');
-					$modifyExcelData['column1'][] = 'REF. CUSTOMER';
-					$modifyExcelData['column2'][] = $data['reference_number'];
-					$modifyExcelData['column3'][] = '';
-					$modifyExcelData['column4'][] = '';
-					$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. CUSTOMER');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['reference_number']);
+					$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. VETLAB');
+					$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['lab_order_number']);
 					$objPHPExcel->getActiveSheet()->SetCellValue('C2', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D2', '');
-					$modifyExcelData['column1'][] = 'DATE';
-					$modifyExcelData['column2'][] = date('d-m-Y', strtotime($data['order_date']));
-					$modifyExcelData['column3'][] = '';
-					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A3', 'DATE');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B3', date('d-m-Y', strtotime($data['order_date'])));
 					$objPHPExcel->getActiveSheet()->SetCellValue('C3', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D3', '');
-					$modifyExcelData['column1'][] = 'ANIMAL';
-					$modifyExcelData['column2'][] = $data['pet_name'];
-					$modifyExcelData['column3'][] = '';
-					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A4', 'ANIMAL');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B4', $data['pet_name']);
 					$objPHPExcel->getActiveSheet()->SetCellValue('C4', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D4', '');
-					$modifyExcelData['column1'][] = 'IMMUNOTHERAPY RECOMMENDED';
-					$modifyExcelData['column2'][] = 'ARTUVETRIN';
-					$modifyExcelData['column3'][] = '';
-					$modifyExcelData['column4'][] = 'ALLERGENS TO BE INCLUDED IN IMMUNOTHERAPY';
-					$objPHPExcel->getActiveSheet()->SetCellValue('A5', 'IMMUNOTHERAPY RECOMMENDED');
+					$objPHPExcel->getActiveSheet()->SetCellValue('A5', 'INMUNOTHERAPY RECOMMENDED');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B5', 'ARTUVETRIN');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C5', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D5', 'ALLERGENS TO BE INCLUDED IN IMMUNOTHERAPY');
-					$modifyExcelData['column1'][] = '';
-					$modifyExcelData['column2'][] = '';
-					$modifyExcelData['column3'][] = '';
-					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A6', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B6', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C6', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D6', '');
-					$modifyExcelData['column1'][] = 'ANALYSIS';
-					$modifyExcelData['column2'][] = 'ng/mL';
-					$modifyExcelData['column3'][] = 'RESULT';
-					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A7', 'ANALYSIS');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B7', 'ng/mL');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C7', 'RESULT');
 					$objPHPExcel->getActiveSheet()->SetCellValue('D7', '');
-					$modifyExcelData['column1'][] = '';
-					$modifyExcelData['column2'][] = '';
-					$modifyExcelData['column3'][] = '';
-					$modifyExcelData['column4'][] = '';
 					$objPHPExcel->getActiveSheet()->SetCellValue('A8', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B8', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('C8', '');
@@ -18491,84 +15910,35 @@ class Orders extends CI_Controller{
 					foreach($getEAllergenParent as $apkey => $apvalue){
 						$subAllergndArr = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
 						if(!empty($subAllergndArr)){
-							$pax1name = []; $paxname = ''; $pax_latin_name = '';
+							$pax1name = []; $paxname = '';
 							foreach ($subAllergndArr as $rpvalue){
-								if($rpvalue['pax_latin_name'] != ""){
-									$pax_latin_name = '('.$rpvalue['pax_latin_name'].')';
-								}
-								if($rpvalue['id'] == '56'){
-									$paxname = $rpvalue['pax_name'].$pax_latin_name;
+								if($rpvalue['name'] != "N/A"){
+									$pax1name = explode("(",$rpvalue['name']);
+									$paxname = !empty($pax1name[0])?$pax1name[0].' ('.$rpvalue['pax_latin_name'].')':$rpvalue['name'];
 									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $paxname);
-									$modifyExcelData['column1'][] = $paxname;
-								}elseif($rpvalue['id'] == '60'){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['pax_name']);
-									$modifyExcelData['column1'][] = $rpvalue['pax_name'];
-								}elseif($rpvalue['id'] == '61'){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'Dermatophagoides pteronyssinus');
-									$modifyExcelData['column1'][] = 'Dermatophagoides pteronyssinus';
-								}elseif($rpvalue['id'] == '62'){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'Dermatophagoides farinae');
-									$modifyExcelData['column1'][] = 'Dermatophagoides farinae';
-								}elseif($rpvalue['id'] == '63'){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'Lepidoglyphus destructor');
-									$modifyExcelData['column1'][] = 'Lepidoglyphus destructor';
-								}elseif($rpvalue['id'] == '64'){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['pax_name']);
-									$modifyExcelData['column1'][] = $rpvalue['pax_name'];
-								}elseif($rpvalue['id'] == '45904'){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['pax_name']);
-									$modifyExcelData['column1'][] = $rpvalue['pax_name'];
-								}elseif($rpvalue['id'] == '81'){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['pax_name']);
-									$modifyExcelData['column1'][] = $rpvalue['pax_name'];
-								}elseif($rpvalue['id'] == '46019'){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['pax_name']);
-									$modifyExcelData['column1'][] = $rpvalue['pax_name'];
 								}else{
-									if($rpvalue['name'] != "N/A"){
-										$pax1name = explode("(",$rpvalue['name']);
-										$paxname = !empty($pax1name[0])?$pax1name[0].$pax_latin_name:$rpvalue['name'];
-										$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $paxname);
-										$modifyExcelData['column1'][] = $paxname;
-									}else{
-										$pax1name = explode("(",$rpvalue['pax_name']);
-										$paxname = !empty($pax1name[0])?$pax1name[0].$pax_latin_name:$rpvalue['pax_name'];
-										$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $paxname);
-										$modifyExcelData['column1'][] = $paxname;
-									}
+									$pax1name = explode("(",$rpvalue['pax_name']);
+									$paxname = !empty($pax1name[0])?$pax1name[0].' ('.$rpvalue['pax_latin_name'].')':$rpvalue['pax_name'];
+									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $paxname);
 								}
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-								$modifyExcelData['column2'][] = '';
-								$modifyExcelData['column3'][] = '';
-								$modifyExcelData['column4'][] = '';
 								if($rpvalue['id'] == '81'){
 									$submVluArr = $this->OrdersModel->getsubAllergensforPanel('459674',$raptorData->result_id);
 									if(!empty($submVluArr)){
 										$rowCount = $rowCount+1;
 										foreach ($submVluArr as $mrow){
-											$modifyExcelData['column1'][] = $mrow->raptor_code;
-											$modifyExcelData['column2'][] = $mrow->result_value;
 											if(floor($mrow->result_value) >= $cutoffs){
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $mrow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $mrow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-												$modifyExcelData['column3'][] = 'POSITIVE';
-												if($this->AllergensModel->checkforArtuveterinallergen($rpvalue['id']) > 0){
-													$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-													$modifyExcelData['column4'][] = 'A';
-												}else{
-													$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-													$modifyExcelData['column4'][] = '';
-												}
+												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
 											}else{
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $mrow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $mrow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
 												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-												$modifyExcelData['column3'][] = 'NEGATIVE';
-												$modifyExcelData['column4'][] = '';
 											}
 											$rowCount++;
 										}
@@ -18578,27 +15948,16 @@ class Orders extends CI_Controller{
 									if(!empty($subpVluArr)){
 										$rowCount = $rowCount;
 										foreach ($subpVluArr as $srow){
-											$modifyExcelData['column1'][] = $srow->raptor_code;
-											$modifyExcelData['column2'][] = $srow->result_value;
 											if(floor($srow->result_value) >= $cutoffs){
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-												$modifyExcelData['column3'][] = 'POSITIVE';
-												if($this->AllergensModel->checkforArtuveterinallergen($rpvalue['id']) > 0){
-													$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-													$modifyExcelData['column4'][] = 'A';
-												}else{
-													$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-													$modifyExcelData['column4'][] = '';
-												}
+												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
 											}else{
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
 												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-												$modifyExcelData['column3'][] = 'NEGATIVE';
-												$modifyExcelData['column4'][] = '';
 											}
 											$rowCount++;
 										}
@@ -18608,27 +15967,16 @@ class Orders extends CI_Controller{
 									if(!empty($subpVluArr)){
 										$rowCount = $rowCount+1;
 										foreach ($subpVluArr as $srow){
-											$modifyExcelData['column1'][] = $srow->raptor_code;
-											$modifyExcelData['column2'][] = $srow->result_value;
 											if(floor($srow->result_value) >= $cutoffs){
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-												$modifyExcelData['column3'][] = 'POSITIVE';
-												if($this->AllergensModel->checkforArtuveterinallergen($rpvalue['id']) > 0){
-													$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
-													$modifyExcelData['column4'][] = 'A';
-												}else{
-													$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-													$modifyExcelData['column4'][] = '';
-												}
+												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
 											}else{
 												$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 												$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 												$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
 												$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-												$modifyExcelData['column3'][] = 'NEGATIVE';
-												$modifyExcelData['column4'][] = '';
 											}
 											$rowCount++;
 										}
@@ -18639,10 +15987,6 @@ class Orders extends CI_Controller{
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-								$modifyExcelData['column1'][] = '';
-								$modifyExcelData['column2'][] = '';
-								$modifyExcelData['column3'][] = '';
-								$modifyExcelData['column4'][] = '';
 							}
 						}
 					}
@@ -18652,44 +15996,29 @@ class Orders extends CI_Controller{
 					foreach($getFAllergenParent as $apkey => $afvalue){
 						$subAllergndArr = $this->AllergensModel->get_pax_subAllergens_dropdown($afvalue['pax_parent_id'], $data['allergens']);
 						if(!empty($subAllergndArr)){
-							$pax_latin_name = '';
 							foreach ($subAllergndArr as $rpvalue){
-								if($rpvalue['pax_latin_name'] != ""){
-									$pax_latin_name = '('.$rpvalue['pax_latin_name'].')';
-								}
 								if($rpvalue['name'] != "N/A"){
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['name'].$pax_latin_name);
-									$modifyExcelData['column1'][] = $rpvalue['name'].$pax_latin_name;
+									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['name'].' ('.$rpvalue['pax_latin_name'].')');
 								}else{
-									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['pax_name'].$pax_latin_name);
-									$modifyExcelData['column1'][] = $rpvalue['pax_name'].$pax_latin_name;
+									$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $rpvalue['pax_name'].' ('.$rpvalue['pax_latin_name'].')');
 								}
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-								$modifyExcelData['column2'][] = '';
-								$modifyExcelData['column3'][] = '';
-								$modifyExcelData['column4'][] = '';
 								$subpVluArr = $this->OrdersModel->getsubAllergensforPanel($rpvalue['id'],$raptorData->result_id);
 								if(!empty($subpVluArr)){
 									$rowCount = $rowCount+1;
 									foreach ($subpVluArr as $srow){
-										$modifyExcelData['column1'][] = $srow->raptor_code;
-										$modifyExcelData['column2'][] = $srow->result_value;
 										if(floor($srow->result_value) >= $cutoffs){
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'POSITIVE');
-											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-											$modifyExcelData['column3'][] = 'POSITIVE';
-											$modifyExcelData['column4'][] = '';
+											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'A');
 										}else{
 											$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $srow->raptor_code);
 											$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $srow->result_value);
 											$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'NEGATIVE');
 											$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-											$modifyExcelData['column3'][] = 'NEGATIVE';
-											$modifyExcelData['column4'][] = '';
 										}
 										$rowCount++;
 									}
@@ -18699,52 +16028,29 @@ class Orders extends CI_Controller{
 								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '');
 								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '');
-								$modifyExcelData['column1'][] = '';
-								$modifyExcelData['column2'][] = '';
-								$modifyExcelData['column3'][] = '';
-								$modifyExcelData['column4'][] = '';
 							}
-						}
-					}
-					if(!empty($modify)) {
-						$i = 0;
-						$checkRecord = $this->ModifyExcelModel->getOneRecordByOrderId($orderId);
-						if (empty($checkRecord)) {
-							foreach ($modifyExcelData['column1'] as $key => $val) {
-								$insertData['order_id'] = $orderId;
-								$insertData['column1'] = $modifyExcelData['column1'][$i];
-								$insertData['column2'] = $modifyExcelData['column2'][$i];
-								$insertData['column3'] = $modifyExcelData['column3'][$i];
-								$insertData['column4'] = $modifyExcelData['column4'][$i];
-								$this->ModifyExcelModel->add_edit($insertData);
-								$i++;
-							}
-						}
-						redirect('orders/modify-excel/'.$orderId);
-					} else {
-						$checkRecord = $this->ModifyExcelModel->getOneRecordByOrderId($orderId);
-						if (!empty($checkRecord)) {
-							$this->downloadModifiedExcel($orderId);
 						}
 					}
 				}elseif($respnedn->name == 'PAX Environmental Screening'){
-					$fileName = seo_friendly_url('PAX_Screening_Environmental_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$data['reference_number'].'');
+					$fileName = 'PAX_Screening_Environmental_Result_'.$NextmuneRef;
 					$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B1', $order_number);
-					$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. CUSTOMER');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['reference_number']);
+					$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
+					$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. VETLAB');
+					$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['lab_order_number']);
 					$objPHPExcel->getActiveSheet()->SetCellValue('A3', 'DATE');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B3', date('d-m-Y', strtotime($data['order_date'])));
 					$objPHPExcel->getActiveSheet()->SetCellValue('A4', 'ANIMAL');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B4', $data['pet_name']);
-					$objPHPExcel->getActiveSheet()->SetCellValue('A5', '');
+					$objPHPExcel->getActiveSheet()->SetCellValue('A5', 'Screening Environmental');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B5', '');
-					$objPHPExcel->getActiveSheet()->SetCellValue('A6', 'ANALYSIS');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B6', 'RESULT');
-					$objPHPExcel->getActiveSheet()->SetCellValue('A7', '');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B7', '');
+					$objPHPExcel->getActiveSheet()->SetCellValue('A6', '');
+					$objPHPExcel->getActiveSheet()->SetCellValue('B6', '');
+					$objPHPExcel->getActiveSheet()->SetCellValue('A7', 'ANALYSIS');
+					$objPHPExcel->getActiveSheet()->SetCellValue('B7', 'RESULT');
+					$objPHPExcel->getActiveSheet()->SetCellValue('A8', '');
+					$objPHPExcel->getActiveSheet()->SetCellValue('B8', '');
 
-					$objPHPExcel->getActiveSheet()->SetCellValue('A8', 'Screening Environmental');
+					$objPHPExcel->getActiveSheet()->SetCellValue('A9', 'Screening Environmental');
 					$getEAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($data['allergens']);
 					if(!empty($getEAllergenParent)){
 						$ispositive = 0;
@@ -18767,23 +16073,6 @@ class Orders extends CI_Controller{
 							}
 						}
 						if($ispositive > 0){
-							$objPHPExcel->getActiveSheet()->SetCellValue('B8', 'POSITIVE');
-						}else{
-							$objPHPExcel->getActiveSheet()->SetCellValue('B8', 'NEGATIVE');
-						}
-					}else{
-						$objPHPExcel->getActiveSheet()->SetCellValue('B8', 'NEGATIVE');
-					}
-
-					$objPHPExcel->getActiveSheet()->SetCellValue('A9', $this->lang->line('flea_Cte_f_1'));
-					$this->db->select('result_value');
-					$this->db->from('ci_raptor_result_allergens');
-					$this->db->where('result_id',$raptorData->result_id);
-					$this->db->where('name LIKE','Cte f 1');
-					$this->db->order_by('result_value', 'DESC');
-					$fleaResults = $this->db->get()->row();
-					if(!empty($fleaResults)){
-						if(floor($fleaResults->result_value) >= $cutoffs){
 							$objPHPExcel->getActiveSheet()->SetCellValue('B9', 'POSITIVE');
 						}else{
 							$objPHPExcel->getActiveSheet()->SetCellValue('B9', 'NEGATIVE');
@@ -18792,7 +16081,24 @@ class Orders extends CI_Controller{
 						$objPHPExcel->getActiveSheet()->SetCellValue('B9', 'NEGATIVE');
 					}
 
-					$objPHPExcel->getActiveSheet()->SetCellValue('A10', 'Malassezia');
+					$objPHPExcel->getActiveSheet()->SetCellValue('A10', $this->lang->line('flea_Cte_f_1'));
+					$this->db->select('result_value');
+					$this->db->from('ci_raptor_result_allergens');
+					$this->db->where('result_id',$raptorData->result_id);
+					$this->db->where('name LIKE','Cte f 1');
+					$this->db->order_by('result_value', 'DESC');
+					$fleaResults = $this->db->get()->row();
+					if(!empty($fleaResults)){
+						if(floor($fleaResults->result_value) >= $cutoffs){
+							$objPHPExcel->getActiveSheet()->SetCellValue('B10', 'POSITIVE');
+						}else{
+							$objPHPExcel->getActiveSheet()->SetCellValue('B10', 'NEGATIVE');
+						}
+					}else{
+						$objPHPExcel->getActiveSheet()->SetCellValue('B10', 'NEGATIVE');
+					}
+
+					$objPHPExcel->getActiveSheet()->SetCellValue('A11', 'Malassezia');
 					$this->db->select('result_value');
 					$this->db->from('ci_raptor_result_allergens');
 					$this->db->where('result_id',$raptorData->result_id);
@@ -18814,24 +16120,24 @@ class Orders extends CI_Controller{
 							}
 						}
 						if($ismpositive > 0){
-							$objPHPExcel->getActiveSheet()->SetCellValue('B10', 'POSITIVE');
+							$objPHPExcel->getActiveSheet()->SetCellValue('B11', 'POSITIVE');
 						}else{
-							$objPHPExcel->getActiveSheet()->SetCellValue('B10', 'NEGATIVE');
+							$objPHPExcel->getActiveSheet()->SetCellValue('B11', 'NEGATIVE');
 						}
 					}else{
-						$objPHPExcel->getActiveSheet()->SetCellValue('B10', 'NEGATIVE');
+						$objPHPExcel->getActiveSheet()->SetCellValue('B11', 'NEGATIVE');
 					}
 				}elseif($respnedn->name == 'PAX Food Screening'){
-					$fileName = seo_friendly_url('PAX_Screening_Food_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$data['reference_number'].'');
+					$fileName = 'PAX_Screening_Food_Result_'.$NextmuneRef;
 					$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B1', $order_number);
-					$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. CUSTOMER');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['reference_number']);
+					$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
+					$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. VETLAB');
+					$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['lab_order_number']);
 					$objPHPExcel->getActiveSheet()->SetCellValue('A3', 'DATE');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B3', date('d-m-Y', strtotime($data['order_date'])));
 					$objPHPExcel->getActiveSheet()->SetCellValue('A4', 'ANIMAL');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B4', $data['pet_name']);
-					$objPHPExcel->getActiveSheet()->SetCellValue('A5', '');
+					$objPHPExcel->getActiveSheet()->SetCellValue('A5', 'Screening Food');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B5', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('A6', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B6', '');
@@ -18840,7 +16146,7 @@ class Orders extends CI_Controller{
 					$objPHPExcel->getActiveSheet()->SetCellValue('A8', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B8', '');
 
-					$objPHPExcel->getActiveSheet()->SetCellValue('A9', 'Screening Food');
+					$objPHPExcel->getActiveSheet()->SetCellValue('A10', 'Screening Food');
 					$getFAllergenParent = $this->AllergensModel->getFoodAllergenParentbyName($data['allergens']);
 					if(!empty($getFAllergenParent)){
 						$isfpositive = 0;
@@ -18863,29 +16169,29 @@ class Orders extends CI_Controller{
 							}
 						}
 						if($isfpositive > 0){
-							$objPHPExcel->getActiveSheet()->SetCellValue('B9', 'POSITIVE');
+							$objPHPExcel->getActiveSheet()->SetCellValue('B10', 'POSITIVE');
 						}else{
-							$objPHPExcel->getActiveSheet()->SetCellValue('B9', 'NEGATIVE');
+							$objPHPExcel->getActiveSheet()->SetCellValue('B10', 'NEGATIVE');
 						}
 					}else{
-						$objPHPExcel->getActiveSheet()->SetCellValue('B9', 'NEGATIVE');
+						$objPHPExcel->getActiveSheet()->SetCellValue('B10', 'NEGATIVE');
 					}
 				}elseif($respnedn->name == 'PAX Environmental + Food Screening'){
-					$fileName = seo_friendly_url('PAX_Screening_Environmental_+_Food_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$data['reference_number'].'');
+					$fileName = 'PAX_Screening_Environmental_+_Food_Result_'.$NextmuneRef;
 					$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B1', $order_number);
-					$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. CUSTOMER');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['reference_number']);
+					$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
+					$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. VETLAB');
+					$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['lab_order_number']);
 					$objPHPExcel->getActiveSheet()->SetCellValue('A3', 'DATE');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B3', date('d-m-Y', strtotime($data['order_date'])));
 					$objPHPExcel->getActiveSheet()->SetCellValue('A4', 'ANIMAL');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B4', $data['pet_name']);
-					$objPHPExcel->getActiveSheet()->SetCellValue('A5', '');
+					$objPHPExcel->getActiveSheet()->SetCellValue('A5', 'Screening Environmental + Food');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B5', '');
-					$objPHPExcel->getActiveSheet()->SetCellValue('A6', 'ANALYSIS');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B6', 'RESULT');
-					$objPHPExcel->getActiveSheet()->SetCellValue('A7', '');
-					$objPHPExcel->getActiveSheet()->SetCellValue('B7', '');
+					$objPHPExcel->getActiveSheet()->SetCellValue('A6', '');
+					$objPHPExcel->getActiveSheet()->SetCellValue('B6', '');
+					$objPHPExcel->getActiveSheet()->SetCellValue('A7', 'ANALYSIS');
+					$objPHPExcel->getActiveSheet()->SetCellValue('B7', 'RESULT');
 					$objPHPExcel->getActiveSheet()->SetCellValue('A8', '');
 					$objPHPExcel->getActiveSheet()->SetCellValue('B8', '');
 
@@ -19028,11 +16334,11 @@ class Orders extends CI_Controller{
 				$sresultID = implode(",",$sresultIDArr);
 				if(!empty($respnedn)){
 					if((preg_match('/\bSCREEN Environmental\b/', $respnedn->name)) && (preg_match('/\bComplete Food\b/', $respnedn->name))){
-						$fileName = 'NextLab_SCREEN_Environmental_+_Complete_Food_Serum_Result_'.$order_number;
+						$fileName = 'NextLab_SCREEN_Environmental_+_Complete_Food_Serum_Result_'.$NextmuneRef;
 						$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $order_number);
-						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. CUSTOMER');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['reference_number']);
+						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
+						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. VETLAB');
+						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['lab_order_number']);
 						$objPHPExcel->getActiveSheet()->SetCellValue('A3', 'DATE');
 						$objPHPExcel->getActiveSheet()->SetCellValue('B3', date('d-m-Y', strtotime($data['order_date'])));
 						$objPHPExcel->getActiveSheet()->SetCellValue('A4', 'ANIMAL');
@@ -19361,11 +16667,11 @@ class Orders extends CI_Controller{
 							}
 						}
 					}elseif(preg_match('/\bSCREEN Environmental only\b/', $respnedn->name)){
-						$fileName = 'NextLab_SCREEN_Environmental_Serum_Result_'.$order_number;
+						$fileName = 'NextLab_SCREEN_Environmental_Serum_Result_'.$NextmuneRef;
 						$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $order_number);
-						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. CUSTOMER');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['reference_number']);
+						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
+						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. VETLAB');
+						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['lab_order_number']);
 						$objPHPExcel->getActiveSheet()->SetCellValue('A3', 'DATE');
 						$objPHPExcel->getActiveSheet()->SetCellValue('B3', date('d-m-Y', strtotime($data['order_date'])));
 						$objPHPExcel->getActiveSheet()->SetCellValue('A4', 'ANIMAL');
@@ -19624,11 +16930,11 @@ class Orders extends CI_Controller{
 						}
 						/* End Malassezia */
 					}elseif(preg_match('/\bSCREEN Food only\b/', $respnedn->name)){
-						$fileName = 'NextLab_SCREEN_Food_Serum_Result_'.$order_number;
+						$fileName = 'NextLab_SCREEN_Food_Serum_Result_'.$NextmuneRef;
 						$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $order_number);
-						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. CUSTOMER');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['reference_number']);
+						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
+						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. VETLAB');
+						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['lab_order_number']);
 						$objPHPExcel->getActiveSheet()->SetCellValue('A3', 'DATE');
 						$objPHPExcel->getActiveSheet()->SetCellValue('B3', date('d-m-Y', strtotime($data['order_date'])));
 						$objPHPExcel->getActiveSheet()->SetCellValue('A4', 'ANIMAL');
@@ -19704,13 +17010,13 @@ class Orders extends CI_Controller{
 						}
 						/* End Food Carbohydrates */
 					}elseif((preg_match('/\bComplete Environmental Panel\b/', $respnedn->name)) && (!preg_match('/\bFood Panel\b/', $respnedn->name)) && (!preg_match('/\bFood SCREEN\b/', $respnedn->name))){
-						$fileName = 'NextLab_Complete_Environmental_Serum_Result_'.$order_number;
+						$fileName = 'NextLab_Complete_Environmental_Serum_Result_'.$NextmuneRef;
 						$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $order_number);
+						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
 						$objPHPExcel->getActiveSheet()->SetCellValue('C1', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('D1', '');
-						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. CUSTOMER');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['reference_number']);
+						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. VETLAB');
+						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['lab_order_number']);
 						$objPHPExcel->getActiveSheet()->SetCellValue('C2', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('D2', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('A3', 'DATE');
@@ -19721,7 +17027,7 @@ class Orders extends CI_Controller{
 						$objPHPExcel->getActiveSheet()->SetCellValue('B4', $data['pet_name']);
 						$objPHPExcel->getActiveSheet()->SetCellValue('C4', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('D4', '');
-						$objPHPExcel->getActiveSheet()->SetCellValue('A5', 'IMMUNOTHERAPY RECOMMENDED');
+						$objPHPExcel->getActiveSheet()->SetCellValue('A5', 'INMUNOTHERAPY RECOMMENDED');
 						$objPHPExcel->getActiveSheet()->SetCellValue('B5', 'ARTUVETRIN');
 						$objPHPExcel->getActiveSheet()->SetCellValue('C5', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('D5', 'ALLERGENS TO BE INCLUDED IN IMMUNOTHERAPY');
@@ -19821,12 +17127,12 @@ class Orders extends CI_Controller{
 						}
 						/* End Malassezia */
 					}elseif(preg_match('/\bComplete Food Panel\b/', $respnedn->name) || preg_match('/\bNEXTLAB Complete Food\b/', $respnedn->name)){
-						$fileName = 'NextLab_Complete_Food_Serum_Result_'.$order_number;
+						$fileName = 'NextLab_Complete_Food_Serum_Result_'.$NextmuneRef;
 						$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $order_number);
+						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
 						$objPHPExcel->getActiveSheet()->SetCellValue('C1', '');
-						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. CUSTOMER');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['reference_number']);
+						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. VETLAB');
+						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['lab_order_number']);
 						$objPHPExcel->getActiveSheet()->SetCellValue('C2', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('A3', 'DATE');
 						$objPHPExcel->getActiveSheet()->SetCellValue('B3', date('d-m-Y', strtotime($data['order_date'])));
@@ -19909,13 +17215,13 @@ class Orders extends CI_Controller{
 							}
 						}
 					}elseif((preg_match('/\bComplete Environmental Panel\b/', $respnedn->name)) && (preg_match('/\bFood Panel\b/', $respnedn->name))){
-						$fileName = 'NextLab_Complete_Environmental_+_Food_Serum_Result_'.$order_number;
+						$fileName = 'NextLab_Complete_Environmental_+_Food_Serum_Result_'.$NextmuneRef;
 						$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $order_number);
+						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
 						$objPHPExcel->getActiveSheet()->SetCellValue('C1', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('D1', '');
-						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. CUSTOMER');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['reference_number']);
+						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. VETLAB');
+						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['lab_order_number']);
 						$objPHPExcel->getActiveSheet()->SetCellValue('C2', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('D2', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('A3', 'DATE');
@@ -19926,7 +17232,7 @@ class Orders extends CI_Controller{
 						$objPHPExcel->getActiveSheet()->SetCellValue('B4', $data['pet_name']);
 						$objPHPExcel->getActiveSheet()->SetCellValue('C4', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('D4', '');
-						$objPHPExcel->getActiveSheet()->SetCellValue('A5', 'IMMUNOTHERAPY RECOMMENDED');
+						$objPHPExcel->getActiveSheet()->SetCellValue('A5', 'INMUNOTHERAPY RECOMMENDED');
 						$objPHPExcel->getActiveSheet()->SetCellValue('B5', 'ARTUVETRIN');
 						$objPHPExcel->getActiveSheet()->SetCellValue('C5', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('D5', 'ALLERGENS TO BE INCLUDED IN IMMUNOTHERAPY');
@@ -20088,13 +17394,13 @@ class Orders extends CI_Controller{
 							}
 						}
 					}elseif((preg_match('/\bComplete Environmental Panel\b/', $respnedn->name)) && (preg_match('/\bFood SCREEN\b/', $respnedn->name))){
-						$fileName = 'NextLab_Complete_Environmental_+_SCREEN_Food_Serum_Result_'.$order_number;
+						$fileName = 'NextLab_Complete_Environmental_+_SCREEN_Food_Serum_Result_'.$NextmuneRef;
 						$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $order_number);
+						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
 						$objPHPExcel->getActiveSheet()->SetCellValue('C1', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('D1', '');
-						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. CUSTOMER');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['reference_number']);
+						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. VETLAB');
+						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['lab_order_number']);
 						$objPHPExcel->getActiveSheet()->SetCellValue('C2', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('D2', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('A3', 'DATE');
@@ -20105,7 +17411,7 @@ class Orders extends CI_Controller{
 						$objPHPExcel->getActiveSheet()->SetCellValue('B4', $data['pet_name']);
 						$objPHPExcel->getActiveSheet()->SetCellValue('C4', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('D4', '');
-						$objPHPExcel->getActiveSheet()->SetCellValue('A5', 'IMMUNOTHERAPY RECOMMENDED');
+						$objPHPExcel->getActiveSheet()->SetCellValue('A5', 'INMUNOTHERAPY RECOMMENDED');
 						$objPHPExcel->getActiveSheet()->SetCellValue('B5', 'ARTUVETRIN');
 						$objPHPExcel->getActiveSheet()->SetCellValue('C5', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('D5', 'ALLERGENS TO BE INCLUDED IN IMMUNOTHERAPY');
@@ -20274,11 +17580,11 @@ class Orders extends CI_Controller{
 						$objPHPExcel->getActiveSheet()->SetCellValue('D'.$foodcount, '');
 						/* End Food Carbohydrates */
 					}elseif((preg_match('/\bSCREEN Environmental\b/', $respnedn->name)) && (preg_match('/\bFood Positive\b/', $respnedn->name))){
-						$fileName = 'NextLab_SCREEN_Environmental_+_SCREEN_Food_Serum_Result_'.$order_number;
+						$fileName = 'NextLab_SCREEN_Environmental_+_SCREEN_Food_Serum_Result_'.$NextmuneRef;
 						$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $order_number);
-						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. CUSTOMER');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['reference_number']);
+						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
+						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. VETLAB');
+						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['lab_order_number']);
 						$objPHPExcel->getActiveSheet()->SetCellValue('A3', 'DATE');
 						$objPHPExcel->getActiveSheet()->SetCellValue('B3', date('d-m-Y', strtotime($data['order_date'])));
 						$objPHPExcel->getActiveSheet()->SetCellValue('A4', 'ANIMAL');
@@ -20606,11 +17912,11 @@ class Orders extends CI_Controller{
 						/* End Food Carbohydrates */
 					}elseif(preg_match('/\bComplete Environmental and Insect Panel\b/', $respnedn->name)){
 						$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $order_number);
+						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
 						$objPHPExcel->getActiveSheet()->SetCellValue('C1', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('D1', '');
-						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. CUSTOMER');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['reference_number']);
+						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. VETLAB');
+						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['lab_order_number']);
 						$objPHPExcel->getActiveSheet()->SetCellValue('C2', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('D2', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('A3', 'DATE');
@@ -20621,7 +17927,7 @@ class Orders extends CI_Controller{
 						$objPHPExcel->getActiveSheet()->SetCellValue('B4', $data['pet_name']);
 						$objPHPExcel->getActiveSheet()->SetCellValue('C4', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('D4', '');
-						$objPHPExcel->getActiveSheet()->SetCellValue('A5', 'IMMUNOTHERAPY RECOMMENDED');
+						$objPHPExcel->getActiveSheet()->SetCellValue('A5', 'INMUNOTHERAPY RECOMMENDED');
 						$objPHPExcel->getActiveSheet()->SetCellValue('B5', 'ARTUVETRIN');
 						$objPHPExcel->getActiveSheet()->SetCellValue('C5', '');
 						$objPHPExcel->getActiveSheet()->SetCellValue('D5', 'ALLERGENS TO BE INCLUDED IN IMMUNOTHERAPY');
@@ -20722,7 +18028,7 @@ class Orders extends CI_Controller{
 						/* End Malassezia */
 
 						if(preg_match('/\bFood\b/', $respnedn->name)){
-							$fileName = 'NextLab_Complete_Environmental_+_Food_Serum_Result_'.$order_number;
+							$fileName = 'NextLab_Complete_Environmental_+_Food_Serum_Result_'.$NextmuneRef;
 							$getAllergenFParent = $this->AllergensModel->getallergensFoodcatgory($data['allergens']);
 							$foodCount = $rowCount+2;
 							foreach($getAllergenFParent as $rowf){
@@ -20785,13 +18091,13 @@ class Orders extends CI_Controller{
 								}
 							}
 						}else{
-							$fileName = 'NextLab_Complete_Environmental_Serum_Result_'.$order_number;
+							$fileName = 'NextLab_Complete_Environmental_Serum_Result_'.$NextmuneRef;
 						}
 					}elseif(preg_match('/\bSCREEN Environmental & Insect Screen\b/', $respnedn->name)){
 						$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'REF. NEXTMUNE');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $order_number);
-						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. CUSTOMER');
-						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['reference_number']);
+						$objPHPExcel->getActiveSheet()->SetCellValue('B1', $NextmuneRef);
+						$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'REF. VETLAB');
+						$objPHPExcel->getActiveSheet()->SetCellValue('B2', $data['lab_order_number']);
 						$objPHPExcel->getActiveSheet()->SetCellValue('A3', 'DATE');
 						$objPHPExcel->getActiveSheet()->SetCellValue('B3', date('d-m-Y', strtotime($data['order_date'])));
 						$objPHPExcel->getActiveSheet()->SetCellValue('A4', 'ANIMAL');
@@ -21051,7 +18357,7 @@ class Orders extends CI_Controller{
 						/* End Malassezia */
 
 						if(preg_match('/\bFood\b/', $respnedn->name)){
-							$fileName = 'NextLab_SCREEN_Environmental_+_Food_Serum_Result_'.$order_number;
+							$fileName = 'NextLab_SCREEN_Environmental_+_Food_Serum_Result_'.$NextmuneRef;
 							$getAllergenFParent = $this->AllergensModel->getallergensFoodcatgory($data['allergens']);
 							$rowCount = 17;
 							foreach($getAllergenFParent as $rowf){
@@ -21114,7 +18420,7 @@ class Orders extends CI_Controller{
 								}
 							}
 						}else{
-							$fileName = 'NextLab_SCREEN_Environmental_Serum_Result_'.$order_number;
+							$fileName = 'NextLab_SCREEN_Environmental_Serum_Result_'.$NextmuneRef;
 						}
 					}
 				}
@@ -21817,7 +19123,7 @@ class Orders extends CI_Controller{
 			$petOWLName = !empty($data['po_last'])?$data['po_last']:'';
 			$petownerName = $petOWFName.' '.$petOWLName;
 			$respnedn = $this->OrdersModel->getProductInfo($data['product_code_selection']);
-			if(preg_match('/\bScreening\b/', $respnedn->name) && !preg_match('/\bExpanded\b/', $respnedn->name)){
+			if(preg_match('/\bScreening\b/', $respnedn->name)){
 				$pdfNameEnv = seo_friendly_url('PAX_Environmental_Screening_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
 				$pdfNameFood = seo_friendly_url('PAX_Food_Screening_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
 				$file_name = FCPATH . SERUM_REQUEST_PDF_PATH . $pdfNameEnv .".pdf";
@@ -21866,11 +19172,7 @@ class Orders extends CI_Controller{
 					}
 					$mpdf->SetHTMLFooter($raptor_footer_pdf);
 					$mpdf->WriteHTML($screening_header);
-					if($respnedn->name == 'PAX Food Screening'){
-						$mpdf->Output($file_name_food,'F');
-					}else{
-						$mpdf->Output($file_name,'F');
-					}
+					$mpdf->Output($file_name,'F');
 				}
 			}else{
 				$pdfNameEnv = seo_friendly_url('PAX_Environmental_Serum_Test_Result_'.$data['order_number'].'_'.$data['pet_name'].'_'.$petownerName.'');
@@ -21911,7 +19213,7 @@ class Orders extends CI_Controller{
 					$removed_treatment_2 = json_decode($removed_treatment_2);
 				}
 
-				if($respnedn->name == 'PAX Environmental' || $respnedn->name == 'PAX Environmental Screening Expanded'){
+				if($respnedn->name == 'PAX Environmental'){
 					$getAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($order_details['allergens']);
 					$totalGroup0 = count($getAllergenParent);
 					$totalGroup2 = $totalGroup0/2;
@@ -21920,253 +19222,45 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$blocks1 = []; $compgrassIDArr = $extrIDArr = $compIDArr = []; $mitecompIDArr = [];
+					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = []; $block1 = []; $blocks1 = []; $allengesIDsArr = array();
 					foreach ($getAllergenParent as $apkey => $apvalue){
-						if($apvalue['pax_parent_id'] == '1'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$compCount = 0;
-							foreach($subAllergens as $skey => $cvalue){
-								$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu)){
-										if(floor($raptrVlu->result_value) >= $cutoffs){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 3){
-												$compCount++;
-												$compgrassIDArr[] = $cvalue['id'];
-											}
-										}
-									}
-								}
-							}
-							if($compCount > 0){
-								foreach ($subAllergens as $skey => $svalue) {
-									if(in_array($svalue['id'],$compgrassIDArr)){
-										$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-										if(!empty($subVlu->raptor_code)){
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-											if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-												if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-													$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-													if($ctype->em_allergen == 3){
-														$compIDArr[] = $ctype->id;
-													}
-												}else{
-													$blocks1[$svalue['id']] = $svalue['name'];
-												}
-											}
-										}
-									}
-								}
-							}else{
-								foreach ($subAllergens as $skey => $svalue) {
-									$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-									if(!empty($subVlu->raptor_code)){
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-										if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-											if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-												$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-												if($ctype->em_allergen == 2){
-													$extrIDArr[$svalue['id']] = $svalue['name'];
-												}
-											}else{
-												$blocks1[$svalue['id']] = $svalue['name'];
-											}
-										}
-									}
-								}
-							}
-						}elseif($apvalue['pax_parent_id'] == '45958'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$positiveCode = [];
-							foreach ($subAllergens as $skey => $svalue) {
-								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['pax_name'] != "N/A"){
-											$positiveCode[] = $raptrVlu->name;
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrIDArr[$svalue['id']] = $svalue['name'];
-											}
-											if($ctype->em_allergen == 3){
-												$compIDArr[] = $ctype->id;
-											}
-											if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											}else{
-												$blocks1[$svalue['id']] = $svalue['name'];
-											}
-										}
-									}
-								}
-							}
-
-							if(!empty($positiveCode)){
-								if(in_array("Blo t 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Per a 7",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-								}
-								if(in_array("Per a 7",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-									$mitecompIDArr[] = 73;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Per a 7",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 73;
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Per a 7",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-									$mitecompIDArr[] = 73;
-								}
-							}
-						}else{
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							foreach ($subAllergens as $skey => $svalue) {
-								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									if($apvalue['pax_parent_id'] == '45966' && $svalue['id'] == '81'){
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code.', Mala p',$raptorData->result_id);
-									}else{
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									}
-									if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
+						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
+						foreach ($subAllergens as $skey => $svalue) {
+							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+							if(!empty($subVlu->raptor_code)){
+								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+								if(!empty($raptrVlu)){
+									if(floor($raptrVlu->result_value) >= $cutoffs){
 										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrIDArr[$svalue['id']] = $svalue['name'];
+											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+												$allengesID3Arr[] = $svalue['id'];
 											}
-											if($ctype->em_allergen == 3){
-												$compIDArr[] = $ctype->id;
-											}
+											$block1[$svalue['id']] = $svalue['name'];
 										}else{
+											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+												$allengesID4Arr[] = $svalue['id'];
+											}
 											$blocks1[$svalue['id']] = $svalue['name'];
 										}
+										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+											$allengesIDArr[] = $svalue['id'];
+										}
+										$allengesIDsArr[] = $svalue['id'];
+										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 									}
 								}
 							}
 						}
 					}
-					$compPart = [];
-					if(!empty($compIDArr)){
-						$finalTretements = $this->AllergensModel->getRaptorComponentsGroupBy($compIDArr,$raptorData->result_id);
-						$funcArr = [];
-						foreach($finalTretements as $favalue){
-							if(in_array("".strtolower($favalue->raptor_function)."",$funcArr)){
-								$samcomp = $this->AllergensModel->getRaptorSameComponents($favalue->raptor_function,$compIDArr,$raptorData->result_id);
-								$allvaluesArr = array();
-								foreach($samcomp as $srow){
-									$allvaluesArr[] = $srow->result_value;
-								}
-								if(count(array_unique($allvaluesArr)) === 1){
-									if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0 && !in_array($favalue->allergens_id,array_unique($mitecompIDArr))){
-										$compPart[$favalue->allergens_id] = $favalue->name;
-									}
-								}elseif($favalue->pax_parent_id == '1'){
-									$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown(1, $order_details['allergens']);
-									$compCount = 0;
-									foreach($subAllergens as $skey => $cvalue){
-										if($cvalue['id'] != $favalue->allergens_id){
-											$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-											if(!empty($subVlu->raptor_code)){
-												$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-													$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-													if($ctype->em_allergen == 3){
-														$compCount++;
-													}
-												}
-											}
-										}
-									}
-									if($compCount == 0){
-										foreach ($subAllergens as $skey => $svalue) {
-											$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-											if(!empty($subVlu->raptor_code)){
-												$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-													if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-														$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-														if($ctype->em_allergen == 2){
-															$extrIDArr[$svalue['id']] = $svalue['name'];
-														}
-													}else{
-														$blocks1[$svalue['id']] = $svalue['name'];
-													}
-												}
-											}
-										}
-									}
-								}else{
-									$subVlu = $this->AllergensModel->getsubAllergensCodeForSecondHigherValue($favalue->allergens_id,$favalue->raptor_code);
-									if(!empty($subVlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $favalue->allergens_id == '81'){
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-											if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0){
-												$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-												if($ctype->em_allergen == 3){
-													$compPart[$favalue->allergens_id] = $favalue->name;
-												}
-											}else{
-												$blocks1[$favalue->allergens_id] = $favalue->name;
-											}
-										}
-									}
-								}
-							}else{
-								$funcArr[] = strtolower($favalue->raptor_function);
-								if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0 && !in_array($favalue->allergens_id,array_unique($mitecompIDArr))){
-									$compPart[$favalue->allergens_id] = $favalue->name;
-								}
-							}
-						}
-					}
-					if(!empty($extrIDArr)){
-						foreach($extrIDArr as $ekey => $evalue){
-							if($ekey != $compPart[$ekey]){
-								$compPart[$ekey] = $evalue;
-							}
-						}
-					}
-					$block1 = $compPart;
-					$block1IDArr = [];
-					if(!empty($block1)){
-						foreach($block1 as $bkey => $bvalue){
-							$block1IDArr[] = $bkey;
-						}
-					}
-					$block1IDArr = json_encode($block1IDArr);
 					if(array_key_exists("45994",$block1) && array_key_exists("73",$block1)){
 						unset($block1['45994']);
 					}elseif(array_key_exists("45994",$block1)){
 						unset($block1['45994']);
 						$block1['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($order_details['treatment_1'] != "" && $order_details['treatment_1'] != "[]"){
+					if($data['treatment_1'] != "" && $data['treatment_1'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_1']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
@@ -22183,180 +19277,80 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
+					//asort($block1);
 					$this->_data['block1'] = $block1;
 					$this->_data['blocks1'] = $blocks1;
 
-					$block2 = []; $chk_alg_cunt = 0; $mix_cunt = 0;
+					$block2 = []; $chk_alg_cunt = 0;
 					foreach($getAllergenParent as $apvalue){
-						if($apvalue['pax_parent_id'] == '1'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$compCount = 0; $extrCount = 0;
-							foreach($subAllergens as $skey => $cvalue){
-								$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu)){
-										if(floor($raptrVlu->result_value) >= $cutoffs){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrCount++;
-											}
-											if($ctype->em_allergen == 3){
-												$compCount++;
-											}
-										}
-									}
+						$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
+						if(!empty($getGroupMixtures)){
+							$parentIdArr = [];
+							foreach($getGroupMixtures as $mvalue){
+								if($mvalue['mixture_allergens'] != "" && $mvalue['mixture_allergens'] != "null"){
+									$parentIdArr[] = $mvalue['id'];
 								}
 							}
-							if($compCount == 0 && $extrCount >= 3){
-								$mix_cunt += 1;
-								$block2[10] = $this->AllergensModel->getAllergennameById(10);
-							}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-								foreach($sub2Allergens as $s2value){
-									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-									if(!empty($sub2Vlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-											if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-												$block2[$s2value['id']] = $s2value['name'];
-											}
-										}
-									}
-								}
-							}
-						}else{
-							$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
-							if(!empty($getGroupMixtures)){
-								$parentIdArr = [];
-								foreach($getGroupMixtures as $mvalue){
-									if($mvalue['mixture_allergens'] != "" && $mvalue['mixture_allergens'] != "null"){
-										$parentIdArr[] = $mvalue['id'];
-									}
-								}
-								if(!empty($parentIdArr)){
-									if(count($parentIdArr) > 1){
-										$emptyArr = [];
-										foreach($parentIdArr as $makey=>$mavalue){
-											$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
-											$testingArr = [];
-											foreach($allergenArr as $amid){
-												$rmcodes = $this->OrdersModel->getsubAllergensCode($amid);
-												if(!empty($rmcodes->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $mavalue == '81'){
-														$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptrmVlu) && floor($raptrmVlu->result_value) >= $cutoffs){
+
+							if(!empty($parentIdArr)){
+								if(count($parentIdArr) > 1){
+									foreach($parentIdArr as $makey=>$mavalue){
+										$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
+										$testingArr = [];
+										foreach($allergenArr as $amid){
+											$rmcodes = $this->OrdersModel->getsubAllergensCode($amid);
+											if(!empty($rmcodes->raptor_code)){
+												$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
+												if(!empty($raptrmVlu)){
+													if(floor($raptrmVlu->result_value) >= $cutoffs){
 														$testingArr[$mavalue] += 1;
 													}
 												}
 											}
+										}
 
-											if(count($allergenArr) >= 3){
-												$chk_alg_cunt = (count($allergenArr)-1);
-												if($testingArr[$mavalue] >= $chk_alg_cunt){
-													if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-														$mix_cunt += 1;
-														$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-													}
-													foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
-														$emptyArr[$apvalue['parent_id']][] = $emtrow;
-													}
+										if(count($allergenArr) >= 3){
+											$chk_alg_cunt = (count($allergenArr)-1);
+											if($testingArr[$mavalue] >= $chk_alg_cunt){
+												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
 												}
-											}else{
-												if($testingArr[$mavalue] >= 2){
-													if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-														$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-														$mix_cunt += 1;
-													}
-													foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
-														$emptyArr[$apvalue['parent_id']][] = $emtrow;
-													}
+											}
+										}else{
+											if($testingArr[$mavalue] >= 2){
+												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
 												}
 											}
 										}
-										if(!empty($emptyArr[$apvalue['parent_id']]) && !empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-											$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown_empty($apvalue['parent_id'],$block1IDArr, $emptyArr[$apvalue['parent_id']]);
-											foreach($sub1Allergens as $s1value){
-												$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-												if(!empty($sub1Vlu->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-														$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-															$block2[$s1value['id']] = $s1value['name'];
-														}
-													}
-												}
-											}
-										}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-											$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-											foreach($sub2Allergens as $s2value){
-												$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-												if(!empty($sub2Vlu->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-														$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-															$block2[$s2value['id']] = $s2value['name'];
-														}
-													}
-												}
-											}
-										}
-									}else{
-										$allergensArr = json_decode($getGroupMixtures[0]['mixture_allergens']);
-										$tested = 0;
-										foreach($allergensArr as $aid){
-											$rcodes = $this->OrdersModel->getsubAllergensCode($aid);
-											if(!empty($rcodes->raptor_code)){
-												if($apvalue['pax_parent_id'] == '45966' && $aid == '81'){
-													$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code.', Mala p',$raptorData->result_id);
-												}else{
-													$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
-												}
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
+									}
+								}else{
+									$allergensArr = json_decode($getGroupMixtures[0]['mixture_allergens']);
+									$tested = 0;
+									foreach($allergensArr as $aid){
+										$rcodes = $this->OrdersModel->getsubAllergensCode($aid);
+										if(!empty($rcodes->raptor_code)){
+											$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
+											if(!empty($raptrVlu)){
+												if(floor($raptrVlu->result_value) >= $cutoffs){
 													$tested++;
 												}
 											}
 										}
-
+									}
+									
+									if($apvalue['parent_id'] == 1){
+										if($tested >= 3){
+											if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
+												$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+											}
+										}
+									}else{
 										if(count($allergensArr) >= 3){
 											$chk_alg_cunt = (count($allergensArr)-1);
 											if($tested >= $chk_alg_cunt){
 												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
 													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-													$mix_cunt += 1;
-												}
-												if(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-													$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$block1IDArr, $getGroupMixtures[0]['mixture_allergens']);
-													foreach($sub1Allergens as $s1value){
-														$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-														if(!empty($sub1Vlu->raptor_code)){
-															if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-															}else{
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-															}
-															if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-																if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-																	$block2[$s1value['id']] = $s1value['name'];
-																}
-															}
-														}
-													}
 												}
 											}
 										}else{
@@ -22364,38 +19358,18 @@ class Orders extends CI_Controller{
 												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
 													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
 												}
-												if(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-													$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$block1IDArr, $getGroupMixtures[0]['mixture_allergens']);
-													foreach($sub1Allergens as $s1value){
-														$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-														if(!empty($sub1Vlu->raptor_code)){
-															if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code.', Mala p',$raptorData->result_id);
-															}else{
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
-															}
-															if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-																if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-																	$block2[$s1value['id']] = $s1value['name'];
-																}
-															}
-														}
-													}
-												}
 											}
 										}
 									}
-								}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-									$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-									foreach($sub2Allergens as $s2value){
-										$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-										if(!empty($sub2Vlu->raptor_code)){
-											if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-											}else{
-												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-											}
-											if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
+								}
+							}else{
+								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+								foreach($sub2Allergens as $s2value){
+									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+									if(!empty($sub2Vlu->raptor_code)){
+										$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+										if(!empty($raptr2Vlu)){
+											if($raptr2Vlu->result_value >= 30){
 												if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
 													$block2[$s2value['id']] = $s2value['name'];
 												}
@@ -22403,19 +19377,17 @@ class Orders extends CI_Controller{
 										}
 									}
 								}
-							}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-								foreach($sub2Allergens as $s2value){
-									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-									if(!empty($sub2Vlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-											if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-												$block2[$s2value['id']] = $s2value['name'];
+							}
+						}else{
+							$sub3Allergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
+							foreach($sub3Allergens as $s3value){
+								$sub3Vlu = $this->OrdersModel->getsubAllergensCode($s3value['id']);
+								if(!empty($sub3Vlu->raptor_code)){
+									$raptr3Vlu = $this->OrdersModel->getRaptorValue($sub3Vlu->raptor_code,$raptorData->result_id);
+									if(!empty($raptr3Vlu)){
+										if($raptr3Vlu->result_value >= 30){
+											if($s3value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s3value['id']) > 0){
+												$block2[$s3value['id']] = $s3value['name'];
 											}
 										}
 									}
@@ -22423,22 +19395,13 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
-					if(!array_key_exists("81",$block2) && array_key_exists("81",$compPart)){
-						$block2[81] = $this->AllergensModel->getAllergennameById(81);
-					}
-					if(array_key_exists("26",$block2) && array_key_exists("27",$block2)){
-						unset($block2['27']);
-					}
-					if($mix_cunt == 0){
-						$block2 = [];
-					}
 					if(array_key_exists("45994",$block2) && array_key_exists("73",$block2)){
 						unset($block2['45994']);
 					}elseif(array_key_exists("45994",$block2)){
 						unset($block2['45994']);
 						$block2['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($order_details['treatment_2'] != "" && $order_details['treatment_2'] != "[]"){
+					if($data['treatment_2'] != "" && $data['treatment_2'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_2']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
@@ -22455,38 +19418,8 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
+					//asort($block2);
 					$this->_data['block2'] = $block2;
-
-					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = [];$allengesIDsArr = array(); $dummytext = "";
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
-							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-							if(!empty($subVlu->raptor_code)){
-								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID3Arr[] = $svalue['id'];
-											}
-										}else{
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID4Arr[] = $svalue['id'];
-											}
-										}
-										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-											$allengesIDArr[] = $svalue['id'];
-										}
-										$allengesIDsArr[] = $svalue['id'];
-										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
-							}
-						}
-					}
 
 					if(count($allengesArr) > 1){
 						asort($allengesArr);
@@ -22614,7 +19547,7 @@ class Orders extends CI_Controller{
 						$mpdf->WriteHTML($positive_faq_pdf);
 					}
 					$mpdf->Output($file_name,'F');
-				}elseif($respnedn->name == 'PAX Food' || $respnedn->name == 'PAX Food Screening Expanded'){
+				}elseif($respnedn->name == 'PAX Food'){
 					$getAllergenParent = $this->AllergensModel->getFoodAllergenParentbyName($order_details['allergens']);
 					$totalGroup0 = count($getAllergenParent);
 					$totalGroup2 = $totalGroup0/2;
@@ -22759,7 +19692,7 @@ class Orders extends CI_Controller{
 						$mpdf->WriteHTML($diet_chart_pdf);
 					}
 					$mpdf->Output($file_name_food,'F');
-				}elseif($respnedn->name == 'PAX Environmental + Food' || $respnedn->name == 'PAX Environmental + Food Screening Expanded'){
+				}elseif($respnedn->name == 'PAX Environmental + Food'){
 					$getAllergenParent = $this->AllergensModel->getEnvAllergenParentbyName($order_details['allergens']);
 					$totalGroup0 = count($getAllergenParent);
 					$totalGroup2 = $totalGroup0/2;
@@ -22768,253 +19701,45 @@ class Orders extends CI_Controller{
 					$this->_data['getAllergenParent'] = $getAllergenParent;
 					$this->_data['partB'] = $partB;
 
-					$blocks1 = []; $compgrassIDArr = $extrIDArr = $compIDArr = []; $mitecompIDArr = [];
+					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = []; $block1 = []; $blocks1 = []; $allengesIDsArr = array();
 					foreach ($getAllergenParent as $apkey => $apvalue){
-						if($apvalue['pax_parent_id'] == '1'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$compCount = 0;
-							foreach($subAllergens as $skey => $cvalue){
-								$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu)){
-										if(floor($raptrVlu->result_value) >= $cutoffs){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 3){
-												$compCount++;
-												$compgrassIDArr[] = $cvalue['id'];
-											}
-										}
-									}
-								}
-							}
-							if($compCount > 0){
-								foreach ($subAllergens as $skey => $svalue) {
-									if(in_array($svalue['id'],$compgrassIDArr)){
-										$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-										if(!empty($subVlu->raptor_code)){
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-											if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-												if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-													$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-													if($ctype->em_allergen == 3){
-														$compIDArr[] = $ctype->id;
-													}
-												}else{
-													$blocks1[$svalue['id']] = $svalue['name'];
-												}
-											}
-										}
-									}
-								}
-							}else{
-								foreach ($subAllergens as $skey => $svalue) {
-									$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-									if(!empty($subVlu->raptor_code)){
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-										if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-											if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-												$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-												if($ctype->em_allergen == 2){
-													$extrIDArr[$svalue['id']] = $svalue['name'];
-												}
-											}else{
-												$blocks1[$svalue['id']] = $svalue['name'];
-											}
-										}
-									}
-								}
-							}
-						}elseif($apvalue['pax_parent_id'] == '45958'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$positiveCode = [];
-							foreach ($subAllergens as $skey => $svalue) {
-								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['pax_name'] != "N/A"){
-											$positiveCode[] = $raptrVlu->name;
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrIDArr[$svalue['id']] = $svalue['name'];
-											}
-											if($ctype->em_allergen == 3){
-												$compIDArr[] = $ctype->id;
-											}
-											if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											}else{
-												$blocks1[$svalue['id']] = $svalue['name'];
-											}
-										}
-									}
-								}
-							}
-
-							if(!empty($positiveCode)){
-								if(in_array("Blo t 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Per a 7",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-								}
-								if(in_array("Per a 7",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-									$mitecompIDArr[] = 73;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Per a 7",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 73;
-									$mitecompIDArr[] = 62;
-								}
-								if(in_array("Blo t 10",$positiveCode) && in_array("Per a 7",$positiveCode) && in_array("Der p 10",$positiveCode) && in_array("Der f",$positiveCode)){
-									unset($extrIDArr['62']);
-									unset($extrIDArr['61']);
-									unset($extrIDArr['73']);
-									$mitecompIDArr[] = 61;
-									$mitecompIDArr[] = 62;
-									$mitecompIDArr[] = 73;
-								}
-							}
-						}else{
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							foreach ($subAllergens as $skey => $svalue) {
-								$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									if($apvalue['pax_parent_id'] == '45966' && $svalue['id'] == '81'){
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code.', Mala p',$raptorData->result_id);
-									}else{
-										$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									}
-									if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
+						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $data['allergens']);
+						foreach ($subAllergens as $skey => $svalue) {
+							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
+							if(!empty($subVlu->raptor_code)){
+								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
+								if(!empty($raptrVlu)){
+									if(floor($raptrVlu->result_value) >= $cutoffs){
 										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrIDArr[$svalue['id']] = $svalue['name'];
+											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+												$allengesID3Arr[] = $svalue['id'];
 											}
-											if($ctype->em_allergen == 3){
-												$compIDArr[] = $ctype->id;
-											}
+											$block1[$svalue['id']] = $svalue['name'];
 										}else{
+											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
+												$allengesID4Arr[] = $svalue['id'];
+											}
 											$blocks1[$svalue['id']] = $svalue['name'];
 										}
+										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
+											$allengesIDArr[] = $svalue['id'];
+										}
+										$allengesIDsArr[] = $svalue['id'];
+										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
 									}
 								}
 							}
 						}
 					}
-					$compPart = [];
-					if(!empty($compIDArr)){
-						$finalTretements = $this->AllergensModel->getRaptorComponentsGroupBy($compIDArr,$raptorData->result_id);
-						$funcArr = [];
-						foreach($finalTretements as $favalue){
-							if(in_array("".strtolower($favalue->raptor_function)."",$funcArr)){
-								$samcomp = $this->AllergensModel->getRaptorSameComponents($favalue->raptor_function,$compIDArr,$raptorData->result_id);
-								$allvaluesArr = array();
-								foreach($samcomp as $srow){
-									$allvaluesArr[] = $srow->result_value;
-								}
-								if(count(array_unique($allvaluesArr)) === 1){
-									if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0 && !in_array($favalue->allergens_id,array_unique($mitecompIDArr))){
-										$compPart[$favalue->allergens_id] = $favalue->name;
-									}
-								}elseif($favalue->pax_parent_id == '1'){
-									$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown(1, $order_details['allergens']);
-									$compCount = 0;
-									foreach($subAllergens as $skey => $cvalue){
-										if($cvalue['id'] != $favalue->allergens_id){
-											$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-											if(!empty($subVlu->raptor_code)){
-												$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-													$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-													if($ctype->em_allergen == 3){
-														$compCount++;
-													}
-												}
-											}
-										}
-									}
-									if($compCount == 0){
-										foreach ($subAllergens as $skey => $svalue) {
-											$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-											if(!empty($subVlu->raptor_code)){
-												$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-													if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-														$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-														if($ctype->em_allergen == 2){
-															$extrIDArr[$svalue['id']] = $svalue['name'];
-														}
-													}else{
-														$blocks1[$svalue['id']] = $svalue['name'];
-													}
-												}
-											}
-										}
-									}
-								}else{
-									$subVlu = $this->AllergensModel->getsubAllergensCodeForSecondHigherValue($favalue->allergens_id,$favalue->raptor_code);
-									if(!empty($subVlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $favalue->allergens_id == '81'){
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
-											if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0){
-												$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-												if($ctype->em_allergen == 3){
-													$compPart[$favalue->allergens_id] = $favalue->name;
-												}
-											}else{
-												$blocks1[$favalue->allergens_id] = $favalue->name;
-											}
-										}
-									}
-								}
-							}else{
-								$funcArr[] = strtolower($favalue->raptor_function);
-								if($favalue->name != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($favalue->allergens_id) > 0 && !in_array($favalue->allergens_id,array_unique($mitecompIDArr))){
-									$compPart[$favalue->allergens_id] = $favalue->name;
-								}
-							}
-						}
-					}
-					if(!empty($extrIDArr)){
-						foreach($extrIDArr as $ekey => $evalue){
-							if($ekey != $compPart[$ekey]){
-								$compPart[$ekey] = $evalue;
-							}
-						}
-					}
-					$block1 = $compPart;
-					$block1IDArr = [];
-					if(!empty($block1)){
-						foreach($block1 as $bkey => $bvalue){
-							$block1IDArr[] = $bkey;
-						}
-					}
-					$block1IDArr = json_encode($block1IDArr);
 					if(array_key_exists("45994",$block1) && array_key_exists("73",$block1)){
 						unset($block1['45994']);
 					}elseif(array_key_exists("45994",$block1)){
 						unset($block1['45994']);
 						$block1['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($order_details['treatment_1'] != "" && $order_details['treatment_1'] != "[]"){
+					if($data['treatment_1'] != "" && $data['treatment_1'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_1']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
@@ -23031,180 +19756,80 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
+					//asort($block1);
 					$this->_data['block1'] = $block1;
 					$this->_data['blocks1'] = $blocks1;
 
-					$block2 = []; $chk_alg_cunt = 0; $mix_cunt = 0;
+					$block2 = []; $chk_alg_cunt = 0;
 					foreach($getAllergenParent as $apvalue){
-						if($apvalue['pax_parent_id'] == '1'){
-							$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-							$compCount = 0; $extrCount = 0;
-							foreach($subAllergens as $skey => $cvalue){
-								$subVlu = $this->OrdersModel->getsubAllergensCode($cvalue['id']);
-								if(!empty($subVlu->raptor_code)){
-									$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-									if(!empty($raptrVlu)){
-										if(floor($raptrVlu->result_value) >= $cutoffs){
-											$ctype = $this->AllergensModel->checkCodeType($raptrVlu->name);
-											if($ctype->em_allergen == 2){
-												$extrCount++;
-											}
-											if($ctype->em_allergen == 3){
-												$compCount++;
-											}
-										}
-									}
+						$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
+						if(!empty($getGroupMixtures)){
+							$parentIdArr = [];
+							foreach($getGroupMixtures as $mvalue){
+								if($mvalue['mixture_allergens'] != "" && $mvalue['mixture_allergens'] != "null"){
+									$parentIdArr[] = $mvalue['id'];
 								}
 							}
-							if($compCount == 0 && $extrCount >= 3){
-								$mix_cunt += 1;
-								$block2[10] = $this->AllergensModel->getAllergennameById(10);
-							}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-								foreach($sub2Allergens as $s2value){
-									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-									if(!empty($sub2Vlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-											if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-												$block2[$s2value['id']] = $s2value['name'];
-											}
-										}
-									}
-								}
-							}
-						}else{
-							$getGroupMixtures = $this->AllergensModel->getGroupMixturesbyParent($apvalue['parent_id']);
-							if(!empty($getGroupMixtures)){
-								$parentIdArr = [];
-								foreach($getGroupMixtures as $mvalue){
-									if($mvalue['mixture_allergens'] != "" && $mvalue['mixture_allergens'] != "null"){
-										$parentIdArr[] = $mvalue['id'];
-									}
-								}
-								if(!empty($parentIdArr)){
-									if(count($parentIdArr) > 1){
-										$emptyArr = [];
-										foreach($parentIdArr as $makey=>$mavalue){
-											$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
-											$testingArr = [];
-											foreach($allergenArr as $amid){
-												$rmcodes = $this->OrdersModel->getsubAllergensCode($amid);
-												if(!empty($rmcodes->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $mavalue == '81'){
-														$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptrmVlu) && floor($raptrmVlu->result_value) >= $cutoffs){
+
+							if(!empty($parentIdArr)){
+								if(count($parentIdArr) > 1){
+									foreach($parentIdArr as $makey=>$mavalue){
+										$allergenArr = json_decode($getGroupMixtures[$makey]['mixture_allergens']);
+										$testingArr = [];
+										foreach($allergenArr as $amid){
+											$rmcodes = $this->OrdersModel->getsubAllergensCode($amid);
+											if(!empty($rmcodes->raptor_code)){
+												$raptrmVlu = $this->OrdersModel->getRaptorValue($rmcodes->raptor_code,$raptorData->result_id);
+												if(!empty($raptrmVlu)){
+													if(floor($raptrmVlu->result_value) >= $cutoffs){
 														$testingArr[$mavalue] += 1;
 													}
 												}
 											}
+										}
 
-											if(count($allergenArr) >= 3){
-												$chk_alg_cunt = (count($allergenArr)-1);
-												if($testingArr[$mavalue] >= $chk_alg_cunt){
-													if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-														$mix_cunt += 1;
-														$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-													}
-													foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
-														$emptyArr[$apvalue['parent_id']][] = $emtrow;
-													}
+										if(count($allergenArr) >= 3){
+											$chk_alg_cunt = (count($allergenArr)-1);
+											if($testingArr[$mavalue] >= $chk_alg_cunt){
+												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
 												}
-											}else{
-												if($testingArr[$mavalue] >= 2){
-													if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
-														$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
-														$mix_cunt += 1;
-													}
-													foreach(json_decode($getGroupMixtures[$makey]['mixture_allergens']) as $emtrow){
-														$emptyArr[$apvalue['parent_id']][] = $emtrow;
-													}
+											}
+										}else{
+											if($testingArr[$mavalue] >= 2){
+												if($getGroupMixtures[$makey]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[$makey]['id']) > 0){
+													$block2[$getGroupMixtures[$makey]['id']] = $getGroupMixtures[$makey]['name'];
 												}
 											}
 										}
-										if(!empty($emptyArr[$apvalue['parent_id']]) && !empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-											$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown_empty($apvalue['parent_id'],$block1IDArr, $emptyArr[$apvalue['parent_id']]);
-											foreach($sub1Allergens as $s1value){
-												$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-												if(!empty($sub1Vlu->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-														$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-														if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-															$block2[$s1value['id']] = $s1value['name'];
-														}
-													}
-												}
-											}
-										}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-											$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-											foreach($sub2Allergens as $s2value){
-												$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-												if(!empty($sub2Vlu->raptor_code)){
-													if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-														$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-													}else{
-														$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-													}
-													if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-														if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-															$block2[$s2value['id']] = $s2value['name'];
-														}
-													}
-												}
-											}
-										}
-									}else{
-										$allergensArr = json_decode($getGroupMixtures[0]['mixture_allergens']);
-										$tested = 0;
-										foreach($allergensArr as $aid){
-											$rcodes = $this->OrdersModel->getsubAllergensCode($aid);
-											if(!empty($rcodes->raptor_code)){
-												if($apvalue['pax_parent_id'] == '45966' && $aid == '81'){
-													$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code.', Mala p',$raptorData->result_id);
-												}else{
-													$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
-												}
-												if(!empty($raptrVlu) && floor($raptrVlu->result_value) >= $cutoffs){
+									}
+								}else{
+									$allergensArr = json_decode($getGroupMixtures[0]['mixture_allergens']);
+									$tested = 0;
+									foreach($allergensArr as $aid){
+										$rcodes = $this->OrdersModel->getsubAllergensCode($aid);
+										if(!empty($rcodes->raptor_code)){
+											$raptrVlu = $this->OrdersModel->getRaptorValue($rcodes->raptor_code,$raptorData->result_id);
+											if(!empty($raptrVlu)){
+												if(floor($raptrVlu->result_value) >= $cutoffs){
 													$tested++;
 												}
 											}
 										}
-
+									}
+									
+									if($apvalue['parent_id'] == 1){
+										if($tested >= 3){
+											if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
+												$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
+											}
+										}
+									}else{
 										if(count($allergensArr) >= 3){
 											$chk_alg_cunt = (count($allergensArr)-1);
 											if($tested >= $chk_alg_cunt){
 												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
 													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
-													$mix_cunt += 1;
-												}
-												if(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-													$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$block1IDArr, $getGroupMixtures[0]['mixture_allergens']);
-													foreach($sub1Allergens as $s1value){
-														$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-														if(!empty($sub1Vlu->raptor_code)){
-															if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-															}else{
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-															}
-															if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-																if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-																	$block2[$s1value['id']] = $s1value['name'];
-																}
-															}
-														}
-													}
 												}
 											}
 										}else{
@@ -23212,38 +19837,18 @@ class Orders extends CI_Controller{
 												if($getGroupMixtures[0]['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($getGroupMixtures[0]['id']) > 0){
 													$block2[$getGroupMixtures[0]['id']] = $getGroupMixtures[0]['name'];
 												}
-												if(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-													$sub1Allergens = $this->AllergensModel->get_subAllergens_dropdown2($getGroupMixtures[0]['parent_id'],$block1IDArr, $getGroupMixtures[0]['mixture_allergens']);
-													foreach($sub1Allergens as $s1value){
-														$sub1Vlu = $this->OrdersModel->getsubAllergensCode($s1value['id']);
-														if(!empty($sub1Vlu->raptor_code)){
-															if($apvalue['pax_parent_id'] == '45966' && $s1value['id'] == '81'){
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code.', Mala p',$raptorData->result_id);
-															}else{
-																$raptr1Vlu = $this->OrdersModel->getRaptorValue($sub1Vlu->raptor_code,$raptorData->result_id);
-															}
-															if(!empty($raptr1Vlu) && floor($raptr1Vlu->result_value) >= $cutoffs){
-																if($s1value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s1value['id']) > 0){
-																	$block2[$s1value['id']] = $s1value['name'];
-																}
-															}
-														}
-													}
-												}
 											}
 										}
 									}
-								}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-									$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-									foreach($sub2Allergens as $s2value){
-										$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-										if(!empty($sub2Vlu->raptor_code)){
-											if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-											}else{
-												$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-											}
-											if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
+								}
+							}else{
+								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $order_details['allergens']);
+								foreach($sub2Allergens as $s2value){
+									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
+									if(!empty($sub2Vlu->raptor_code)){
+										$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
+										if(!empty($raptr2Vlu)){
+											if($raptr2Vlu->result_value >= 30){
 												if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
 													$block2[$s2value['id']] = $s2value['name'];
 												}
@@ -23251,19 +19856,17 @@ class Orders extends CI_Controller{
 										}
 									}
 								}
-							}elseif(!empty($block1IDArr) && $block1IDArr != '' && $block1IDArr != '[]'){
-								$sub2Allergens = $this->AllergensModel->get_subAllergens_dropdown($apvalue['parent_id'], $block1IDArr);
-								foreach($sub2Allergens as $s2value){
-									$sub2Vlu = $this->OrdersModel->getsubAllergensCode($s2value['id']);
-									if(!empty($sub2Vlu->raptor_code)){
-										if($apvalue['pax_parent_id'] == '45966' && $s2value['id'] == '81'){
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code.', Mala p',$raptorData->result_id);
-										}else{
-											$raptr2Vlu = $this->OrdersModel->getRaptorValue($sub2Vlu->raptor_code,$raptorData->result_id);
-										}
-										if(!empty($raptr2Vlu) && floor($raptr2Vlu->result_value) >= $cutoffs){
-											if($s2value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s2value['id']) > 0){
-												$block2[$s2value['id']] = $s2value['name'];
+							}
+						}else{
+							$sub3Allergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
+							foreach($sub3Allergens as $s3value){
+								$sub3Vlu = $this->OrdersModel->getsubAllergensCode($s3value['id']);
+								if(!empty($sub3Vlu->raptor_code)){
+									$raptr3Vlu = $this->OrdersModel->getRaptorValue($sub3Vlu->raptor_code,$raptorData->result_id);
+									if(!empty($raptr3Vlu)){
+										if($raptr3Vlu->result_value >= 30){
+											if($s3value['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($s3value['id']) > 0){
+												$block2[$s3value['id']] = $s3value['name'];
 											}
 										}
 									}
@@ -23271,22 +19874,13 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
-					if(!array_key_exists("81",$block2) && array_key_exists("81",$compPart)){
-						$block2[81] = $this->AllergensModel->getAllergennameById(81);
-					}
-					if(array_key_exists("26",$block2) && array_key_exists("27",$block2)){
-						unset($block2['27']);
-					}
-					if($mix_cunt == 0){
-						$block2 = [];
-					}
 					if(array_key_exists("45994",$block2) && array_key_exists("73",$block2)){
 						unset($block2['45994']);
 					}elseif(array_key_exists("45994",$block2)){
 						unset($block2['45994']);
 						$block2['73'] = $this->AllergensModel->getAllergennameById(73);
 					}
-					if($order_details['treatment_2'] != "" && $order_details['treatment_2'] != "[]"){
+					if($data['treatment_2'] != "" && $data['treatment_2'] != "[]"){
 						$subAllergnArr = $this->AllergensModel->getAllergensByID($order_details['treatment_2']);
 						if(!empty($subAllergnArr)){
 							foreach ($subAllergnArr as $svalue){
@@ -23303,38 +19897,8 @@ class Orders extends CI_Controller{
 							}
 						}
 					}
+					//asort($block2);
 					$this->_data['block2'] = $block2;
-
-					$allengesArr = []; $allenges3Arr = []; $allenges4Arr = []; $allengesIDArr = []; $allengesID3Arr = []; $allengesID4Arr = [];$allengesIDsArr = array(); $dummytext = "";
-					foreach ($getAllergenParent as $apkey => $apvalue){
-						$subAllergens = $this->AllergensModel->get_pax_subAllergens_dropdown($apvalue['pax_parent_id'], $order_details['allergens']);
-						foreach ($subAllergens as $skey => $svalue) {
-							$subVlu = $this->OrdersModel->getsubAllergensCode($svalue['id']);
-							if(!empty($subVlu->raptor_code)){
-								$raptrVlu = $this->OrdersModel->getRaptorValue($subVlu->raptor_code,$raptorData->result_id);
-								if(!empty($raptrVlu)){
-									if(floor($raptrVlu->result_value) >= $cutoffs){
-										if($svalue['name'] != "N/A" && $this->AllergensModel->checkforArtuveterinallergen($svalue['id']) > 0){
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges3Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID3Arr[] = $svalue['id'];
-											}
-										}else{
-											if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-												$allenges4Arr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-												$allengesID4Arr[] = $svalue['id'];
-											}
-										}
-										if((!in_array($svalue['id'],$removed_treatment_1)) && (!in_array($svalue['id'],$removed_treatment_2))){
-											$allengesIDArr[] = $svalue['id'];
-										}
-										$allengesIDsArr[] = $svalue['id'];
-										$allengesArr[] = !empty($svalue['pax_name'])?$svalue['pax_name']:$svalue['name'];
-									}
-								}
-							}
-						}
-					}
 
 					if(count($allengesArr) > 1){
 						asort($allengesArr);
