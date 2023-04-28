@@ -2570,14 +2570,19 @@ class Orders extends CI_Controller{
 		$this->email->message($html);
 		$this->email->set_mailtype("html");
 		$is_send = $this->email->send();
-		//Send mail 
-		if ($is_send) {
+		//Send mail
+		if (ENVIRONMENT == 'production') {
+			if ($is_send) {
+				$this->session->set_flashdata("success", "Order Cancel and Email has been sent to Netherlands successfully.");
+				echo 'success';
+			} else {
+				//$this->session->set_flashdata("error", "Error in sending Email.");
+				$this->session->set_flashdata("error", $this->email->print_debugger());
+				echo 'fail';
+			}
+		} else {
 			$this->session->set_flashdata("success", "Order Cancel and Email has been sent to Netherlands successfully.");
 			echo 'success';
-		} else {
-			//$this->session->set_flashdata("error", "Error in sending Email.");
-			$this->session->set_flashdata("error", $this->email->print_debugger());
-			echo 'fail';
 		}
 		exit;
 	}
@@ -3548,7 +3553,7 @@ class Orders extends CI_Controller{
 		$this->_data['data'] = [];
 		$data = $this->OrdersModel->getRecord($id);
 		$order_details = $this->OrdersModel->allData($data['id'], "");
-
+//echo "<pre>";print_r($order_details);die;
 		/*****delivery address details */
 		$this->_data['delivery_address_details'] = '';
 		if ($order_details['order_can_send_to'] == '1') {
@@ -3645,7 +3650,8 @@ class Orders extends CI_Controller{
 
 				/**single allergen discount **/
 				$single_discount = $this->PriceCategoriesModel->get_discount("14", $practice_lab);
-				if (!empty($single_discount)) {
+				if (!empty($single_discount))
+				{
 					$single_order_discount = ($skin_test_price[0]['uk_price'] * $single_discount['uk_discount']) / 100;
 					$single_order_discount = sprintf("%.2f", $single_order_discount);
 				}
@@ -3667,8 +3673,9 @@ class Orders extends CI_Controller{
 				$this->_data['price_currency'] = $skin_test_price[0]['price_currency'];
 				$finalPrice = $this->_data['final_price'];
 				$discountPercent = $this->_data['order_discount'];
+				//echo "<pre>";print_r('('.$single_price. '*' .$single_allergen.')'. '+'. '('.$single_insect_price. '*'. $insects_allergen.')');die;
+				//echo "<pre>";print_r($single_order_discount."=".$insects_order_discount);die;
 			}
-
 			//Serum Test Pricing
 			if ($data['order_type'] == '2') {
 				$order_discount = 0.00;
@@ -10743,6 +10750,10 @@ class Orders extends CI_Controller{
 		$data = $this->OrdersModel->getRecord($id);
 		$order_details = $this->OrdersModel->allData($data['id'], "");
 
+		$discountPercent = 0;
+		$discountPrice = 0;
+		$shippingPrice = 0;
+		$finalPrice = 0;
 		/*****delivery address details */
 		$this->_data['delivery_address_details'] = '';
 		if ($order_details['order_can_send_to'] == '1') {
@@ -11149,6 +11160,34 @@ class Orders extends CI_Controller{
 					redirect('orders');
 				}
 			}
+		}
+
+		$type = $this->input->get('vp', TRUE);
+		$type = !empty($data['vetgoid_petslit']) ? $data['vetgoid_petslit'] : $type;
+		if (!empty($type)) {
+			$vetgoidPetslit = $this->PriceCategoriesModel->vetgoid_petslit($type, $this->user_id);
+			/**discount **/
+			$discount = $this->PriceCategoriesModel->get_discount("65", $practice_lab);
+			//echo "<pre>";print_r($discount);die;
+			if (!empty($discount)) {
+				$discountPercent = $discount['uk_discount'];
+				$discountPrice = ($vetgoidPetslit['uk_price'] * $discountPercent) / 100;
+				$discountPrice = sprintf("%.2f", $discountPrice);
+			}
+			/**discount **/
+
+			$this->_data['order_discount'] = round($discountPrice, 2);
+			if ($data['order_type'] == '1') {
+				$shipUPrice = $this->OrdersModel->getShippingCostbyUser("1", $practice_lab);
+				if(!empty($shipUPrice)){
+					$this->_data['shipping_cost'] = $shipUPrice['uk_discount'];
+				}else{
+					$shipDPrice = $this->OrdersModel->getDefaultShippingCost("1");
+					$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
+				}
+			}
+			$this->_data['final_price'] = ($vetgoidPetslit['uk_price'] - $discountPrice) + $this->_data['shipping_cost'];
+			$this->_data['price_currency'] = $vetgoidPetslit['price_currency'];
 		}
 
 		if (!empty($data)) {
@@ -17103,6 +17142,9 @@ class Orders extends CI_Controller{
 					$orderData['comment_by'] = 0;
 					$orderData['updated_by'] = $this->user_id;
 					$orderData['updated_at'] = date("Y-m-d H:i:s");
+					if (!empty($postData['OrderRecommendationsBtns'])) {
+						$orderData['vetgoid_petslit'] = $postData['OrderRecommendationsBtns'];
+					}
 					$this->OrdersModel->add_edit($orderData);
 					redirect('orders/immmuno_summary/'. $newData['id']);
 				}

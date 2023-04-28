@@ -29,6 +29,41 @@ class PriceCategoriesModel extends CI_model{
 		return $this->db->get()->result_array(); 
 	}
 
+	public function vetgoid_petslit($type= 0, $practice_lab='') {
+		$practiceLab = $this->UsersModel->practiceLabCountry($practice_lab);
+		if($practiceLab['name']=='UK' || $practiceLab['name']=='uk' || $practiceLab['name']=='UK'){
+			$this->db->select('id,name,uk_price,uk_currency AS price_currency');
+		}elseif($practiceLab['name']=='Ireland' || $practiceLab['name']=='ireland' || $practiceLab['name']=='IE'){
+			$this->db->select('id,name,roi_price AS uk_price,roi_currency AS price_currency');
+		}elseif($practiceLab['name']=='Denmark' || $practiceLab['name']=='denmark' || $practiceLab['name']=='DK'){
+			$this->db->select('id,name,dk_price AS uk_price,dk_currency AS price_currency');
+		}elseif($practiceLab['name']=='France' || $practiceLab['name']=='france' || $practiceLab['name']=='FR'){
+			$this->db->select('id,name,fr_price AS uk_price,fr_currency AS price_currency');
+		}elseif($practiceLab['name']=='Germany' || $practiceLab['name']=='germany' || $practiceLab['name']=='DE'){
+			$this->db->select('id,name,de_price AS uk_price,de_currency AS price_currency');
+		}elseif($practiceLab['name']=='Italy' || $practiceLab['name']=='italy' || $practiceLab['name']=='IT'){
+			$this->db->select('id,name,it_price AS uk_price,it_currency AS price_currency');
+		}elseif($practiceLab['name']=='Netherlands' || $practiceLab['name']=='netherlands' || $practiceLab['name']=='NL'){
+			$this->db->select('id,name,nl_price AS uk_price,nl_currency AS price_currency');
+		}elseif($practiceLab['name']=='Norway' || $practiceLab['name']=='norway' || $practiceLab['name']=='NO'){
+			$this->db->select('id,name,no_price AS uk_price,no_currency AS price_currency');
+		}elseif($practiceLab['name']=='Spain' || $practiceLab['name']=='spain' || $practiceLab['name']=='ES'){
+			$this->db->select('id,name,es_price AS uk_price,es_currency AS price_currency');
+		}elseif($practiceLab['name']=='Sweden' || $practiceLab['name']=='sweden' || $practiceLab['name']=='SE'){
+			$this->db->select('id,name,se_price AS uk_price,se_currency AS price_currency');
+		}else{
+			$this->db->select('id,name,default_price AS uk_price,default_currency AS price_currency');
+		}
+		$this->db->from($this->_table);
+		if ($type == 1) {
+			$this->db->where('id IN(65)');
+		} else {
+			$this->db->where('id IN(63)');
+		}
+
+		return $this->db->get()->row_array();
+	}
+
 	public function skin_test_price($practice_lab='') {
 		$practiceLab = $this->UsersModel->practiceLabCountry($practice_lab);
 		if($practiceLab['name']=='UK' || $practiceLab['name']=='uk' || $practiceLab['name']=='UK'){
