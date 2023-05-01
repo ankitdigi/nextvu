@@ -56,6 +56,16 @@ $userData = logged_in_user_data();
 											<div class="col-sm-6 col-md-6 col-lg-6">
 												<div class="form-group">
 													<label>Order Type</label>
+													<select class="form-control product_type" name="product_type" id="product_type" required="">
+														<option value="">--Select--</option>
+														<option value="1" <?= isset($data['product_type']) ? ($data['product_type'] == 1 ? 'selected="selected"' : '') : ''; ?> >Immunotherapy</option>
+														<option value="2" <?= isset($data['product_type']) ? ($data['product_type'] == 2 ? 'selected="selected"' : '') : ''; ?> >Serum test</option>
+														<option value="3" <?= isset($data['product_type']) ? ($data['product_type'] == 3 ? 'selected="selected"' : '') : ''; ?> >Skin Test</option>
+													</select>
+													<?php echo form_error('product_type', '<div class="error">', '</div>'); ?>
+												</div>
+												<div class="form-group">
+													<label>Sub Type</label>
 													<select class="form-control parent_id" name="parent_id" id="parent_id" required="">
 														<option value="">--Select--</option>
 														<?php foreach($shipping_prices as $category){ ?>
@@ -65,22 +75,246 @@ $userData = logged_in_user_data();
 													<?php echo form_error('parent_id', '<div class="error">', '</div>'); ?>
 												</div>
 												<div class="form-group">
+													<label>Product Code Selection</label>
+													<input type="text" class="form-control" name="child_ids" placeholder="Enter Product Code Selection (e.g.: 1,2,3,4,5)" value="<?php echo set_value('child_ids',isset($data['child_ids']) ? $data['child_ids'] : '');?>" required="">
+													<?php echo form_error('parent_id', '<div class="error">', '</div>'); ?>
+												</div>
+												<div class="form-group">
 													<label>Name</label>
 													<input type="text" class="form-control" name="name" placeholder="Enter Name" value="<?php echo set_value('name',isset($data['name']) ? $data['name'] : '');?>" required="">
 													<?php echo form_error('name', '<div class="error">', '</div>'); ?>
 												</div>
-												<div class="form-group">
-													<label>UK Price(£)</label>
-													<input type="text" class="form-control" name="uk_price" placeholder="Enter Price" value="<?php echo set_value('uk_price',isset($data['uk_price']) ? $data['uk_price'] : '');?>" required="">
-													<?php echo form_error('uk_price', '<div class="error">', '</div>'); ?>
-												</div>
-												<div class="form-group">
-													<label>Euro Price(€)</label>
-													<input type="text" class="form-control" name="roi_price" placeholder="Enter Price" value="<?php echo set_value('roi_price',isset($data['roi_price']) ? $data['roi_price'] : '');?>" required="">
-													<?php echo form_error('roi_price', '<div class="error">', '</div>'); ?>
-												</div>
+												
 											</div>
 											<!-- /.col -->
+											<div class="col-sm-6 col-md-6 col-lg-6">
+												<div class="col-sm-12 col-md-12 col-lg-12"><h3 style="margin: 0px;color: #2f5c79;border-bottom: 1px solid;margin-bottom: 5px;">Global and NL Prices</h3></div>
+												<div class="form-group col-sm-4 col-md-4 col-lg-4">
+													<label>UK Price:</label>
+													<div class="input-group">
+														<div class="input-group-addon" style="padding:0px;width:90px;">
+															<select class="form-control" name="uk_currency" id="uk_currency" style="padding:0px;height: 32px;">
+																<option value="€" <?php if(isset($id) && $id>0 && ($data['uk_currency']== '€')){ echo 'selected="selected"'; } ?>>Euro(€)</option>
+																<option value="£" <?php if(isset($id) && $id>0 && ($data['uk_currency']== '£')){ echo 'selected="selected"'; } ?>>Pound(£)</option>
+																<option value="$" <?php if(isset($id) && $id>0 && ($data['uk_currency']== '$')){ echo 'selected="selected"'; } ?>>Dollar($)</option>
+															</select>
+														</div>
+														<input type="text" class="form-control" name="uk_price" placeholder="Enter UK Price" value="<?php echo set_value('uk_price',isset($data['uk_price']) ? $data['uk_price'] : '');?>">
+														<?php echo form_error('uk_price', '<div class="error">', '</div>'); ?>
+													</div>
+												</div>
+												<div class="form-group col-sm-4 col-md-4 col-lg-4">
+													<label>Ireland Price:</label>
+													<div class="input-group">
+														<div class="input-group-addon" style="padding:0px;width:90px;">
+															<select class="form-control" name="roi_currency" id="roi_currency" style="padding:0px;height: 32px;">
+																<option value="€" <?php if(isset($id) && $id>0 && ($data['roi_currency']== '€')){ echo 'selected="selected"'; } ?>>Euro(€)</option>
+																<option value="£" <?php if(isset($id) && $id>0 && ($data['roi_currency']== '£')){ echo 'selected="selected"'; } ?>>Pound(£)</option>
+																<option value="$" <?php if(isset($id) && $id>0 && ($data['roi_currency']== '$')){ echo 'selected="selected"'; } ?>>Dollar($)</option>
+															</select>
+														</div>
+														<input type="text" class="form-control" name="roi_price" placeholder="Enter Ireland Price" value="<?php echo set_value('roi_price',isset($data['roi_price']) ? $data['roi_price'] : '');?>">
+														<?php echo form_error('roi_price', '<div class="error">', '</div>'); ?>
+													</div>
+												</div>
+												<div class="form-group col-sm-4 col-md-4 col-lg-4">
+													<label>Denmark Price:</label>
+													<div class="input-group">
+														<div class="input-group-addon" style="padding:0px;width:90px;">
+															<select class="form-control" name="dk_currency" id="dk_currency" style="padding:0px;height: 32px;">
+																<option value="DKK" <?php if(isset($id) && $id>0 && ($data['se_price']== 'DKK')){ echo 'selected="selected"'; } ?>>DKK</option>
+																<option value="€" <?php if(isset($id) && $id>0 && ($data['dk_currency']== '€')){ echo 'selected="selected"'; } ?>>Euro(€)</option>
+																<option value="£" <?php if(isset($id) && $id>0 && ($data['dk_currency']== '£')){ echo 'selected="selected"'; } ?>>Pound(£)</option>
+																<option value="$" <?php if(isset($id) && $id>0 && ($data['dk_currency']== '$')){ echo 'selected="selected"'; } ?>>Dollar($)</option>
+															</select>
+														</div>
+														<input type="text" class="form-control" name="dk_price" placeholder="Enter Denmark Price" value="<?php echo set_value('dk_price',isset($data['dk_price']) ? $data['dk_price'] : '');?>">
+														<?php echo form_error('dk_price', '<div class="error">', '</div>'); ?>
+													</div>
+												</div>
+												<div class="form-group col-sm-4 col-md-4 col-lg-4">
+													<label>France Price:</label>
+													<div class="input-group">
+														<div class="input-group-addon" style="padding:0px;width:90px;">
+															<select class="form-control" name="fr_currency" id="fr_currency" style="padding:0px;height: 32px;">
+																<option value="€" <?php if(isset($id) && $id>0 && ($data['fr_currency']== '€')){ echo 'selected="selected"'; } ?>>Euro(€)</option>
+																<option value="£" <?php if(isset($id) && $id>0 && ($data['fr_currency']== '£')){ echo 'selected="selected"'; } ?>>Pound(£)</option>
+																<option value="$" <?php if(isset($id) && $id>0 && ($data['fr_currency']== '$')){ echo 'selected="selected"'; } ?>>Dollar($)</option>
+															</select>
+														</div>
+														<input type="text" class="form-control" name="fr_price" placeholder="Enter France Price" value="<?php echo set_value('fr_price',isset($data['fr_price']) ? $data['fr_price'] : '');?>">
+														<?php echo form_error('fr_price', '<div class="error">', '</div>'); ?>
+													</div>
+												</div>
+												<div class="form-group col-sm-4 col-md-4 col-lg-4">
+													<label>Germany Price:</label>
+													<div class="input-group">
+														<div class="input-group-addon" style="padding:0px;width:90px;">
+															<select class="form-control" name="de_currency" id="de_currency" style="padding:0px;height: 32px;">
+																<option value="€" <?php if(isset($id) && $id>0 && ($data['de_currency']== '€')){ echo 'selected="selected"'; } ?>>Euro(€)</option>
+																<option value="£" <?php if(isset($id) && $id>0 && ($data['de_currency']== '£')){ echo 'selected="selected"'; } ?>>Pound(£)</option>
+																<option value="$" <?php if(isset($id) && $id>0 && ($data['de_currency']== '$')){ echo 'selected="selected"'; } ?>>Dollar($)</option>
+															</select>
+														</div>
+														<input type="text" class="form-control" name="de_price" placeholder="Enter Germany Price" value="<?php echo set_value('de_price',isset($data['de_price']) ? $data['de_price'] : '');?>">
+														<?php echo form_error('de_price', '<div class="error">', '</div>'); ?>
+													</div>
+												</div>
+												<div class="form-group col-sm-4 col-md-4 col-lg-4">
+													<label>Italy Price:</label>
+													<div class="input-group">
+														<div class="input-group-addon" style="padding:0px;width:90px;">
+															<select class="form-control" name="it_currency" id="it_currency" style="padding:0px;height: 32px;">
+																<option value="€" <?php if(isset($id) && $id>0 && ($data['it_currency']== '€')){ echo 'selected="selected"'; } ?>>Euro(€)</option>
+																<option value="£" <?php if(isset($id) && $id>0 && ($data['it_currency']== '£')){ echo 'selected="selected"'; } ?>>Pound(£)</option>
+																<option value="$" <?php if(isset($id) && $id>0 && ($data['it_currency']== '$')){ echo 'selected="selected"'; } ?>>Dollar($)</option>
+															</select>
+														</div>
+														<input type="text" class="form-control" name="it_price" placeholder="Enter Italy Price" value="<?php echo set_value('it_price',isset($data['it_price']) ? $data['it_price'] : '');?>">
+														<?php echo form_error('it_price', '<div class="error">', '</div>'); ?>
+													</div>
+												</div>
+												<div class="form-group col-sm-4 col-md-4 col-lg-4">
+													<label>Netherland Price:</label>
+													<div class="input-group">
+														<div class="input-group-addon" style="padding:0px;width:90px;">
+															<select class="form-control" name="nl_currency" id="nl_currency" style="padding:0px;height: 32px;">
+																<option value="€" <?php if(isset($id) && $id>0 && ($data['nl_currency']== '€')){ echo 'selected="selected"'; } ?>>Euro(€)</option>
+																<option value="£" <?php if(isset($id) && $id>0 && ($data['nl_currency']== '£')){ echo 'selected="selected"'; } ?>>Pound(£)</option>
+																<option value="$" <?php if(isset($id) && $id>0 && ($data['nl_currency']== '$')){ echo 'selected="selected"'; } ?>>Dollar($)</option>
+															</select>
+														</div>
+														<input type="text" class="form-control" name="nl_price" placeholder="Enter Netherland Price" value="<?php echo set_value('nl_price',isset($data['nl_price']) ? $data['nl_price'] : '');?>">
+														<?php echo form_error('nl_price', '<div class="error">', '</div>'); ?>
+													</div>
+												</div>
+												<div class="form-group col-sm-4 col-md-4 col-lg-4">
+													<label>Norway Price:</label>
+													<div class="input-group">
+														<div class="input-group-addon" style="padding:0px;width:90px;">
+															<select class="form-control" name="no_currency" id="no_currency" style="padding:0px;height: 32px;">
+																<option value="NOK" <?php if(isset($id) && $id>0 && ($data['se_price']== 'NOK')){ echo 'selected="selected"'; } ?>>NOK</option>
+																<option value="€" <?php if(isset($id) && $id>0 && ($data['no_currency']== '€')){ echo 'selected="selected"'; } ?>>Euro(€)</option>
+																<option value="£" <?php if(isset($id) && $id>0 && ($data['no_currency']== '£')){ echo 'selected="selected"'; } ?>>Pound(£)</option>
+																<option value="$" <?php if(isset($id) && $id>0 && ($data['no_currency']== '$')){ echo 'selected="selected"'; } ?>>Dollar($)</option>
+															</select>
+														</div>
+														<input type="text" class="form-control" name="no_price" placeholder="Enter Norway Price" value="<?php echo set_value('no_price',isset($data['no_price']) ? $data['no_price'] : '');?>">
+														<?php echo form_error('no_price', '<div class="error">', '</div>'); ?>
+													</div>
+												</div>
+												<div class="form-group col-sm-4 col-md-4 col-lg-4">
+													<label>Sweden Price:</label>
+													<div class="input-group">
+														<div class="input-group-addon" style="padding:0px;width:90px;">
+															<select class="form-control" name="se_currency" id="se_price" style="padding:0px;height: 32px;">
+																<option value="SEK" <?php if(isset($id) && $id>0 && ($data['se_currency']== 'SEK')){ echo 'selected="selected"'; } ?>>SEK</option>
+																<option value="€" <?php if(isset($id) && $id>0 && ($data['se_currency']== '€')){ echo 'selected="selected"'; } ?>>Euro(€)</option>
+																<option value="£" <?php if(isset($id) && $id>0 && ($data['se_currency']== '£')){ echo 'selected="selected"'; } ?>>Pound(£)</option>
+																<option value="$" <?php if(isset($id) && $id>0 && ($data['se_currency']== '$')){ echo 'selected="selected"'; } ?>>Dollar($)</option>
+															</select>
+														</div>
+														<input type="text" class="form-control" name="se_price" placeholder="Enter Sweden Price" value="<?php echo set_value('se_price',isset($data['se_price']) ? $data['se_price'] : '');?>">
+														<?php echo form_error('se_price', '<div class="error">', '</div>'); ?>
+													</div>
+												</div>
+												<div class="form-group col-sm-4 col-md-4 col-lg-4">
+													<label>NL Default Export Price (Ex shipping):</label>
+													<div class="input-group">
+														<div class="input-group-addon">
+															<b>(€)</b>
+														</div>
+														<input type="text" class="form-control" name="" placeholder="Enter Default Export Price" value="<?php echo set_value('default_price',isset($data['default_price']) ? $data['default_price'] : '');?>" required="">
+														<?php echo form_error('default_price', '<div class="error">', '</div>'); ?>
+													</div>
+												</div>
+												<div class="col-sm-12 col-md-12 col-lg-12"><h3 style="margin: 0px;color: #2f5c79;border-bottom: 1px solid;margin-bottom: 5px;">ES Prices</h3></div>
+												<div class="form-group col-sm-4 col-md-4 col-lg-4">
+													<label>Spain Price:</label>
+													<div class="input-group">
+														<div class="input-group-addon" style="padding:0px;width:90px;">
+															<select class="form-control" name="es_currency" id="es_currency" style="padding:0px;height: 32px;">
+																<option value="€" <?php if(isset($id) && $id>0 && ($data['es_currency']== '€')){ echo 'selected="selected"'; } ?>>Euro(€)</option>
+																<option value="£" <?php if(isset($id) && $id>0 && ($data['es_currency']== '£')){ echo 'selected="selected"'; } ?>>Pound(£)</option>
+																<option value="$" <?php if(isset($id) && $id>0 && ($data['es_currency']== '$')){ echo 'selected="selected"'; } ?>>Dollar($)</option>
+															</select>
+														</div>
+														<input type="text" class="form-control" name="es_price" placeholder="Enter Spain Price" value="<?php echo set_value('es_price',isset($data['es_price']) ? $data['es_price'] : '');?>">
+														<?php echo form_error('es_price', '<div class="error">', '</div>'); ?>
+													</div>
+												</div>
+												<div class="form-group col-sm-4 col-md-4 col-lg-4">
+													<label>Poland Price:</label>
+													<div class="input-group">
+														<div class="input-group-addon" style="padding:0px;width:90px;">
+															<select class="form-control" name="pl_currency" id="pl_currency" style="padding:0px;height: 32px;">
+																<option value="€" <?php if(isset($id) && $id>0 && ($data['pl_currency']== '€')){ echo 'selected="selected"'; } ?>>Euro(€)</option>
+																<option value="£" <?php if(isset($id) && $id>0 && ($data['pl_currency']== '£')){ echo 'selected="selected"'; } ?>>Pound(£)</option>
+																<option value="$" <?php if(isset($id) && $id>0 && ($data['pl_currency']== '$')){ echo 'selected="selected"'; } ?>>Dollar($)</option>
+															</select>
+														</div>
+														<input type="text" class="form-control" name="pl_price" placeholder="Enter Poland Price" value="<?php echo set_value('pl_price',isset($data['pl_price']) ? $data['pl_price'] : '');?>">
+														<?php echo form_error('pl_price', '<div class="error">', '</div>'); ?>
+													</div>
+												</div>
+												<div class="form-group col-sm-4 col-md-4 col-lg-4">
+													<label>Czech Republic Price:</label>
+													<div class="input-group">
+														<div class="input-group-addon" style="padding:0px;width:90px;">
+															<select class="form-control" name="cz_currency" id="cz_currency" style="padding:0px;height: 32px;">
+																<option value="€" <?php if(isset($id) && $id>0 && ($data['cz_currency']== '€')){ echo 'selected="selected"'; } ?>>Euro(€)</option>
+																<option value="£" <?php if(isset($id) && $id>0 && ($data['cz_currency']== '£')){ echo 'selected="selected"'; } ?>>Pound(£)</option>
+																<option value="$" <?php if(isset($id) && $id>0 && ($data['cz_currency']== '$')){ echo 'selected="selected"'; } ?>>Dollar($)</option>
+															</select>
+														</div>
+														<input type="text" class="form-control" name="cz_price" placeholder="Enter Czech Republic Price" value="<?php echo set_value('cz_price',isset($data['cz_price']) ? $data['cz_price'] : '');?>">
+														<?php echo form_error('cz_price', '<div class="error">', '</div>'); ?>
+													</div>
+												</div>
+
+												<div class="form-group col-sm-4 col-md-4 col-lg-4">
+													<label>Portugal Price:</label>
+													<div class="input-group">
+														<div class="input-group-addon" style="padding:0px;width:90px;">
+															<select class="form-control" name="pt_currency" id="pt_currency" style="padding:0px;height: 32px;">
+																<option value="€" <?php if(isset($id) && $id>0 && ($data['pt_currency']== '€')){ echo 'selected="selected"'; } ?>>Euro(€)</option>
+																<option value="£" <?php if(isset($id) && $id>0 && ($data['pt_currency']== '£')){ echo 'selected="selected"'; } ?>>Pound(£)</option>
+																<option value="$" <?php if(isset($id) && $id>0 && ($data['pt_currency']== '$')){ echo 'selected="selected"'; } ?>>Dollar($)</option>
+															</select>
+														</div>
+														<input type="text" class="form-control" name="pt_price" placeholder="Enter Portugal Price" value="<?php echo set_value('pt_price',isset($data['pt_price']) ? $data['pt_price'] : '');?>">
+														<?php echo form_error('pt_price', '<div class="error">', '</div>'); ?>
+													</div>
+												</div>
+												<div class="form-group col-sm-4 col-md-4 col-lg-4">
+													<label>Slovenia Price:</label>
+													<div class="input-group">
+														<div class="input-group-addon" style="padding:0px;width:90px;">
+															<select class="form-control" name="si_currency" id="si_currency" style="padding:0px;height: 32px;">
+																<option value="€" <?php if(isset($id) && $id>0 && ($data['si_currency']== '€')){ echo 'selected="selected"'; } ?>>Euro(€)</option>
+																<option value="£" <?php if(isset($id) && $id>0 && ($data['si_currency']== '£')){ echo 'selected="selected"'; } ?>>Pound(£)</option>
+																<option value="$" <?php if(isset($id) && $id>0 && ($data['si_currency']== '$')){ echo 'selected="selected"'; } ?>>Dollar($)</option>
+															</select>
+														</div>
+														<input type="text" class="form-control" name="si_price" placeholder="Enter Slovenia Price" value="<?php echo set_value('si_price',isset($data['si_price']) ? $data['si_price'] : '');?>">
+														<?php echo form_error('si_price', '<div class="error">', '</div>'); ?>
+													</div>
+												</div>
+												<div class="form-group col-sm-4 col-md-4 col-lg-4">
+													<label>Rest of Europe Price:</label>
+													<div class="input-group">
+														<div class="input-group-addon" style="padding:0px;width:90px;">
+															<select class="form-control" name="default_es_currency" id="default_es_currency" style="padding:0px;height: 32px;">
+																<option value="€" <?php if(isset($id) && $id>0 && ($data['default_es_currency']== '€')){ echo 'selected="selected"'; } ?>>Euro(€)</option>
+																<option value="£" <?php if(isset($id) && $id>0 && ($data['default_es_currency']== '£')){ echo 'selected="selected"'; } ?>>Pound(£)</option>
+																<option value="$" <?php if(isset($id) && $id>0 && ($data['default_es_currency']== '$')){ echo 'selected="selected"'; } ?>>Dollar($)</option>
+															</select>
+														</div>
+														<input type="text" class="form-control" name="default_es_price" placeholder="Enter Rest of Europe Price" value="<?php echo set_value('default_es_price',isset($data['default_es_price']) ? $data['default_es_price'] : '');?>">
+														<?php echo form_error('default_es_price', '<div class="error">', '</div>'); ?>
+													</div>
+												</div>
+											</div>
 										</div>
 										<!-- /.row -->
 									</div>

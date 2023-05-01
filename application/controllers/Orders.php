@@ -17,6 +17,7 @@ class Orders extends CI_Controller{
 		$this->zones = $this->session->userdata('managed_by_id');
 		$this->site_lang = $this->session->userdata('site_lang');
 		$this->export_site_lang = $this->session->userdata('export_site_lang');
+		$this->load->model('ShippingPriceModel');
 		$this->load->model('OrdersModel');
 		$this->load->model('UsersModel');
 		$this->load->model('PetsModel');
@@ -3730,7 +3731,6 @@ class Orders extends CI_Controller{
 					//$final_price = $total_allergen * ($serum_test_price[0]['uk_price']);
 					$final_price = $serum_test_price[0]['uk_price'];
 					$finalPrice = $final_price;
-
 					/**discount **/
 					$serum_discount = $this->PriceCategoriesModel->get_discount($data['product_code_selection'], $practice_lab);
 					//print_r($serum_discount);
@@ -3943,65 +3943,10 @@ class Orders extends CI_Controller{
 					$countOdr = $this->OrdersModel->checkVetUserOrderToday($data['vet_user_id']);
 				}
 			}
-			$countOdr = $this->OrdersModel->checkUserOrderToday($practice_lab);
+			$countOdr = $this->OrdersModel->checkUserOrderToday($practice_lab);  //check 24 hrs
 			if($countOdr == 0){
-				//Skin Test Shipping Price
-				if ($data['order_type'] == '3') {
-					$shipUPrice = $this->OrdersModel->getShippingCostbyUser("4", $practice_lab);
-					if(!empty($shipUPrice)){
-						$finalPrice = $this->_data['final_price'];
-						$this->_data['final_price'] = $this->_data['final_price']+$shipUPrice['uk_discount'];
-						$this->_data['shipping_cost'] = $shipUPrice['uk_discount'];
-					}else{
-						$shipDPrice = $this->OrdersModel->getDefaultShippingCost("4");
-						$finalPrice = $this->_data['final_price'];
-						$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
-						$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
-					}
-				}
-
-				//Serum Test Shipping Price
-				if ($data['order_type'] == '2') {
-					if ($data['species_selection'] == '2') {
-						$shipUPrice = $this->OrdersModel->getShippingCostbyUser("3", $practice_lab);
-					}
-					if ($data['species_selection'] == '1') {
-						$shipUPrice = $this->OrdersModel->getShippingCostbyUser("2", $practice_lab);
-					}
-					if(!empty($shipUPrice)){
-						$finalPrice = $this->_data['final_price'];
-						$this->_data['final_price'] = $this->_data['final_price']+$shipUPrice['uk_discount'];
-						$this->_data['shipping_cost'] = $shipUPrice['uk_discount'];
-					}else{
-						if ($data['species_selection'] == '2') {
-							$shipDPrice = $this->OrdersModel->getDefaultShippingCost("3");
-							//$finalPrice = $this->_data['final_price'];
-							$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
-							$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
-						}
-						if ($data['species_selection'] == '1') {
-							$shipDPrice = $this->OrdersModel->getDefaultShippingCost("2");
-							//$finalPrice = $this->_data['final_price'];
-							$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
-							$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
-						}
-					}
-				}
-
-				//Immunotherapy Shipping Price
-				if ($data['order_type'] == '1') {
-					$shipUPrice = $this->OrdersModel->getShippingCostbyUser("1", $practice_lab);
-					if(!empty($shipUPrice)){
-						$finalPrice = $this->_data['final_price'];
-						$this->_data['final_price'] = $this->_data['final_price']+$shipUPrice['uk_discount'];
-						$this->_data['shipping_cost'] = $shipUPrice['uk_discount'];
-					}else{
-						$shipDPrice = $this->OrdersModel->getDefaultShippingCost("1");
-						$finalPrice = $this->_data['final_price'];
-						$this->_data['final_price'] = $this->_data['final_price']+$shipDPrice['uk_price'];
-						$this->_data['shipping_cost'] = $shipDPrice['uk_price'];
-					}
-				}
+				$shippingPrice = $this->ShippingPriceModel->getShippingPrice($practice_lab, $data['order_type'], $data['product_code_selection']);
+				$this->_data['shipping_cost'] = !empty($shippingPrice['uk_price']) ? $shippingPrice['uk_price'] : 0;
 			}else{
 				$existCost = $this->OrdersModel->getexistShippingCost($id);
 				$this->_data['shipping_cost'] = !empty($existCost)?$existCost:'0.00';
@@ -4011,9 +3956,6 @@ class Orders extends CI_Controller{
 		if ($data['order_type'] == '1' && $data['sub_order_type'] == '2') {
 			$this->_data['final_price'] = ($finalPrice - $discountPrice) + $this->_data['shipping_cost'];
 			$this->_data['order_discount'] = $discountPrice;
-		} else {
-			//$this->_data['order_discount'] = ($finalPrice * $discountPercent) / 100;
-			//$this->_data['final_price'] = ($finalPrice + $this->_data['shipping_cost']) - $this->_data['order_discount'];
 		}
 
 		//echo "<pre>";print_r($this->_data);die;
@@ -4189,6 +4131,9 @@ class Orders extends CI_Controller{
 					}
 				}
 			}
+		}
+		if (!empty($this->_data['shipping_cost'])) {
+			$this->_data['final_price'] = $this->_data['final_price'] + $this->_data['shipping_cost'];
 		}
 		if (!empty($data)) {
 			$this->_data['data'] = $data;
