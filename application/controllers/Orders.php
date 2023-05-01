@@ -3,6 +3,9 @@ require_once(APPPATH . 'libraries/dompdf/autoload.inc.php');
 use Dompdf\Dompdf as Dompdf;
 if (!defined('BASEPATH')) exit('No direct script access allowed');
 error_reporting(E_ERROR | E_PARSE);
+/*ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);*/
 class Orders extends CI_Controller{
 
 	public function __construct(){
@@ -56,6 +59,7 @@ class Orders extends CI_Controller{
 	}
 
 	function getTableData(){
+
 		$Orders = $this->OrdersModel->getTableData();
 		if (!empty($Orders)) {
 			foreach ($Orders as $key => $value) {
@@ -3554,7 +3558,6 @@ class Orders extends CI_Controller{
 		$this->_data['data'] = [];
 		$data = $this->OrdersModel->getRecord($id);
 		$order_details = $this->OrdersModel->allData($data['id'], "");
-//echo "<pre>";print_r($order_details);die;
 		/*****delivery address details */
 		$this->_data['delivery_address_details'] = '';
 		if ($order_details['order_can_send_to'] == '1') {
@@ -3948,8 +3951,13 @@ class Orders extends CI_Controller{
 				$shippingPrice = $this->ShippingPriceModel->getShippingPrice($practice_lab, $data['order_type'], $data['product_code_selection']);
 				$this->_data['shipping_cost'] = !empty($shippingPrice['uk_price']) ? $shippingPrice['uk_price'] : 0;
 			}else{
-				$existCost = $this->OrdersModel->getexistShippingCost($id);
-				$this->_data['shipping_cost'] = !empty($existCost)?$existCost:'0.00';
+				if ($data['order_type'] == '2') {
+					$shippingPrice = $this->ShippingPriceModel->getShippingPrice($practice_lab, $data['order_type'], $data['product_code_selection']);
+					$this->_data['shipping_cost'] = !empty($shippingPrice['uk_price']) ? $shippingPrice['uk_price'] : 0;
+				}else {
+					$existCost = $this->OrdersModel->getexistShippingCost($id);
+					$this->_data['shipping_cost'] = !empty($existCost) ? $existCost : '0.00';
+				}
 			}
 		}
 

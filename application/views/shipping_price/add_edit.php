@@ -84,7 +84,7 @@ $userData = logged_in_user_data();
 													<input type="text" class="form-control" name="name" placeholder="Enter Name" value="<?php echo set_value('name',isset($data['name']) ? $data['name'] : '');?>" required="">
 													<?php echo form_error('name', '<div class="error">', '</div>'); ?>
 												</div>
-												
+
 											</div>
 											<!-- /.col -->
 											<div class="col-sm-6 col-md-6 col-lg-6">

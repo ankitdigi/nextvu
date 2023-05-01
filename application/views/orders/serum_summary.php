@@ -1147,6 +1147,22 @@ $userData = logged_in_user_data();
 														</div>
 													<?php } ?>
 												</div><!-- /.col -->
+												<div class="col-sm-4 col-md-4 col-lg-4">
+													<?php if(($userData['role'] == 1) || ($userData['role'] == 11) || ($userData['role'] == 5 && $this->session->userdata('user_type') == '3')){ ?>
+														<div class="form-group">
+															<label><?php echo $this->lang->line('shipping_cost'); ?> </label>
+															<div class="input-group">
+																<div class="input-group-addon">
+																	<?php echo isset($price_currency) ? $price_currency:'£'; ?>
+																</div>
+																<input type="text" class="form-control" name="shipping_cost" id="shipping_cost" placeholder="Enter Order Discount" value="<?php echo set_value('shipping_cost',isset($shipping_cost) ? $shipping_cost : '');?>"  <?php echo $readonly; ?>>
+																<?php echo form_error('shipping_cost', '<div class="error">', '</div>'); ?>
+															</div>
+														</div>
+													<?php }else{ ?>
+														<input type="hidden" name="shipping_cost" id="shipping_cost" value="0">
+													<?php } ?>
+												</div><!-- /.col -->
 											</div><!-- /.row -->
 										</div><!-- /.box-body -->
 									</div><!-- /.box -->

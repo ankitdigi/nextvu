@@ -426,6 +426,7 @@ class OrdersModel extends CI_model{
 				$this->db->or_like('ci_pets.name', $postData['search']['value']);
 				$this->db->or_like('petOwner.name', $postData['search']['value']);
 				$this->db->or_like('petOwner.last_name', $postData['search']['value']);
+				$this->db->or_like("CONCAT(petOwner.name,' ',petOwner.last_name)", $postData['search']['value']);
 				$this->db->or_like('practice.name', $postData['search']['value']);
 				$this->db->or_like('ci_orders.batch_number', $postData['search']['value']);
 				$this->db->or_like('ci_orders.lab_order_number', $postData['search']['value']);
